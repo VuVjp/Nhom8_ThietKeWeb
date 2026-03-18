@@ -46,7 +46,7 @@ namespace HotelManagement.Controllers
 
             return Ok(new { Token = newJwt, RefreshToken = newRefreshToken });
         }
-
+        
         [HttpPost("logout")]
         public async Task<IActionResult> Logout([FromBody] RefreshTokenRequest refreshToken)
         {

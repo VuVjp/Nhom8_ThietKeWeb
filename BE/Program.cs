@@ -1,5 +1,6 @@
 using HotelManagement.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -37,10 +38,24 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("assign_role", policy =>
+        policy.Requirements.Add(new PermissionRequirement("assign_role")));
+
+    options.AddPolicy("create_room", policy =>
+        policy.Requirements.Add(new PermissionRequirement("create_room")));
+
+    options.AddPolicy("delete_room", policy =>
+        policy.Requirements.Add(new PermissionRequirement("delete_room")));
+});
+
+
+builder.Services.AddScoped<IAuthorizationHandler, PermissionHandler>();
 
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IRoleRepository, RoleRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 
