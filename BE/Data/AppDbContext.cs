@@ -34,6 +34,8 @@ public class AppDbContext : DbContext
     public DbSet<User> Users { get; set; }
     public DbSet<Voucher> Vouchers { get; set; }
 
+    public DbSet<RefreshToken> RefreshTokens { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -65,6 +67,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Service>().ToTable("Services");
         modelBuilder.Entity<User>().ToTable("Users");
         modelBuilder.Entity<Voucher>().ToTable("Vouchers");
+        modelBuilder.Entity<RefreshToken>().ToTable("Refresh_Tokens");
 
         // Column name mappings
         modelBuilder.Entity<Amenity>(e =>
@@ -297,22 +300,42 @@ public class AppDbContext : DbContext
             e.HasIndex(x => x.Code).IsUnique();
         });
 
-        // Composite PKs
-        modelBuilder.Entity<RolePermission>().HasKey(x => new { x.RoleId, x.PermissionId });
         modelBuilder.Entity<RolePermission>(e =>
         {
             e.Property(x => x.RoleId).HasColumnName("role_id");
             e.Property(x => x.PermissionId).HasColumnName("permission_id");
         });
 
-        modelBuilder.Entity<RoomTypeAmenity>().HasKey(x => new { x.RoomTypeId, x.AmenityId });
         modelBuilder.Entity<RoomTypeAmenity>(e =>
         {
             e.Property(x => x.RoomTypeId).HasColumnName("room_type_id");
             e.Property(x => x.AmenityId).HasColumnName("amenity_id");
         });
 
+        modelBuilder.Entity<RefreshToken>(e =>
+        {
+            e.Property(x => x.Id).HasColumnName("id");
+            e.Property(x => x.Token).HasColumnName("token");
+            e.Property(x => x.ExpiryDate).HasColumnName("expiry_date");
+            e.Property(x => x.UserId).HasColumnName("user_id");
+        });
+
+        // Composite PKs
+        modelBuilder.Entity<RolePermission>().HasKey(x => new { x.RoleId, x.PermissionId });
+
+        modelBuilder.Entity<RefreshToken>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.HasIndex(e => e.Token).IsUnique();
+                entity.HasIndex(e => e.UserId);
+            });
+
+        modelBuilder.Entity<RoomTypeAmenity>().HasKey(x => new { x.RoomTypeId, x.AmenityId });
+
         // Relationships
+        modelBuilder.Entity<RefreshToken>()
+                .HasOne(e => e.User).WithMany(u => u.RefreshTokens).HasForeignKey(e => e.UserId).OnDelete(DeleteBehavior.Cascade);
+
         modelBuilder.Entity<User>()
             .HasOne(u => u.Role).WithMany(r => r.Users).HasForeignKey(u => u.RoleId).OnDelete(DeleteBehavior.SetNull);
 

@@ -10,6 +10,8 @@ public class User
     public string? Phone { get; set; }
     public string PasswordHash { get; set; } = string.Empty;
     public bool? Status { get; set; }
+    public bool IsLocked { get; set; } = false;
+    public string? GoogleId { get; set; }
 
     public Role? Role { get; set; }
     public Membership? Membership { get; set; }
@@ -17,4 +19,5 @@ public class User
     public ICollection<Review> Reviews { get; set; } = new List<Review>();
     public ICollection<AuditLog> AuditLogs { get; set; } = new List<AuditLog>();
     public ICollection<Article> Articles { get; set; } = new List<Article>();
+    public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
 }
