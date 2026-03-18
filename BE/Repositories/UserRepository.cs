@@ -13,6 +13,11 @@ public class UserRepository : Repository<User>, IUserRepository
         return await _dbSet.FirstOrDefaultAsync(u => u.Email == email);
     }
 
+    public async Task<User?> GetUserByIdAsync(int id)
+    {
+        return await _dbSet.Include(u => u.RefreshTokens).FirstOrDefaultAsync(u => u.Id == id);
+    }
+
     public async Task<User?> LockUserById(int id)
     {
         var user = await _dbSet.FindAsync(id);

@@ -11,11 +11,14 @@ public class AuthService : IAuthService
 {
     private readonly IUserRepository _userRepository;
     private readonly IConfiguration _configuration;
+    private readonly IRefreshTokenRepository _refreshTokenRepository;
 
-    public AuthService(IUserRepository userRepository, IConfiguration configuration)
+    public AuthService(IUserRepository userRepository, IConfiguration configuration, IRefreshTokenRepository refreshTokenRepository)
     {
         _userRepository = userRepository;
         _configuration = configuration;
+        _refreshTokenRepository = refreshTokenRepository;
+
     }
 
     public async Task<(int, string, string)> RegisterAsync(string email, string fullName, string password)
@@ -52,7 +55,7 @@ public class AuthService : IAuthService
         }
 
         var jwtToken = GenerateJwt(user);
-        var refreshToken = await GenerateRefreshTokenAsync(user.Id);
+        var refreshToken = await GenerateRefreshTokenAsync(user);
 
 
         return (jwtToken, refreshToken);
@@ -87,55 +90,73 @@ public class AuthService : IAuthService
         }
 
         var jwtToken = GenerateJwt(user);
-        var refreshToken = await GenerateRefreshTokenAsync(user.Id);
+        var refreshToken = await GenerateRefreshTokenAsync(user);
 
         return (jwtToken, refreshToken);
     }
 
+    public async Task LogoutAsync(string refreshToken)
+    {
+        var rf = await _refreshTokenRepository.GetByTokenAsync(refreshToken);
+        if (rf == null)
+        {
+            throw new UnauthorizedException("Invalid refresh token");
+        }
+        if (rf.IsRevoked)
+        {
+            throw new UnauthorizedException("Refresh token has already been revoked");
+        }
+        await _refreshTokenRepository.RevokeTokenAsync(refreshToken);
+    }
+
     public async Task<(string, string)> RefreshTokenAsync(string refreshToken)
     {
-        var user = await _userRepository.GetAllAsync();
 
-        Console.WriteLine($"{user.Count()} users found in database for refresh token validation.");
-        var matchedUser = user.FirstOrDefault(u => u.RefreshTokens.Any(rt => rt.Token == refreshToken && rt.ExpiryDate > DateTime.UtcNow));
+        var rf = await _refreshTokenRepository.GetByTokenAsync(refreshToken);
+
+        if (rf == null || rf.ExpiryDate < DateTime.UtcNow)
+        {
+            throw new UnauthorizedException("Invalid refresh token");
+        }
+
+        var matchedUser = await _userRepository.GetByIdAsync(rf.UserId);
 
         if (matchedUser == null)
         {
             throw new UnauthorizedException("Invalid refresh token");
         }
 
-        var rfToken = matchedUser.RefreshTokens.First(rt => rt.Token == refreshToken);
-        if (rfToken.IsRevoked)
+        if (rf.IsRevoked)
         {
             throw new UnauthorizedException("Refresh token has been revoked");
         }
 
-        rfToken.IsRevoked = true;
-
         var newJwt = GenerateJwt(matchedUser);
-        var newRefreshToken = await GenerateRefreshTokenAsync(matchedUser.Id);
 
-        await _userRepository.SaveChangesAsync();
+        var newRefreshToken = await GenerateRefreshTokenAsync(matchedUser);
+
+        await _refreshTokenRepository.RevokeTokenAsync(refreshToken);
 
         return (newJwt, newRefreshToken);
     }
 
-    public async Task<string> GenerateRefreshTokenAsync(int userId)
+    public async Task<string> GenerateRefreshTokenAsync(User user)
     {
-        var user = await _userRepository.GetByIdAsync(userId);
         if (user == null)
         {
             throw new UnauthorizedException("User not found");
         }
 
         var rfToken = GenerateRefreshToken();
-        user.RefreshTokens.Add(new RefreshToken
+
+        var refreshToken = new RefreshToken
         {
             Token = rfToken,
-            ExpiryDate = DateTime.UtcNow.AddDays(7)
-        });
+            ExpiryDate = DateTime.UtcNow.AddDays(7),
+            UserId = user.Id
+        };
 
-        await _userRepository.SaveChangesAsync();
+        await _refreshTokenRepository.AddRefreshTokenAsync(refreshToken);
 
         return rfToken;
     }
