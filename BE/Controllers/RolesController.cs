@@ -4,12 +4,12 @@ using HotelManagement.Dtos;
 namespace HotelManagement.Controllers
 {
     [ApiController]
-    [Route("api/roles")]
-    public class RoleController : ControllerBase
+    [Route("api/[controller]")]
+    public class RolesController : ControllerBase
     {
         private readonly IRoleService _roleService;
 
-        public RoleController(IRoleService roleService)
+        public RolesController(IRoleService roleService)
         {
             _roleService = roleService;
         }

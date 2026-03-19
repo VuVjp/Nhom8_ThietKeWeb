@@ -49,9 +49,9 @@ public class AuthService : IAuthService
         {
             throw new UnauthorizedAccessException("Invalid email or password");
         }
-        if (user.IsLocked)
+        if (user.IsActive == false)
         {
-            throw new UnauthorizedException("User account is locked");
+            throw new UnauthorizedException("User account is deactivated");
         }
 
         var jwtToken = GenerateJwt(user);

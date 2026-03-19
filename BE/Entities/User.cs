@@ -10,7 +10,7 @@ public class User
     public string? Phone { get; set; }
     public string PasswordHash { get; set; } = string.Empty;
     public bool? Status { get; set; }
-    public bool IsLocked { get; set; } = false;
+    public bool IsActive { get; set; } = true;
     public string? GoogleId { get; set; }
 
     public Role? Role { get; set; }

@@ -1,3 +1,4 @@
+using HotelManagement.Entities;
 public class UserManagementService : IUserManagementService
 {
     private readonly IUserManagementRepository _userManagementRepository;
@@ -11,26 +12,60 @@ public class UserManagementService : IUserManagementService
 
     public async Task ChangeRoleByIdAsync(int userId, int roleId)
     {
+        if (!await _roleRepository.IsRoleExistAsync(roleId))
+        {
+            throw new ArgumentException("Role does not exist.");
+        }
+
         await _userManagementRepository.ChangeRoleByIdAsync(userId, roleId);
     }
 
-    public Task CreateUserAsync(string email, string password, int roleId)
+    public async Task CreateUserAsync(string email, string password, int roleId)
     {
-        throw new NotImplementedException();
+        if (!await _roleRepository.IsRoleExistAsync(roleId))
+        {
+            throw new NotFoundException("Role does not exist.");
+        }
+
+        await _userManagementRepository.AddAsync(new User
+        {
+            Email = email,
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
+            RoleId = roleId
+        });
+
+        await _userManagementRepository.SaveChangesAsync();
     }
 
-    public Task EditUserAsync(int userId, string email, string password, int roleId)
+    public async Task EditUserAsync(int userId, string email, string password, int roleId)
     {
-        throw new NotImplementedException();
+        if (!await _roleRepository.IsRoleExistAsync(roleId))
+        {
+            throw new NotFoundException("Role does not exist.");
+        }
+
+        var user = await _userManagementRepository.GetByIdAsync(userId);
+
+        if (user == null)
+        {
+            throw new NotFoundException("User not found.");
+        }
+
+        user.Email = email;
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(password);
+        user.RoleId = roleId;
+
+        _userManagementRepository.Update(user);
+        await _userManagementRepository.SaveChangesAsync();
     }
 
-    public Task GetAllUsersAsync(int roleId, int permissionId)
+    public async Task<IEnumerable<User>> GetAllUsersAsync()
     {
-        throw new NotImplementedException();
+        return await _userManagementRepository.GetAllAsync();
     }
 
-    public Task SoftDeleteUserByIdAsync(int userId)
+    public async Task SoftDeleteUserByIdAsync(int userId)
     {
-        throw new NotImplementedException();
+        await _userManagementRepository.SoftDeleteUserByIdAsync(userId);
     }
 }

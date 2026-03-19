@@ -5,7 +5,7 @@ using HotelManagement.Dtos;
 namespace HotelManagement.Controllers
 {
     [ApiController]
-    [Route("api/auth")]
+    [Route("api/[controller]")]
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
@@ -46,7 +46,7 @@ namespace HotelManagement.Controllers
 
             return Ok(new { Token = newJwt, RefreshToken = newRefreshToken });
         }
-        
+
         [HttpPost("logout")]
         public async Task<IActionResult> Logout([FromBody] RefreshTokenRequest refreshToken)
         {

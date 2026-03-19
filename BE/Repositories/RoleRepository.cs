@@ -9,6 +9,11 @@ class RoleRepository : Repository<Role>, IRoleRepository
     {
     }
 
+    public async Task<bool> IsRoleExistAsync(int id)
+    {
+        return await _dbSet.AnyAsync(r => r.Id == id);
+    }
+
     public async Task AssignPermissionAsync(int roleId, int permissionId)
     {
         var roleExists = await _context.Roles
