@@ -22,7 +22,7 @@ class RefreshTokenRepository : Repository<RefreshToken>, IRefreshTokenRepository
             ExpiryDate = DateTime.UtcNow.AddDays(7)
         });
 
-        await _context.SaveChangesAsync();
+        await SaveChangesAsync();
 
     }
 
@@ -32,7 +32,7 @@ class RefreshTokenRepository : Repository<RefreshToken>, IRefreshTokenRepository
         if (refreshToken != null)
         {
             refreshToken.IsRevoked = true;
-            await _context.SaveChangesAsync();
+            await SaveChangesAsync();
         }
     }
 }
