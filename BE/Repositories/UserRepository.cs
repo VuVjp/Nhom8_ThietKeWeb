@@ -20,7 +20,7 @@ public class UserRepository : Repository<User>, IUserRepository
 
     public async Task<User?> LockUserById(int id)
     {
-        var user = await _dbSet.FindAsync(id);
+        var user = await GetByIdAsync(id);
         if (user != null)
         {
             user.IsLocked = true;
@@ -31,7 +31,7 @@ public class UserRepository : Repository<User>, IUserRepository
 
     public async Task<User?> ChangeRoleUserById(int id, string newRole)
     {
-        var user = await _dbSet.FindAsync(id);
+        var user = await GetByIdAsync(id);
         if (user != null)
         {
             user.Role = new Role { Name = newRole };
