@@ -7,17 +7,17 @@ namespace HotelManagement.Controllers
     [Route("api/roles")]
     public class RoleController : ControllerBase
     {
-        private readonly IRoleRepository _roleRepository;
+        private readonly IRoleService _roleService;
 
-        public RoleController(IRoleRepository roleRepository)
+        public RoleController(IRoleService roleService)
         {
-            _roleRepository = roleRepository;
+            _roleService = roleService;
         }
 
-        [HttpPost("assign-role")]
-        public async Task<IActionResult> AssignRole([FromBody] AssignRoleDto dto)
+        [HttpPost("assign-permission")]
+        public async Task<IActionResult> AssignPermission([FromBody] AssignPermissionDto dto)
         {
-            await _roleRepository.AssignRoleAsync(dto.UserId, dto.RoleId);
+            await _roleService.AssignPermissionAsync(dto.roleId, dto.PermissionId);
             return Ok();
         }
 
@@ -25,7 +25,7 @@ namespace HotelManagement.Controllers
         public async Task<IActionResult> GetMyPermissions()
         {
             var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
-            var permissions = await _roleRepository.GetMyPermissionsAsync(userId);
+            var permissions = await _roleService.GetMyPermissionsAsync(userId);
             return Ok(permissions);
         }
     }

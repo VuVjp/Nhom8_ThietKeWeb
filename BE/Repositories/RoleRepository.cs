@@ -9,16 +9,19 @@ class RoleRepository : Repository<Role>, IRoleRepository
     {
     }
 
-    public async Task AssignRoleAsync(int userId, int roleId)
+    public async Task AssignPermissionAsync(int roleId, int permissionId)
     {
-        var user = await _context.Users.Include(u => u.Role).ThenInclude(r => r!.RolePermissions)
-            .FirstOrDefaultAsync(u => u.Id == userId);
+        var role = await _context.Roles.Include(r => r.RolePermissions)
+            .FirstOrDefaultAsync(r => r.Id == roleId);
 
-        if (user == null || user.Role == null)
-            throw new Exception("User or Role not found");
+        if (role == null)
+            throw new Exception("Role not found");
 
-        user.RoleId = roleId;
+        var permission = await _context.Permissions.FindAsync(permissionId);
+        if (permission == null)
+            throw new Exception("Permission not found");
 
+        role.RolePermissions.Add(new RolePermission { RoleId = roleId, PermissionId = permissionId });
         await _context.SaveChangesAsync();
     }
 

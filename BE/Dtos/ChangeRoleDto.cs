@@ -1,6 +1,6 @@
 namespace HotelManagement.Dtos
 {
-    public class AssignRoleDto
+    public class ChangeRoleDto
     {
         public int UserId { get; set; }
         public int RoleId { get; set; }
