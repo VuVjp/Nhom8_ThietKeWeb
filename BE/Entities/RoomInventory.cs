@@ -7,6 +7,7 @@ public class RoomInventory
     public string ItemName { get; set; } = string.Empty;
     public int? Quantity { get; set; }
     public decimal? PriceIfLost { get; set; }
+    public bool IsActive { get; set; } = true;
 
     public Room? Room { get; set; }
     public ICollection<LossAndDamage> LossAndDamages { get; set; } = new List<LossAndDamage>();

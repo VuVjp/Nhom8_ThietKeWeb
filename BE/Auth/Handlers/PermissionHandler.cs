@@ -1,4 +1,6 @@
+using System.Security.Claims;
 using HotelManagement.Data;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 
@@ -15,10 +17,18 @@ public class PermissionHandler : AuthorizationHandler<PermissionRequirement>
         AuthorizationHandlerContext context,
         PermissionRequirement requirement)
     {
-        var userIdClaim = context.User.FindFirst("sub");
+        foreach (var claim in context.User.Claims)
+        {
+            Console.WriteLine($"Claim Type: {claim.Type}, Claim Value: {claim.Value}");
+        }
+        if (!context.User.Identity?.IsAuthenticated ?? false)
+        {
+            throw new UnauthorizedAccessException("User is not authenticated.");
+        }
+        var userIdClaim = context.User.FindFirst(ClaimTypes.NameIdentifier);
 
         if (userIdClaim == null)
-            return;
+            throw new UnauthorizedAccessException("User ID claim not found.");
 
         var userId = int.Parse(userIdClaim.Value);
 
@@ -30,6 +40,10 @@ public class PermissionHandler : AuthorizationHandler<PermissionRequirement>
         if (hasPermission)
         {
             context.Succeed(requirement);
+        }
+        else
+        {
+            throw new ForbiddenException("User does not have the required permission.");
         }
     }
 }

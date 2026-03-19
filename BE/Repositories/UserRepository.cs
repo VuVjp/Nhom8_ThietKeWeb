@@ -7,6 +7,10 @@ public class UserRepository : Repository<User>, IUserRepository
     public UserRepository(AppDbContext context) : base(context)
     {
     }
+    public async Task<bool> IsEmailExistAsync(string email)
+    {
+        return await _dbSet.AnyAsync(u => u.Email == email);
+    }
 
     public async Task<User?> GetByEmailAsync(string email)
     {

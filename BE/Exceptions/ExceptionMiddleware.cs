@@ -57,6 +57,17 @@ public class ExceptionMiddleware
                 message = ex.Message
             });
         }
+        catch (ForbiddenException ex)
+        {
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            context.Response.ContentType = "application/json";
+
+            await context.Response.WriteAsJsonAsync(new
+            {
+                status = 403,
+                message = ex.Message
+            });
+        }
         catch (Exception ex)
         {
             context.Response.StatusCode = 500;

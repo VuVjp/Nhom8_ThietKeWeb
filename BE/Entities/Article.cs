@@ -10,7 +10,7 @@ public class Article
     public string? Content { get; set; }
     public string? ThumbnailUrl { get; set; }
     public DateTime? PublishedAt { get; set; }
-    public bool IsActive { get; set; } = false;
+    public bool IsActive { get; set; } = true;
     public ArticleCategory? Category { get; set; }
     public User? Author { get; set; }
 }

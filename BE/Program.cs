@@ -43,8 +43,8 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("assign_role", policy =>
         policy.Requirements.Add(new PermissionRequirement("assign_role")));
 
-    options.AddPolicy("create_room", policy =>
-        policy.Requirements.Add(new PermissionRequirement("create_room")));
+    options.AddPolicy("create_rooms", policy =>
+        policy.Requirements.Add(new PermissionRequirement("create_rooms")));
 
     options.AddPolicy("delete_room", policy =>
         policy.Requirements.Add(new PermissionRequirement("delete_room")));

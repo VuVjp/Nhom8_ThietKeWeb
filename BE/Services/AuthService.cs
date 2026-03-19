@@ -23,7 +23,7 @@ public class AuthService : IAuthService
 
     public async Task<(int, string, string)> RegisterAsync(string email, string fullName, string password)
     {
-        if (await _userRepository.GetByEmailAsync(email) != null)
+        if (await _userRepository.IsEmailExistAsync(email))
         {
             throw new ConflictException("Email already exists");
         }
@@ -69,9 +69,9 @@ public class AuthService : IAuthService
         var googleId = payload.Subject;
 
         var user = await _userRepository.GetByGoogleIdAsync(googleId);
-        var alreadyExistsEmail = await _userRepository.GetByEmailAsync(email);
+        var alreadyExistsEmail = await _userRepository.IsEmailExistAsync(email);
 
-        if (alreadyExistsEmail != null && user == null)
+        if (alreadyExistsEmail && user == null)
         {
             throw new ConflictException("Email already exists with a different authentication method");
         }

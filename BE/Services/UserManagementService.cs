@@ -3,11 +3,13 @@ public class UserManagementService : IUserManagementService
 {
     private readonly IUserManagementRepository _userManagementRepository;
     private readonly IRoleRepository _roleRepository;
+    private readonly IUserRepository _userRepository;
 
-    public UserManagementService(IUserManagementRepository userManagementRepository, IRoleRepository roleRepository)
+    public UserManagementService(IUserManagementRepository userManagementRepository, IRoleRepository roleRepository, IUserRepository userRepository)
     {
         _userManagementRepository = userManagementRepository;
         _roleRepository = roleRepository;
+        _userRepository = userRepository;
     }
 
     public async Task ChangeRoleByIdAsync(int userId, int roleId)
@@ -25,6 +27,11 @@ public class UserManagementService : IUserManagementService
         if (!await _roleRepository.IsRoleExistAsync(roleId))
         {
             throw new NotFoundException("Role does not exist.");
+        }
+
+        if (await _userRepository.IsEmailExistAsync(email))
+        {
+            throw new ConflictException("Email already exists.");
         }
 
         await _userManagementRepository.AddAsync(new User

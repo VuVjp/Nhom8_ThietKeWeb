@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using HotelManagement.Dtos;
+using Microsoft.AspNetCore.Authorization;
 namespace HotelManagement.Controllers
 {
     [ApiController]
@@ -15,12 +16,14 @@ namespace HotelManagement.Controllers
         }
 
         [HttpPost("assign-permission")]
+        [Authorize]
         public async Task<IActionResult> AssignPermission([FromBody] AssignPermissionDto dto)
         {
             await _roleService.AssignPermissionAsync(dto.roleId, dto.PermissionId);
             return Ok();
         }
 
+        [Permission("create_rooms")]
         [HttpGet("my-permissions")]
         public async Task<IActionResult> GetMyPermissions()
         {

@@ -75,12 +75,14 @@ public class AppDbContext : DbContext
             e.Property(x => x.Id).HasColumnName("id");
             e.Property(x => x.Name).HasColumnName("name");
             e.Property(x => x.IconUrl).HasColumnName("icon_url");
+            e.Property(x => x.IsActive).HasColumnName("is_active");
         });
 
         modelBuilder.Entity<ArticleCategory>(e =>
         {
             e.Property(x => x.Id).HasColumnName("id");
             e.Property(x => x.Name).HasColumnName("name");
+            e.Property(x => x.IsActive).HasColumnName("is_active");
         });
 
         modelBuilder.Entity<Article>(e =>
@@ -93,6 +95,7 @@ public class AppDbContext : DbContext
             e.Property(x => x.Content).HasColumnName("content");
             e.Property(x => x.ThumbnailUrl).HasColumnName("thumbnail_url");
             e.Property(x => x.PublishedAt).HasColumnName("published_at");
+            e.Property(x => x.IsActive).HasColumnName("is_active");
             e.HasIndex(x => x.Slug).IsUnique();
         });
 
@@ -103,6 +106,10 @@ public class AppDbContext : DbContext
             e.Property(x => x.DistanceKm).HasColumnName("distance_km").HasColumnType("decimal(5,2)");
             e.Property(x => x.Description).HasColumnName("description");
             e.Property(x => x.MapEmbedLink).HasColumnName("map_embed_link");
+            e.Property(x => x.IsActive).HasColumnName("is_active");
+            e.Property(x => x.Longitude).HasColumnName("longitude");
+            e.Property(x => x.Latitude).HasColumnName("latitude");
+
         });
 
         modelBuilder.Entity<AuditLog>(e =>
@@ -238,6 +245,7 @@ public class AppDbContext : DbContext
             e.Property(x => x.ItemName).HasColumnName("item_name");
             e.Property(x => x.Quantity).HasColumnName("quantity");
             e.Property(x => x.PriceIfLost).HasColumnName("price_if_lost").HasColumnType("decimal(18,2)");
+            e.Property(x => x.IsActive).HasColumnName("is_active");
         });
 
         modelBuilder.Entity<RoomType>(e =>
@@ -248,6 +256,7 @@ public class AppDbContext : DbContext
             e.Property(x => x.CapacityAdults).HasColumnName("capacity_adults");
             e.Property(x => x.CapacityChildren).HasColumnName("capacity_children");
             e.Property(x => x.Description).HasColumnName("description");
+            e.Property(x => x.IsActive).HasColumnName("is_active");
         });
 
         modelBuilder.Entity<Room>(e =>
@@ -284,6 +293,8 @@ public class AppDbContext : DbContext
             e.Property(x => x.Phone).HasColumnName("phone");
             e.Property(x => x.PasswordHash).HasColumnName("password_hash");
             e.Property(x => x.Status).HasColumnName("status");
+            e.Property(x => x.IsActive).HasColumnName("is_active");
+            e.Property(x => x.GoogleId).HasColumnName("google_id");
             e.HasIndex(x => x.Email).IsUnique();
         });
 
