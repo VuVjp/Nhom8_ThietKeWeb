@@ -12,6 +12,7 @@ public class User
     public bool? Status { get; set; }
     public bool IsActive { get; set; } = true;
     public string? GoogleId { get; set; }
+    public string? AvatarUrl { get; set; }
 
     public Role? Role { get; set; }
     public Membership? Membership { get; set; }

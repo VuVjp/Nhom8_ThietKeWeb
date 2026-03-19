@@ -73,6 +73,11 @@ public class UserManagementService : IUserManagementService
 
     public async Task SoftDeleteUserByIdAsync(int userId)
     {
-        await _userManagementRepository.SoftDeleteUserByIdAsync(userId);
+        var user = await _userRepository.GetByIdAsync(userId);
+        if (user == null)
+        {
+            throw new NotFoundException("User not found.");
+        }
+        await _userRepository.SoftDeleteAsync(user);
     }
 }

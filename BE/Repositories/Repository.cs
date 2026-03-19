@@ -41,6 +41,21 @@ public class Repository<T> : IRepository<T> where T : class
         _dbSet.Remove(entity);
     }
 
+    public async Task SoftDeleteAsync(T entity)
+    {
+        var property = typeof(T).GetProperty("IsActive");
+        if (property != null && property.PropertyType == typeof(bool))
+        {
+            property.SetValue(entity, false);
+            _dbSet.Update(entity);
+            await SaveChangesAsync();
+        }
+        else
+        {
+            throw new InvalidOperationException("Soft delete is not supported for this entity.");
+        }
+    }
+
     public async Task SaveChangesAsync()
     {
         await _context.SaveChangesAsync();
