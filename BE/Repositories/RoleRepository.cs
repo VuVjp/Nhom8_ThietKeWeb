@@ -11,17 +11,30 @@ class RoleRepository : Repository<Role>, IRoleRepository
 
     public async Task AssignPermissionAsync(int roleId, int permissionId)
     {
-        var role = await _context.Roles.Include(r => r.RolePermissions)
-            .FirstOrDefaultAsync(r => r.Id == roleId);
+        var roleExists = await _context.Roles
+            .AnyAsync(r => r.Id == roleId);
 
-        if (role == null)
-            throw new Exception("Role not found");
+        if (!roleExists)
+            throw new NotFoundException("Role not found");
 
-        var permission = await _context.Permissions.FindAsync(permissionId);
-        if (permission == null)
-            throw new Exception("Permission not found");
+        var permissionExists = await _context.Permissions
+            .AnyAsync(p => p.Id == permissionId);
 
-        role.RolePermissions.Add(new RolePermission { RoleId = roleId, PermissionId = permissionId });
+        if (!permissionExists)
+            throw new NotFoundException("Permission not found");
+
+        var exists = await _context.RolePermissions
+            .AnyAsync(rp => rp.RoleId == roleId && rp.PermissionId == permissionId);
+
+        if (exists)
+            throw new ConflictException("Permission already assigned to role");
+
+        _context.RolePermissions.Add(new RolePermission
+        {
+            RoleId = roleId,
+            PermissionId = permissionId
+        });
+
         await _context.SaveChangesAsync();
     }
 
