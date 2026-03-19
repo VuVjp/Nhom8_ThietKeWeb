@@ -10,6 +10,7 @@ public class UserManagement : Repository<User>, IUserManagementRepository
     public async Task ChangeRoleByIdAsync(int userId, int roleId)
     {
         var user = await GetByIdAsync(userId);
+
         if (user != null)
         {
             user.RoleId = roleId;
