@@ -11,13 +11,6 @@ public class UserManagementService : IUserManagementService
 
     public async Task ChangeRoleByIdAsync(int userId, int roleId)
     {
-        var exitsRole = await _roleRepository.IsRoleExistAsync(roleId);
-
-        if (!exitsRole)
-        {
-            throw new ArgumentException("Role not found");
-        }
-
         await _userManagementRepository.ChangeRoleByIdAsync(userId, roleId);
     }
 
