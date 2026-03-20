@@ -47,7 +47,7 @@ public class ArticleService : IArticleService
             AuthorName = a.Author?.FullName
         };
     }
-    public async Task<ArticleDto> CreateAsync(CreateArticleDto dto)
+    public async Task<bool> CreateAsync(CreateArticleDto dto)
     {
         var entity = new Article
         {
@@ -61,18 +61,7 @@ public class ArticleService : IArticleService
         await _repo.AddAsync(entity);
         await _repo.SaveChangesAsync();
 
-        return new ArticleDto
-        {
-            Id = entity.Id,
-            CategoryId = entity.CategoryId,
-            AuthorId = entity.AuthorId,
-            Title = entity.Title,
-            Content = entity.Content,
-            ThumbnailUrl = entity.ThumbnailUrl,
-            PublishedAt = entity.PublishedAt,
-            CategoryName = entity.Category?.Name,
-            AuthorName = entity.Author?.FullName
-        };
+        return true;
     }
 
     public async Task<bool> UpdateAsync(int id, UpdateArticleDto dto)

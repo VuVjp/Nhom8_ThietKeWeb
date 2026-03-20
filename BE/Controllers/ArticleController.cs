@@ -29,8 +29,9 @@ public class ArticlesController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create(CreateArticleDto dto)
     {
-        var result = await _service.CreateAsync(dto);
-        return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
+        var ok = await _service.CreateAsync(dto);
+        if (!ok) return BadRequest();
+        return Ok();
     }
 
     [Permission("update_article")]
