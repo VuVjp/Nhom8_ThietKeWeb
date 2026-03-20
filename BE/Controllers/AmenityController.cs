@@ -25,13 +25,15 @@ public class AmenitiesController : ControllerBase
         return Ok(data);
     }
 
+    [Permission("create_amenity")]
     [HttpPost]
     public async Task<IActionResult> Create(CreateAmenityDto dto)
     {
         var result = await _service.CreateAsync(dto);
         return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
     }
-
+    
+    [Permission("update_amenity")]
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(int id, UpdateAmenityDto dto)
     {
@@ -40,6 +42,7 @@ public class AmenitiesController : ControllerBase
         return NoContent();
     }
 
+    [Permission("delete_amenity")]
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {
