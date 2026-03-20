@@ -1,3 +1,4 @@
+
 public class ExceptionMiddleware
 {
     private readonly RequestDelegate _next;
@@ -65,6 +66,28 @@ public class ExceptionMiddleware
             await context.Response.WriteAsJsonAsync(new
             {
                 status = 403,
+                message = ex.Message
+            });
+        }
+        catch (ArgumentException ex)
+        {
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            context.Response.ContentType = "application/json";
+
+            await context.Response.WriteAsJsonAsync(new
+            {
+                status = 400,
+                message = ex.Message
+            });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            context.Response.ContentType = "application/json";
+
+            await context.Response.WriteAsJsonAsync(new
+            {
+                status = 401,
                 message = ex.Message
             });
         }

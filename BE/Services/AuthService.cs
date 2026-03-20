@@ -33,7 +33,7 @@ public class AuthService : IAuthService
             Email = email,
             FullName = fullName,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
-            Role = new Role { Name = "Customer" }
+            Role = new Role { Name = "Guest" },
         };
 
         await _userRepository.AddAsync(user);
@@ -83,7 +83,7 @@ public class AuthService : IAuthService
                 Email = email,
                 FullName = name,
                 GoogleId = googleId,
-                Role = new Role { Name = "Customer" }
+                Role = new Role { Name = "Guest" }
             };
             await _userRepository.AddAsync(user);
             await _userRepository.SaveChangesAsync();
@@ -178,7 +178,7 @@ public class AuthService : IAuthService
         {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim(ClaimTypes.Email, user.Email),
-                new Claim(ClaimTypes.Role, user.Role?.Name ?? "Customer"),
+                new Claim(ClaimTypes.Role, user.Role?.Name ?? "Guest"),
                 new Claim("sub", user.Id.ToString()),
             };
 
