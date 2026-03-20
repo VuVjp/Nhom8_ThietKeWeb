@@ -1,4 +1,8 @@
 using HotelManagement.Data;
+using HotelManagement.Repositories.Implementations;
+using HotelManagement.Repositories.Interfaces;
+using HotelManagement.Services.Implementations;
+using HotelManagement.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
@@ -68,6 +72,12 @@ builder.Services.AddScoped<IArticleService, ArticleService>();
 builder.Services.AddScoped<IArticleRepository, ArticleRepository>();
 builder.Services.AddScoped<IArticleCategoryRepository, ArticleCategoryRepository>();
 builder.Services.AddScoped<IArticleCategoryService, ArticleCategoryService>();
+builder.Services.AddScoped<IRoomInventoryRepository, RoomInventoryRepository>();
+builder.Services.AddScoped<IRoomInventoryService, RoomInventoryService>();
+builder.Services.AddScoped<IRoomRepository, RoomRepository>();
+builder.Services.AddScoped<IRoomService, RoomService>();
+builder.Services.AddScoped<IAttractionRepository, AttractionRepository>();
+builder.Services.AddScoped<IAttractionService, AttractionService>();
 
 builder.Services.AddSwaggerGen(options =>
 {
