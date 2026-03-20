@@ -60,7 +60,7 @@ public class RoomInventoriesController : ControllerBase
 	public async Task<IActionResult> Delete(int id)
 	{
 		var result = await _service.RemoveItemAsync(id);
-		return result ? Ok("Xóa vật tư thành công") : NotFound();
+		return result ? Ok("Deleted item successfully.") : NotFound();
 	}
 
 	[Permission("create_room_inventory")]
