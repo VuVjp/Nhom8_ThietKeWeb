@@ -36,7 +36,7 @@ public class RoomTypeService : IRoomTypeService
         }).ToList()
     });
 }
-public async Task<RoomTypeDto> GetRoomTypeByIdAsync(int id)
+public async Task<RoomTypeDto?> GetRoomTypeByIdAsync(int id)
 {
     var roomType = await _roomTypeRepository.GetByIdAsync(id);
     if (roomType == null) return null;
@@ -57,7 +57,7 @@ public async Task<RoomTypeDto> GetRoomTypeByIdAsync(int id)
             }).ToList()
     };
 }
-public async Task<RoomTypeDto> CreateRoomTypeAsync(CreateRoomTypeDto dto)
+public async Task<bool> CreateRoomTypeAsync(CreateRoomTypeDto dto)
 {
     var roomType = new RoomType
     {
@@ -72,20 +72,12 @@ public async Task<RoomTypeDto> CreateRoomTypeAsync(CreateRoomTypeDto dto)
     await _roomTypeRepository.AddAsync(roomType);
     await _roomTypeRepository.SaveChangesAsync();
 
-    return new RoomTypeDto
-    {
-        Id = roomType.Id,
-        Name = roomType.Name,
-        BasePrice = roomType.BasePrice,
-        CapacityAdults = roomType.CapacityAdults,
-        CapacityChildren = roomType.CapacityChildren,
-        Description = roomType.Description
-    };
+    return true;
 }
-public async Task<RoomTypeDto> UpdateRoomTypeAsync(int id, UpdateRoomTypeDto dto)
+public async Task<bool> UpdateRoomTypeAsync(int id, UpdateRoomTypeDto dto)
 {
     var roomType = await _roomTypeRepository.GetByIdAsync(id);
-    if (roomType == null) return null;
+    if (roomType == null) return false;
 
     roomType.Name = dto.Name;
     roomType.BasePrice = dto.BasePrice;
@@ -96,21 +88,7 @@ public async Task<RoomTypeDto> UpdateRoomTypeAsync(int id, UpdateRoomTypeDto dto
     _roomTypeRepository.Update(roomType);
     await _roomTypeRepository.SaveChangesAsync();
 
-    return new RoomTypeDto
-    {
-        Id = roomType.Id,
-        Name = roomType.Name,
-        BasePrice = roomType.BasePrice,
-        CapacityAdults = roomType.CapacityAdults,
-        CapacityChildren = roomType.CapacityChildren,
-        Description = roomType.Description,
-        RoomImages = roomType.RoomImages.Select(i => new RoomImageDto
-        {
-            Id = i.Id,
-            ImageUrl = i.ImageUrl,
-            IsPrimary = i.IsPrimary ?? false
-        }).ToList()
-    };
+    return true;
 }
 
     public async Task<bool> DeleteRoomTypeAsync(int id)
@@ -126,7 +104,7 @@ public async Task<RoomTypeDto> UpdateRoomTypeAsync(int id, UpdateRoomTypeDto dto
     return true;
 }
 
-  public async Task<RoomImageDto> AddImageAsync(int id, AddRoomImageDto dto)
+  public async Task<bool> AddImageAsync(int id, AddRoomImageDto dto)
 {
     var roomType = await _roomTypeRepository.GetByIdAsync(id);
     if (roomType == null)
@@ -144,12 +122,7 @@ public async Task<RoomTypeDto> UpdateRoomTypeAsync(int id, UpdateRoomTypeDto dto
     await _roomImageRepository.AddAsync(roomImage);
     await _roomImageRepository.SaveChangesAsync();
 
-    return new RoomImageDto
-    {
-        Id = roomImage.Id,
-        ImageUrl = roomImage.ImageUrl,
-        IsPrimary = roomImage.IsPrimary ?? false
-    };
+    return true;
 }
    public async Task<bool> DeleteImageAsync(int imageId)
 {
