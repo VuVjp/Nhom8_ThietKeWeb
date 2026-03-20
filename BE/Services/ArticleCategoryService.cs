@@ -32,7 +32,7 @@ public class ArticleCategoryService : IArticleCategoryService
         };
     }
 
-    public async Task<ArticleCategoryDto> CreateAsync(CreateArticleCategoryDto dto)
+    public async Task<bool> CreateAsync(CreateArticleCategoryDto dto)
     {
         var entity = new ArticleCategory
         {
@@ -42,11 +42,7 @@ public class ArticleCategoryService : IArticleCategoryService
         await _repo.AddAsync(entity);
         await _repo.SaveChangesAsync();
 
-        return new ArticleCategoryDto
-        {
-            Id = entity.Id,
-            Name = entity.Name
-        };
+        return true;
     }
 
     public async Task<bool> UpdateAsync(int id, UpdateArticleCategoryDto dto)
