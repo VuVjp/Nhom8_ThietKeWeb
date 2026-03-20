@@ -1,9 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
 
-<<<<<<< Updated upstream
-=======
-
->>>>>>> Stashed changes
 [ApiController]
 [Route("api/[controller]")]
 public class ArticleCategoriesController : ControllerBase
@@ -29,10 +25,7 @@ public class ArticleCategoriesController : ControllerBase
         return Ok(data);
     }
 
-<<<<<<< Updated upstream
-=======
     [Permission("create_article_category")]
->>>>>>> Stashed changes
     [HttpPost]
     public async Task<IActionResult> Create(CreateArticleCategoryDto dto)
     {
@@ -40,10 +33,7 @@ public class ArticleCategoriesController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
     }
 
-<<<<<<< Updated upstream
-=======
     [Permission("update_article_category")]
->>>>>>> Stashed changes
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(int id, UpdateArticleCategoryDto dto)
     {
@@ -52,10 +42,7 @@ public class ArticleCategoriesController : ControllerBase
         return NoContent();
     }
 
-<<<<<<< Updated upstream
-=======
     [Permission("delete_article_category")]
->>>>>>> Stashed changes
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {
