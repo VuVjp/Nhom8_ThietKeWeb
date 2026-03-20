@@ -1,4 +1,4 @@
-namespace HotelManagement.Dtos.RoomType;
+namespace HotelManagement.Dtos;
 
 public class AddRoomImageDto
 {

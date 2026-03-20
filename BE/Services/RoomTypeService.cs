@@ -1,4 +1,4 @@
-using HotelManagement.Dtos.RoomType;
+using HotelManagement.Dtos;
 using HotelManagement.Entities;
 using Microsoft.AspNetCore.Http;
 using System.Transactions;
@@ -17,103 +17,184 @@ public class RoomTypeService : IRoomTypeService
     }
 
     public async Task<IEnumerable<RoomTypeDto>> GetAllRoomTypesAsync()
+{
+    var roomTypes = await _roomTypeRepository.GetAllActiveWithImagesAsync();
+
+    return roomTypes.Select(rt => new RoomTypeDto
     {
-        var roomTypes = await _roomTypeRepository.GetAllAsync();
-        var dtos = new List<RoomTypeDto>();
-
-        foreach (var rt in roomTypes)
+        Id = rt.Id,
+        Name = rt.Name,
+        BasePrice = rt.BasePrice,
+        CapacityAdults = rt.CapacityAdults,
+        CapacityChildren = rt.CapacityChildren,
+        Description = rt.Description,
+        RoomImages = rt.RoomImages.Select(i => new RoomImageDto
         {
-            var images = await _roomImageRepository.GetImagesByRoomTypeIdAsync(rt.Id);
-            
-            dtos.Add(new RoomTypeDto
-            {
-                Id = rt.Id,
-                Name = rt.Name,
-                BasePrice = rt.BasePrice,
-                CapacityAdults = rt.CapacityAdults,
-                CapacityChildren = rt.CapacityChildren,
-                Description = rt.Description,
-                IsActive = rt.IsActive,
-                RoomImages = images.Select(i => new RoomImageDto
-                {
-                    Id = i.Id,
-                    RoomTypeId = i.RoomTypeId,
-                    ImageUrl = i.ImageUrl,
-                    IsPrimary = i.IsPrimary
-                }).ToList()
-            });
-        }
+            Id = i.Id,
+            ImageUrl = i.ImageUrl,
+            IsPrimary =  i.IsPrimary ?? false
+        }).ToList()
+    });
+}
+public async Task<RoomTypeDto> GetRoomTypeByIdAsync(int id)
+{
+    var roomType = await _roomTypeRepository.GetByIdAsync(id);
+    if (roomType == null) return null;
 
-        return dtos;
-    }
+        return new RoomTypeDto
+        {
+            Id = roomType.Id,
+            Name = roomType.Name,
+            BasePrice = roomType.BasePrice,
+            CapacityAdults = roomType.CapacityAdults,
+            CapacityChildren = roomType.CapacityChildren,
+            Description = roomType.Description,
+            RoomImages = roomType.RoomImages.Select(i => new RoomImageDto
+            {
+                Id = i.Id,
+                ImageUrl = i.ImageUrl,
+                IsPrimary = i.IsPrimary ?? false
+            }).ToList()
+    };
+}
+public async Task<RoomTypeDto> CreateRoomTypeAsync(CreateRoomTypeDto dto)
+{
+    var roomType = new RoomType
+    {
+        Name = dto.Name,
+        BasePrice = dto.BasePrice,
+        CapacityAdults = dto.CapacityAdults,
+        CapacityChildren = dto.CapacityChildren,
+        Description = dto.Description,
+        IsActive = true
+    };
+
+    await _roomTypeRepository.AddAsync(roomType);
+    await _roomTypeRepository.SaveChangesAsync();
+
+    return new RoomTypeDto
+    {
+        Id = roomType.Id,
+        Name = roomType.Name,
+        BasePrice = roomType.BasePrice,
+        CapacityAdults = roomType.CapacityAdults,
+        CapacityChildren = roomType.CapacityChildren,
+        Description = roomType.Description
+    };
+}
+public async Task<RoomTypeDto> UpdateRoomTypeAsync(int id, UpdateRoomTypeDto dto)
+{
+    var roomType = await _roomTypeRepository.GetByIdAsync(id);
+    if (roomType == null) return null;
+
+    roomType.Name = dto.Name;
+    roomType.BasePrice = dto.BasePrice;
+    roomType.CapacityAdults = dto.CapacityAdults;
+    roomType.CapacityChildren = dto.CapacityChildren;
+    roomType.Description = dto.Description;
+
+    _roomTypeRepository.Update(roomType);
+    await _roomTypeRepository.SaveChangesAsync();
+
+    return new RoomTypeDto
+    {
+        Id = roomType.Id,
+        Name = roomType.Name,
+        BasePrice = roomType.BasePrice,
+        CapacityAdults = roomType.CapacityAdults,
+        CapacityChildren = roomType.CapacityChildren,
+        Description = roomType.Description,
+        RoomImages = roomType.RoomImages.Select(i => new RoomImageDto
+        {
+            Id = i.Id,
+            ImageUrl = i.ImageUrl,
+            IsPrimary = i.IsPrimary ?? false
+        }).ToList()
+    };
+}
 
     public async Task<bool> DeleteRoomTypeAsync(int id)
+{
+    var roomType = await _roomTypeRepository.GetByIdAsync(id);
+    if (roomType == null) return false;
+
+    roomType.IsActive = false;
+
+    _roomTypeRepository.Update(roomType);
+    await _roomTypeRepository.SaveChangesAsync();
+
+    return true;
+}
+
+  public async Task<RoomImageDto> AddImageAsync(int id, AddRoomImageDto dto)
+{
+    var roomType = await _roomTypeRepository.GetByIdAsync(id);
+    if (roomType == null)
+        throw new Exception("Room type not found");
+
+    var existingImages = await _roomImageRepository.GetImagesByRoomTypeIdAsync(id);
+
+    var roomImage = new RoomImage
     {
-        var roomType = await _roomTypeRepository.GetRoomTypeWithImagesAsync(id);
-        if (roomType == null) return false;
+        RoomTypeId = id,
+        ImageUrl = dto.ImageUrl,
+        IsPrimary = !existingImages.Any()
+    };
 
-        _roomTypeRepository.Delete(roomType);
-        await _roomTypeRepository.SaveChangesAsync();
-        return true;
-    }
+    await _roomImageRepository.AddAsync(roomImage);
+    await _roomImageRepository.SaveChangesAsync();
 
-    public async Task<RoomImageDto> AddImageAsync(int id, string imageUrl)
+    return new RoomImageDto
     {
-        var roomType = await _roomTypeRepository.GetByIdAsync(id);
-        if (roomType == null)
-            throw new Exception("Room type not found");
+        Id = roomImage.Id,
+        ImageUrl = roomImage.ImageUrl,
+        IsPrimary = roomImage.IsPrimary ?? false
+    };
+}
+   public async Task<bool> DeleteImageAsync(int imageId)
+{
+    var image = await _roomImageRepository.GetByIdAsync(imageId);
+    if (image == null) return false;
 
-        // Check if it's the first image, make it primary automatically
-        var existingImages = await _roomImageRepository.GetImagesByRoomTypeIdAsync(id);
-        bool isPrimary = !existingImages.Any();
+    if (image.RoomTypeId == null) return false;
 
-        var roomImage = new RoomImage
+    if (image.IsPrimary ?? false)
+    {
+        var images = await _roomImageRepository
+            .GetImagesByRoomTypeIdAsync(image.RoomTypeId.Value);
+
+        var next = images.FirstOrDefault(x => x.Id != image.Id);
+        if (next != null)
         {
-            RoomTypeId = id,
-            ImageUrl = imageUrl,
-            IsPrimary = isPrimary
-        };
-
-        await _roomImageRepository.AddAsync(roomImage);
-        await _roomImageRepository.SaveChangesAsync();
-
-        return new RoomImageDto
-        {
-            Id = roomImage.Id,
-            RoomTypeId = roomImage.RoomTypeId,
-            ImageUrl = roomImage.ImageUrl,
-            IsPrimary = roomImage.IsPrimary
-        };
-    }
-
-    public async Task<bool> DeleteImageAsync(int imageId)
-    {
-        var image = await _roomImageRepository.GetByIdAsync(imageId);
-        if (image == null) return false;
-        
-        _roomImageRepository.Delete(image);
-        await _roomImageRepository.SaveChangesAsync();
-
-        return true;
-    }
-
-    public async Task<bool> SetPrimaryImageAsync(int roomTypeId, int imageId)
-    {
-        var images = await _roomImageRepository.GetImagesByRoomTypeIdAsync(roomTypeId);
-        
-        var targetImage = images.FirstOrDefault(i => i.Id == imageId);
-        if (targetImage == null) return false;
-
-        foreach (var image in images)
-        {
-            image.IsPrimary = false;
-            _roomImageRepository.Update(image);
+            next.IsPrimary = true;
+            _roomImageRepository.Update(next);
         }
-
-        targetImage.IsPrimary = true;
-        _roomImageRepository.Update(targetImage);
-
-        await _roomImageRepository.SaveChangesAsync();
-        return true;
     }
+
+    _roomImageRepository.Delete(image);
+    await _roomImageRepository.SaveChangesAsync();
+
+    return true;
+}
+
+   public async Task<bool> SetPrimaryImageAsync(int roomTypeId, int imageId)
+{
+    var images = (await _roomImageRepository
+        .GetImagesByRoomTypeIdAsync(roomTypeId)).ToList();
+
+    var targetImage = images.FirstOrDefault(x => x.Id == imageId);
+    if (targetImage == null) return false;
+
+    images.ForEach(img => img.IsPrimary = false);
+
+    targetImage.IsPrimary = true;
+
+    foreach (var img in images)
+    {
+        _roomImageRepository.Update(img);
+    }
+
+    await _roomImageRepository.SaveChangesAsync();
+    return true;
+}
 }

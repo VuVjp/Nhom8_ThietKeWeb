@@ -15,14 +15,14 @@ public class RoomRepository : IRoomRepository
 
 	public async Task<IEnumerable<Room>> GetAllAsync()
 		=> await _context.Rooms
-			.Include(r => r.RoomType) // Lấy thông tin loại phòng
+			.Include(r => r.RoomType) 
 			.AsNoTracking()
 			.ToListAsync();
 
 	public async Task<Room?> GetByIdAsync(int id)
 		=> await _context.Rooms
 			.Include(r => r.RoomType)
-			.Include(r => r.RoomInventories) // Lấy danh sách vật tư trong phòng
+			.Include(r => r.RoomInventories) 
 			.FirstOrDefaultAsync(r => r.Id == id);
 
 	public async Task<bool> IsRoomNumberExistsAsync(string roomNumber)

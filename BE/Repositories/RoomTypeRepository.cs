@@ -8,10 +8,11 @@ public class RoomTypeRepository : Repository<RoomType>, IRoomTypeRepository
     {
     }
 
-    public async Task<RoomType?> GetRoomTypeWithImagesAsync(int id)
-    {
-        return await _dbSet
-            .Include(r => r.RoomImages)
-            .FirstOrDefaultAsync(r => r.Id == id);
-    }
+    public async Task<IEnumerable<RoomType>> GetAllActiveWithImagesAsync()
+{
+    return await _dbSet
+        .Where(x => x.IsActive)
+        .Include(r => r.RoomImages)
+        .ToListAsync();
+}
 }
