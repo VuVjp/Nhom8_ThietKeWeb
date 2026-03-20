@@ -14,6 +14,7 @@ public class UserManagementController : ControllerBase
         _userManagementService = userManagementService;
     }
 
+    [Permission("manage_user")]
     [HttpGet]
     public async Task<IActionResult> GetAllUsers()
     {
@@ -21,6 +22,7 @@ public class UserManagementController : ControllerBase
         return Ok(users);
     }
 
+    [Permission("manage_user")]
     [HttpPost]
     public async Task<IActionResult> CreateUser([FromBody] CreateUserDto dto)
     {
@@ -28,6 +30,7 @@ public class UserManagementController : ControllerBase
         return NoContent();
     }
 
+    [Permission("manage_user")]
     [HttpPut("{userId}")]
     public async Task<IActionResult> EditUser(int userId, [FromBody] EditUserDto dto)
     {
@@ -35,6 +38,7 @@ public class UserManagementController : ControllerBase
         return NoContent();
     }
 
+    [Permission("manage_user")]
     [HttpPut("{userId}/change-role")]
     public async Task<IActionResult> ChangeUserRole(int userId, [FromBody] ChangeRoleDto dto)
     {
@@ -42,6 +46,7 @@ public class UserManagementController : ControllerBase
         return NoContent();
     }
 
+    [Permission("manage_user")]
     [HttpDelete("{userId}")]
     public async Task<IActionResult> SoftDeleteUser(int userId)
     {

@@ -32,6 +32,7 @@ public class AttractionsController : ControllerBase
 		return Ok(result);
 	}
 
+	[Permission("manage_attraction")]
 	[HttpPost]
 	public async Task<IActionResult> Create([FromBody] Attraction attraction)
 	{
@@ -47,6 +48,7 @@ public class AttractionsController : ControllerBase
 		}
 	}
 
+	[Permission("manage_attraction")]
 	[HttpPut("{id}")]
 	public async Task<IActionResult> Update(int id, [FromBody] Attraction attraction)
 	{
@@ -55,6 +57,7 @@ public class AttractionsController : ControllerBase
 		return NoContent();
 	}
 
+	[Permission("manage_attraction")]
 	[HttpDelete("{id}")]
 	public async Task<IActionResult> Delete(int id)
 	{

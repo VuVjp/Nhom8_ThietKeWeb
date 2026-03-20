@@ -14,6 +14,7 @@ public class RoomsController : ControllerBase
 
 	public RoomsController(IRoomService service) => _service = service;
 
+
 	[HttpGet]
 	public async Task<IActionResult> GetAll() => Ok(await _service.GetListAsync());
 
@@ -24,6 +25,7 @@ public class RoomsController : ControllerBase
 		return room == null ? NotFound("Không tìm thấy phòng.") : Ok(room);
 	}
 
+	[Permission("create_room")]
 	[HttpPost]
 	public async Task<IActionResult> Create([FromBody] Room room)
 	{
@@ -38,6 +40,7 @@ public class RoomsController : ControllerBase
 		}
 	}
 
+	[Permission("update_room")]
 	[HttpPut("{id}")]
 	public async Task<IActionResult> Update(int id, [FromBody] Room room)
 	{
@@ -52,6 +55,7 @@ public class RoomsController : ControllerBase
 		}
 	}
 
+	[Permission("delete_room")]
 	[HttpDelete("{id}")]
 	public async Task<IActionResult> Delete(int id)
 	{

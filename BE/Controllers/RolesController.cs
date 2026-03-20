@@ -15,6 +15,7 @@ namespace HotelManagement.Controllers
             _roleService = roleService;
         }
 
+        [Permission("manage_role")]
         [HttpPost("assign-permission")]
         [Authorize]
         public async Task<IActionResult> AssignPermission([FromBody] AssignPermissionDto dto)

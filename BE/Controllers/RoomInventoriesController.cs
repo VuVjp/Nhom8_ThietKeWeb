@@ -17,8 +17,10 @@ public class RoomInventoriesController : ControllerBase
 		_service = service;
 	}
 
+	[Permission("get_all_room_inventory")]
 	[HttpGet]
 	public async Task<IActionResult> GetAll() => Ok(await _service.GetInventoriesAsync());
+
 
 	[HttpGet("room/{roomId}")]
 	public async Task<IActionResult> GetByRoom(int roomId) => Ok(await _service.GetByRoomAsync(roomId));
@@ -30,6 +32,7 @@ public class RoomInventoriesController : ControllerBase
 		return item == null ? NotFound() : Ok(item);
 	}
 
+	[Permission("create_room_inventory")]
 	[HttpPost]
 	public async Task<IActionResult> Create(RoomInventory inventory)
 	{
@@ -44,6 +47,7 @@ public class RoomInventoriesController : ControllerBase
 		}
 	}
 
+	[Permission("update_room_inventory")]
 	[HttpPut("{id}")]
 	public async Task<IActionResult> Update(int id, RoomInventory inventory)
 	{
@@ -51,6 +55,7 @@ public class RoomInventoriesController : ControllerBase
 		return result ? NoContent() : NotFound();
 	}
 
+	[Permission("delete_room_inventory")]
 	[HttpDelete("{id}")]
 	public async Task<IActionResult> Delete(int id)
 	{

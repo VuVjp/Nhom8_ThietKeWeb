@@ -31,7 +31,7 @@ public class ArticleService : IArticleService
     public async Task<ArticleDto?> GetByIdAsync(int id)
     {
         var a = await _repo.GetByIdAsync(id);
-        if (a == null || !a.IsActive) return null;
+        if (a == null || !a.IsActive) throw new NotFoundException($"Article with ID {id} not found.");
 
         return new ArticleDto
         {
@@ -78,7 +78,7 @@ public class ArticleService : IArticleService
     public async Task<bool> UpdateAsync(int id, UpdateArticleDto dto)
     {
         var entity = await _repo.GetByIdAsync(id);
-        if (entity == null || !entity.IsActive) return false;
+        if (entity == null || !entity.IsActive) throw new NotFoundException($"Article with ID {id} not found.");
 
         entity.CategoryId = dto.CategoryId;
         entity.AuthorId = dto.AuthorId;
@@ -95,7 +95,7 @@ public class ArticleService : IArticleService
     public async Task<bool> DeleteAsync(int id)
     {
         var entity = await _repo.GetByIdAsync(id);
-        if (entity == null || !entity.IsActive) return false;
+        if (entity == null || !entity.IsActive) throw new NotFoundException($"Article with ID {id} not found.");
 
         entity.IsActive = false;
         _repo.Update(entity);
@@ -106,7 +106,7 @@ public class ArticleService : IArticleService
     public async Task<bool> UpdateThumbnailAsync(int id, UpdateArticleThumbnailDto dto)
     {
         var entity = await _repo.GetByIdAsync(id);
-        if (entity == null || !entity.IsActive) return false;
+        if (entity == null || !entity.IsActive) throw new NotFoundException($"Article with ID {id} not found.");
 
         entity.ThumbnailUrl = dto.ThumbnailUrl;
 

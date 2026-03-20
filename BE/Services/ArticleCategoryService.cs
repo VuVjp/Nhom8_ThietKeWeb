@@ -23,7 +23,7 @@ public class ArticleCategoryService : IArticleCategoryService
     public async Task<ArticleCategoryDto?> GetByIdAsync(int id)
     {
         var a = await _repo.GetByIdAsync(id);
-        if (a == null || !a.IsActive) return null;
+        if (a == null || !a.IsActive) throw new NotFoundException($"Article category with ID {id} not found.");
 
         return new ArticleCategoryDto
         {
@@ -52,7 +52,7 @@ public class ArticleCategoryService : IArticleCategoryService
     public async Task<bool> UpdateAsync(int id, UpdateArticleCategoryDto dto)
     {
         var entity = await _repo.GetByIdAsync(id);
-        if (entity == null || !entity.IsActive) return false;
+        if (entity == null || !entity.IsActive) throw new NotFoundException($"Article category with ID {id} not found.");
 
         entity.Name = dto.Name;
 
@@ -65,7 +65,7 @@ public class ArticleCategoryService : IArticleCategoryService
     public async Task<bool> DeleteAsync(int id)
     {
         var entity = await _repo.GetByIdAsync(id);
-        if (entity == null || !entity.IsActive) return false;
+        if (entity == null || !entity.IsActive) throw new NotFoundException($"Article category with ID {id} not found.");
 
         entity.IsActive = false;
         _repo.Update(entity);

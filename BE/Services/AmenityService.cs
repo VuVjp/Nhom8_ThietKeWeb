@@ -24,7 +24,7 @@ public class AmenityService : IAmenityService
     public async Task<AmenityDto?> GetByIdAsync(int id)
     {
         var a = await _repo.GetByIdAsync(id);
-        if (a == null || !a.IsActive) return null;
+        if (a == null || !a.IsActive) throw new NotFoundException($"Amenity with ID {id} not found.");
 
         return new AmenityDto
         {
@@ -56,7 +56,7 @@ public class AmenityService : IAmenityService
     public async Task<bool> UpdateAsync(int id, UpdateAmenityDto dto)
     {
         var entity = await _repo.GetByIdAsync(id);
-        if (entity == null || !entity.IsActive) return false;
+        if (entity == null || !entity.IsActive) throw new NotFoundException($"Amenity with ID {id} not found.");
 
         entity.Name = dto.Name;
         entity.IconUrl = dto.IconUrl;
@@ -70,7 +70,7 @@ public class AmenityService : IAmenityService
     public async Task<bool> DeleteAsync(int id)
     {
         var entity = await _repo.GetByIdAsync(id);
-        if (entity == null || !entity.IsActive) return false;
+        if (entity == null || !entity.IsActive) throw new NotFoundException($"Amenity with ID {id} not found.");
 
         entity.IsActive = false;
         _repo.Update(entity);
