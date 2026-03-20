@@ -5,32 +5,14 @@ using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace HotelManagement.Repositories.Implementations;
-
-public class AttractionRepository : IAttractionRepository
+public class AttractionRepository : Repository<Attraction>, IAttractionRepository
 {
-	private readonly AppDbContext _context;
-
-	public AttractionRepository(AppDbContext context)
+	public AttractionRepository(AppDbContext context) : base(context)
 	{
-		_context = context;
 	}
 
-	public async Task<IEnumerable<Attraction>> GetAllAsync()
-		=> await _context.Attractions.AsNoTracking().ToListAsync();
-
-	public async Task<Attraction?> GetByIdAsync(int id)
-		=> await _context.Attractions.FindAsync(id);
-
-	public async Task AddAsync(Attraction attraction)
-		=> await _context.Attractions.AddAsync(attraction);
-
-	public void Update(Attraction attraction)
-		=> _context.Attractions.Update(attraction);
-
-	public void Delete(Attraction attraction)
-		=> _context.Attractions.Remove(attraction);
-
-	public async Task<bool> SaveChangesAsync()
-		=> await _context.SaveChangesAsync() > 0;
+	public async Task<IEnumerable<Attraction>> GetAllActiveAsync()
+	{
+		return await _context.Attractions.Where(a => a.IsActive).ToListAsync();
+	}
 }

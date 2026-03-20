@@ -1,11 +1,7 @@
 ﻿using HotelManagement.Entities;
-using HotelManagement.Repositories.Interfaces;
-using HotelManagement.Services.Interfaces;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System;
-
-namespace HotelManagement.Services.Implementations;
 
 public class AttractionService : IAttractionService
 {
@@ -16,47 +12,79 @@ public class AttractionService : IAttractionService
 		_repository = repository;
 	}
 
-	public async Task<IEnumerable<Attraction>> GetAttractionsAsync()
+	public async Task<IEnumerable<AttractionDto>> GetAllAsync()
 	{
-		return await _repository.GetAllAsync();
+		var attractions = await _repository.GetAllActiveAsync();
+		return attractions.Select(a => new AttractionDto
+		{
+			Id = a.Id,
+			Name = a.Name,
+			Description = a.Description,
+			DistanceKm = a.DistanceKm,
+			Latitude = a.Latitude,
+			Longitude = a.Longitude
+		});
+	}
+		
+
+	public async Task<AttractionDto?> GetByIdAsync(int id)
+	{
+		var a = await _repository.GetByIdAsync(id);
+		if (a == null || !a.IsActive) return null;
+
+		return new AttractionDto
+		{
+			Id = a.Id,
+			Name = a.Name,
+			Description = a.Description,
+			DistanceKm = a.DistanceKm,
+			Latitude = a.Latitude,
+			Longitude = a.Longitude
+		};
 	}
 
-	public async Task<Attraction?> GetAttractionByIdAsync(int id)
+	public async Task<bool> CreateAsync(CreateAttractionDto dto)
 	{
-		return await _repository.GetByIdAsync(id);
+		var entity = new Attraction
+		{
+			Name = dto.Name,
+			Description = dto.Description,
+			DistanceKm = dto.DistanceKm,
+			Latitude = dto.Latitude,
+			Longitude = dto.Longitude
+		};
+
+		await _repository.AddAsync(entity);
+		await _repository.SaveChangesAsync();
+
+		return true;
 	}
+		
 
-	public async Task<bool> CreateAttractionAsync(Attraction attraction)
-	{
-		if (string.IsNullOrWhiteSpace(attraction.Name))
-			throw new ArgumentException("Tên địa điểm không được để trống.");
-
-		if (attraction.DistanceKm < 0)
-			throw new ArgumentException("Khoảng cách không thể là số âm.");
-
-		await _repository.AddAsync(attraction);
-		return await _repository.SaveChangesAsync();
-	}
-
-	public async Task<bool> UpdateAttractionAsync(int id, Attraction attraction)
-	{
-		var existing = await _repository.GetByIdAsync(id);
-		if (existing == null) return false;
-		existing.Name = attraction.Name;
-		existing.DistanceKm = attraction.DistanceKm;
-		existing.Description = attraction.Description;
-		existing.MapEmbedLink = attraction.MapEmbedLink;
-
-		_repository.Update(existing);
-		return await _repository.SaveChangesAsync();
-	}
-
-	public async Task<bool> DeleteAttractionAsync(int id)
+	public async Task<bool> UpdateAsync(int id, UpdateAttractionDto dto)
 	{
 		var attraction = await _repository.GetByIdAsync(id);
-		if (attraction == null) return false;
+		if (attraction == null || !attraction.IsActive) return false;
 
-		_repository.Delete(attraction);
-		return await _repository.SaveChangesAsync();
+		attraction.Name = dto.Name;
+		attraction.Description = dto.Description;
+		attraction.DistanceKm = dto.DistanceKm;
+		attraction.Latitude = dto.Latitude;
+		attraction.Longitude = dto.Longitude;
+
+		_repository.Update(attraction);
+		await _repository.SaveChangesAsync();
+		return true;
+	}
+
+	public async Task<bool> DeleteAsync(int id)
+	{
+		var attraction = await _repository.GetByIdAsync(id);
+		if (attraction == null || !attraction.IsActive) return false;
+
+		attraction.IsActive = false;
+		_repository.Update(attraction);
+		await _repository.SaveChangesAsync();
+		return true;
 	}
 }

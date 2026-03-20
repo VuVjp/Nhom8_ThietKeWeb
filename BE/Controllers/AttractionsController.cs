@@ -20,48 +20,41 @@ public class AttractionsController : ControllerBase
 	[HttpGet]
 	public async Task<IActionResult> GetAll()
 	{
-		var result = await _service.GetAttractionsAsync();
+		var result = await _service.GetAllAsync();
 		return Ok(result);
 	}
 
 	[HttpGet("{id}")]
 	public async Task<IActionResult> GetById(int id)
 	{
-		var result = await _service.GetAttractionByIdAsync(id);
-		if (result == null) return NotFound($"Không tìm thấy địa điểm với ID {id}");
+		var result = await _service.GetByIdAsync(id);
+		if (result == null) return NotFound("Không tìm thấy địa điểm.");
 		return Ok(result);
 	}
 
 	[Permission("manage_attraction")]
 	[HttpPost]
-	public async Task<IActionResult> Create([FromBody] Attraction attraction)
+	public async Task<IActionResult> Create([FromBody] CreateAttractionDto dto)
 	{
-		try
-		{
-			var success = await _service.CreateAttractionAsync(attraction);
-			if (!success) return BadRequest("Không thể lưu dữ liệu.");
-			return CreatedAtAction(nameof(GetById), new { id = attraction.Id }, attraction);
-		}
-		catch (ArgumentException ex)
-		{
-			return BadRequest(ex.Message);
-		}
+		var success = await _service.CreateAsync(dto);
+		if (!success) return BadRequest("Tạo địa điểm thất bại.");
+		return Ok("Tạo địa điểm thành công.");
 	}
 
 	[Permission("manage_attraction")]
 	[HttpPut("{id}")]
-	public async Task<IActionResult> Update(int id, [FromBody] Attraction attraction)
+	public async Task<IActionResult> Update(int id, [FromBody] UpdateAttractionDto dto)
 	{
-		var success = await _service.UpdateAttractionAsync(id, attraction);
+		var success = await _service.UpdateAsync(id, dto);
 		if (!success) return NotFound("Cập nhật thất bại hoặc không tìm thấy địa điểm.");
-		return NoContent();
+		return Ok("Cập nhật thành công.");
 	}
 
 	[Permission("manage_attraction")]
 	[HttpDelete("{id}")]
 	public async Task<IActionResult> Delete(int id)
 	{
-		var success = await _service.DeleteAttractionAsync(id);
+		var success = await _service.DeleteAsync(id);
 		if (!success) return NotFound("Xóa thất bại hoặc không tìm thấy địa điểm.");
 		return Ok("Xóa thành công.");
 	}
