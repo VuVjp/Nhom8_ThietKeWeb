@@ -62,4 +62,12 @@ public class RoomInventoriesController : ControllerBase
 		var result = await _service.RemoveItemAsync(id);
 		return result ? Ok("Xóa vật tư thành công") : NotFound();
 	}
+
+	[Permission("create_room_inventory")]
+	[HttpPost("clone/{idClone}/to/{newRoomId}")]
+	public async Task<IActionResult> Clone(int idClone, int newRoomId)
+	{
+		await _service.CloneItemAsync(idClone, newRoomId);
+		return Ok("Clone item completed successfully.");
+	}
 }

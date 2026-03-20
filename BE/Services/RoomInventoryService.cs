@@ -4,6 +4,7 @@ using HotelManagement.Services.Interfaces;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System;
+using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace HotelManagement.Services.Implementations;
 
@@ -50,6 +51,26 @@ public class RoomInventoryService : IRoomInventoryService
 
 		_repository.Update(existing);
 		return await _repository.SaveChangesAsync();
+	}
+
+	public async Task CloneItemAsync(int idClone, int newRoomId)
+	{
+		var clone = await _repository.GetByRoomIdAsync(idClone);
+		if (clone == null) throw new NotFoundException("Item not found.");
+
+		foreach (var item in clone)
+		{
+			var newClone = new RoomInventory
+			{
+				ItemName = item.ItemName,
+				Quantity = item.Quantity,
+				PriceIfLost = item.PriceIfLost,
+				RoomId = newRoomId
+			};
+
+			await _repository.AddAsync(newClone);
+		}
+		await _repository.SaveChangesAsync();
 	}
 
 	public async Task<bool> RemoveItemAsync(int id)
