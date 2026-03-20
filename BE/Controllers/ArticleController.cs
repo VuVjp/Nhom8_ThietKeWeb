@@ -24,12 +24,16 @@ public class ArticlesController : ControllerBase
         if (data == null) return NotFound();
         return Ok(data);
     }
+
+    [Permission("create_article")]
     [HttpPost]
     public async Task<IActionResult> Create(CreateArticleDto dto)
     {
         var result = await _service.CreateAsync(dto);
         return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
     }
+
+    [Permission("update_article")]
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(int id, UpdateArticleDto dto)
     {
@@ -37,6 +41,8 @@ public class ArticlesController : ControllerBase
         if (!ok) return NotFound();
         return NoContent();
     }
+
+    [Permission("delete_article")]
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {
@@ -44,6 +50,8 @@ public class ArticlesController : ControllerBase
         if (!ok) return NotFound();
         return NoContent();
     }
+    
+    [Permission("update_thumbnail")]
     [HttpPost("{id}/thumbnail")]
     public async Task<IActionResult> UpdateThumbnail(int id, UpdateArticleThumbnailDto dto)
     {
