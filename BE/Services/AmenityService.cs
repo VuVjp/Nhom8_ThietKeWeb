@@ -34,7 +34,7 @@ public class AmenityService : IAmenityService
         };
     }
 
-    public async Task<AmenityDto> CreateAsync(CreateAmenityDto dto)
+    public async Task<bool> CreateAsync(CreateAmenityDto dto)
     {
         var entity = new Amenity
         {
@@ -45,12 +45,7 @@ public class AmenityService : IAmenityService
         await _repo.AddAsync(entity);
         await _repo.SaveChangesAsync();
 
-        return new AmenityDto
-        {
-            Id = entity.Id,
-            Name = entity.Name,
-            IconUrl = entity.IconUrl
-        };
+        return true;
     }
 
     public async Task<bool> UpdateAsync(int id, UpdateAmenityDto dto)
