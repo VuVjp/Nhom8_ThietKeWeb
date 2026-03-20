@@ -35,8 +35,11 @@ namespace HotelManagement.Controllers
         [HttpPost]
         public async Task<ActionResult<RoomTypeDto>> CreateRoomType(CreateRoomTypeDto dto)
         {
-            var createdRoomType = await _roomTypeService.CreateRoomTypeAsync(dto);
-            return CreatedAtAction(nameof(GetRoomType), new { id = createdRoomType.Id }, createdRoomType);
+            var result = await _roomTypeService.CreateRoomTypeAsync(dto);
+            if (!result)
+                return BadRequest(new { message = "Failed to create room type." });
+
+            return Ok(new { message = "Room type created successfully." });
         }
 
         [Permission("('manage_room_type')")]
@@ -44,7 +47,7 @@ namespace HotelManagement.Controllers
         public async Task<IActionResult> UpdateRoomType(int id, UpdateRoomTypeDto dto)
         {
             var result = await _roomTypeService.UpdateRoomTypeAsync(id, dto);
-            if (result == null)
+            if (!result)
                 return NotFound(new { message = "Room type not found." });
 
             return NoContent();
@@ -65,22 +68,11 @@ namespace HotelManagement.Controllers
         [HttpPost("{id}/images")]
         public async Task<ActionResult<RoomImageDto>> AddImage(int id, [FromBody] AddRoomImageDto dto)
         {
-            if (dto == null || string.IsNullOrWhiteSpace(dto.ImageUrl))
-                return BadRequest(new { message = "ImageUrl is required." });
+            var result = await _roomTypeService.AddImageAsync(id, dto);
+            if (!result)
+                return NotFound(new { message = "Room type not found." });
 
-            try
-            {
-                var imageDto = await _roomTypeService.AddImageAsync(id, dto);
-
-                return Created(
-                    $"/api/RoomTypes/{id}/images/{imageDto.Id}",
-                    imageDto
-                );
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
+            return Ok(new { message = "Image added successfully." });
         }
 
         [Permission("('manage_room_type')")]
