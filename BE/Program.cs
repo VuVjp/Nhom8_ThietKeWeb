@@ -36,8 +36,24 @@ builder.Services.AddAuthentication(options =>
         IssuerSigningKey = new SymmetricSecurityKey(key)
     };
 });
+<<<<<<< Updated upstream
 
 builder.Services.AddAuthorization();
+=======
+var permissionSettings = builder.Configuration.GetSection("Permissions");
+var permissions = permissionSettings.Get<string[]>() ?? Array.Empty<string>();
+builder.Services.AddAuthorization(options =>
+{
+    foreach (var permission in permissions)
+    {
+        options.AddPolicy(permission, policy =>
+            policy.AddRequirements(new PermissionRequirement(permission)));
+    }
+});
+
+
+builder.Services.AddScoped<IAuthorizationHandler, PermissionHandler>();
+>>>>>>> Stashed changes
 
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 builder.Services.AddScoped<IUserRepository, UserRepository>();
