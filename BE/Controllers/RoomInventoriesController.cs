@@ -34,22 +34,15 @@ public class RoomInventoriesController : ControllerBase
 
 	[Permission("create_room_inventory")]
 	[HttpPost]
-	public async Task<IActionResult> Create(RoomInventory inventory)
+	public async Task<IActionResult> Create(CreateRoomInventoryDto inventory)
 	{
-		try
-		{
-			var result = await _service.AddItemAsync(inventory);
-			return result ? CreatedAtAction(nameof(GetById), new { id = inventory.Id }, inventory) : BadRequest();
-		}
-		catch (ArgumentException ex)
-		{
-			return BadRequest(ex.Message);
-		}
+		var result = await _service.AddItemAsync(inventory);
+		return result ? Ok("Created item successfully.") : BadRequest("Failed to create item.");
 	}
 
 	[Permission("update_room_inventory")]
 	[HttpPut("{id}")]
-	public async Task<IActionResult> Update(int id, RoomInventory inventory)
+	public async Task<IActionResult> Update(int id, UpdateRoomInventoryDto inventory)
 	{
 		var result = await _service.UpdateItemAsync(id, inventory);
 		return result ? NoContent() : NotFound();

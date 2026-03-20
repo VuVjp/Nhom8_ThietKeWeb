@@ -6,11 +6,11 @@ namespace HotelManagement.Services.Interfaces;
 
 public interface IRoomInventoryService
 {
-	Task<IEnumerable<RoomInventory>> GetInventoriesAsync();
-	Task<IEnumerable<RoomInventory>> GetByRoomAsync(int roomId);
-	Task<RoomInventory?> GetByIdAsync(int id);
-	Task<bool> AddItemAsync(RoomInventory inventory);
+	Task<IEnumerable<RoomInventoryDto>> GetInventoriesAsync();
+	Task<IEnumerable<RoomInventoryDto>> GetByRoomAsync(int roomId);
+	Task<RoomInventoryDto?> GetByIdAsync(int id);
+	Task<bool> AddItemAsync(CreateRoomInventoryDto dto);
 	Task CloneItemAsync(int idClone, int newRoomId);
-	Task<bool> UpdateItemAsync(int id, RoomInventory inventory);
+	Task<bool> UpdateItemAsync(int id, UpdateRoomInventoryDto dto);
 	Task<bool> RemoveItemAsync(int id);
 }

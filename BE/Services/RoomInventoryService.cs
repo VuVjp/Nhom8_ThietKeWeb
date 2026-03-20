@@ -17,37 +17,68 @@ public class RoomInventoryService : IRoomInventoryService
 		_repository = repository;
 	}
 
-	public async Task<IEnumerable<RoomInventory>> GetInventoriesAsync() => await _repository.GetAllAsync();
-
-	public async Task<IEnumerable<RoomInventory>> GetByRoomAsync(int roomId) => await _repository.GetByRoomIdAsync(roomId);
-
-	public async Task<RoomInventory?> GetByIdAsync(int id) => await _repository.GetByIdAsync(id);
-
-	public async Task<bool> AddItemAsync(RoomInventory inventory)
+	public async Task<IEnumerable<RoomInventoryDto>> GetInventoriesAsync()
 	{
-		// LOGIC: Kiểm tra tính hợp lệ của dữ liệu
-		if (string.IsNullOrWhiteSpace(inventory.ItemName))
-			throw new ArgumentException("Tên vật tư không được để trống.");
+		var inventories = await _repository.GetAllAsync();
+		return inventories.Select(i => new RoomInventoryDto
+		{
+			Id = i.Id,
+			RoomId = i.RoomId,
+			ItemName = i.ItemName,
+			Quantity = i.Quantity,
+			PriceIfLost = i.PriceIfLost
+		});
+	}
 
-		if (inventory.Quantity < 0)
-			throw new ArgumentException("Số lượng vật tư không thể nhỏ hơn 0.");
+	public async Task<IEnumerable<RoomInventoryDto>> GetByRoomAsync(int roomId)
+	{
+		var inventories = await _repository.GetByRoomIdAsync(roomId);
+		return inventories.Select(i => new RoomInventoryDto
+		{
+			Id = i.Id,
+			RoomId = i.RoomId,
+			ItemName = i.ItemName,
+			Quantity = i.Quantity,
+			PriceIfLost = i.PriceIfLost
+		});
+	}
 
-		if (inventory.PriceIfLost < 0)
-			throw new ArgumentException("Giá đền bù không thể là số âm.");
+	public async Task<RoomInventoryDto?> GetByIdAsync(int id)
+	{
+		var inventory = await _repository.GetByIdAsync(id);
+		return inventory == null ? null : new RoomInventoryDto
+		{
+			Id = inventory.Id,
+			RoomId = inventory.RoomId,
+			ItemName = inventory.ItemName,
+			Quantity = inventory.Quantity,
+			PriceIfLost = inventory.PriceIfLost
+		};
+	}
+
+	public async Task<bool> AddItemAsync(CreateRoomInventoryDto dto)
+	{
+		var inventory = new RoomInventory
+		{
+			RoomId = dto.RoomId,
+			ItemName = dto.ItemName,
+			Quantity = dto.Quantity,
+			PriceIfLost = dto.PriceIfLost
+		};
 
 		await _repository.AddAsync(inventory);
 		return await _repository.SaveChangesAsync();
 	}
 
-	public async Task<bool> UpdateItemAsync(int id, RoomInventory inventory)
+	public async Task<bool> UpdateItemAsync(int id, UpdateRoomInventoryDto dto)
 	{
 		var existing = await _repository.GetByIdAsync(id);
 		if (existing == null) return false;
 
-		existing.ItemName = inventory.ItemName;
-		existing.Quantity = inventory.Quantity;
-		existing.PriceIfLost = inventory.PriceIfLost;
-		existing.RoomId = inventory.RoomId;
+		existing.ItemName = dto.ItemName;
+		existing.Quantity = dto.Quantity;
+		existing.PriceIfLost = dto.PriceIfLost;
+		existing.RoomId = dto.RoomId;
 
 		_repository.Update(existing);
 		return await _repository.SaveChangesAsync();
@@ -74,11 +105,14 @@ public class RoomInventoryService : IRoomInventoryService
 	}
 
 	public async Task<bool> RemoveItemAsync(int id)
-	{
-		var item = await _repository.GetByIdAsync(id);
-		if (item == null) return false;
+    {
+        var entity = await _repository.GetByIdAsync(id);
+        if (entity == null || !entity.IsActive) throw new NotFoundException($"Amenity with ID {id} not found.");
 
-		_repository.Delete(item);
-		return await _repository.SaveChangesAsync();
-	}
+        entity.IsActive = false;
+        _repository.Update(entity);
+        await _repository.SaveChangesAsync();
+
+        return true;
+    }
 }
