@@ -130,11 +130,6 @@ Hệ thống dùng **4 vai trò chính**:
 
 # 🔎 API Endpoints & Quyền cần có (Permission Matrix)
 
-> Dựa trên code hiện tại trong `BE/Controllers/*` (các action được gắn `[Permission("...")]`).
-> Những endpoint **không có** `[Permission]` thường là **public** (không bắt quyền) hoặc chỉ phụ thuộc JWT (tuỳ controller).
->
-> Lưu ý: `RolesController.GetMyPermissions` hiện không gắn `[Authorize]` trong code, nhưng bên trong có đọc `User` claim. Khuyến nghị bổ sung `[Authorize]` để tránh gọi anonymous (hiện tại có thể trả về userId=0).
-
 ## 1) Auth (`/api/auth`) – Không yêu cầu permission
 | Method | Endpoint | Yêu cầu |
 |---|---|---|
