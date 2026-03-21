@@ -18,14 +18,14 @@ Dự án **Nhóm 8 – Thiết Kế Web**: Xây dựng hệ thống quản lý k
 
 ## 📁 Cấu trúc dự án
 
-```
+```text
 Nhom8_ThietKeWeb/
 ├── BE/                  # Backend ASP.NET Core
 │   ├── Auth/            # Xác thực & Phân quyền
-│   ├── Controllers/     # 11 API Controllers
+│   ├── Controllers/     # API Controllers
 │   ├── Data/            # Database Context
 │   ├── Dtos/            # Data Transfer Objects
-│   ├── Entities/        # 27 Entity Models
+│   ├── Entities/        # Entity Models
 │   ├── Migrations/      # EF Core Migrations
 │   ├── Repositories/    # Tầng truy cập dữ liệu
 │   ├── Services/        # Business Logic
@@ -38,103 +38,35 @@ Nhom8_ThietKeWeb/
 
 ## ✅ Các chức năng đã thực hiện
 
-### 1. Xác thực & Phân quyền (`/api/auth`)
+### 1) Xác thực & Phân quyền (`/api/auth`)
+- Đăng ký / Đăng nhập (JWT + Refresh Token)
+- Đăng nhập Google OAuth
+- Làm mới token / Đăng xuất
+- **Phân quyền theo vai trò (RBAC)**: kiểm soát truy cập theo **Role** và **Permission**
 
-- **Đăng ký tài khoản** – Tạo tài khoản mới với email, họ tên, mật khẩu
-- **Đăng nhập** – Đăng nhập bằng email/mật khẩu, trả về JWT + Refresh Token
-- **Đăng nhập Google** – Xác thực qua Google OAuth (Google ID Token)
-- **Làm mới token** – Cấp lại JWT từ Refresh Token còn hiệu lực
-- **Đăng xuất** – Vô hiệu hóa Refresh Token
-- **Phân quyền theo vai trò (RBAC)** – Kiểm soát truy cập dựa trên vai trò và 24 quyền hạn
-
-### 2. Quản lý hồ sơ người dùng (`/api/userProfile`)
-
-- **Xem hồ sơ** – Lấy thông tin cá nhân của tài khoản đang đăng nhập
-- **Cập nhật hồ sơ** – Chỉnh sửa thông tin cá nhân
-- **Đổi mật khẩu** – Đổi mật khẩu (kiểm tra mật khẩu cũ trước khi đổi)
-- **Cập nhật avatar** – Upload/thay đổi ảnh đại diện
-
-### 3. Quản lý người dùng – Admin (`/api/userManagement`)
-
-- **Danh sách người dùng** – Xem tất cả tài khoản trong hệ thống
-- **Tạo người dùng** – Tạo tài khoản mới và gán vai trò
-- **Chỉnh sửa người dùng** – Cập nhật email, mật khẩu, thông tin
-- **Đổi vai trò** – Thay đổi vai trò (Role) của người dùng
-- **Xóa mềm người dùng** – Vô hiệu hóa tài khoản (không xóa vĩnh viễn)
-
-### 4. Quản lý phòng (`/api/rooms`)
-
-- **Danh sách phòng** – Lấy tất cả phòng khách sạn
-- **Chi tiết phòng** – Xem thông tin chi tiết theo ID
-- **Tạo phòng** – Thêm phòng mới (số phòng, tầng, loại phòng)
-- **Cập nhật phòng** – Chỉnh sửa thông tin phòng
-- **Đổi trạng thái phòng** – Cập nhật trạng thái: Trống / Đang sử dụng / Bảo trì
-- **Đổi trạng thái vệ sinh** – Cập nhật: Sạch / Bẩn / Cần kiểm tra
-- **Xóa phòng** – Xóa phòng khỏi hệ thống
-
-### 5. Quản lý loại phòng (`/api/roomTypes`)
-
-- **Danh sách loại phòng** – Lấy tất cả loại phòng kèm tiện nghi
-- **Chi tiết loại phòng** – Xem thông tin theo ID
-- **Tạo loại phòng** – Thêm loại phòng (tên, giá, sức chứa người lớn/trẻ em, mô tả)
-- **Cập nhật loại phòng** – Chỉnh sửa thông tin
-- **Xóa loại phòng** – Xóa loại phòng
-- **Thêm ảnh loại phòng** – Thêm hình ảnh cho loại phòng
-- **Xóa ảnh loại phòng** – Xóa hình ảnh
-- **Đặt ảnh chính** – Chọn ảnh đại diện (primary image) cho loại phòng
-
-### 6. Quản lý tiện nghi (`/api/amenities`)
-
-- **Danh sách tiện nghi** – Lấy tất cả tiện nghi
-- **Chi tiết tiện nghi** – Xem theo ID
-- **Tạo tiện nghi** – Thêm tiện nghi mới (tên, URL icon)
-- **Cập nhật tiện nghi** – Chỉnh sửa thông tin
-- **Xóa tiện nghi** – Xóa tiện nghi khỏi hệ thống
-- **Liên kết với loại phòng** – Gán tiện nghi cho loại phòng cụ thể
-
-### 7. Quản lý kho thiết bị phòng (`/api/roomInventories`)
-
-- **Danh sách kho** – Xem tất cả thiết bị/vật dụng trong kho
-- **Kho của phòng cụ thể** – Xem danh sách theo phòng
-- **Chi tiết mục kho** – Xem thông tin theo ID
-- **Thêm thiết bị** – Tạo mục kho mới (tên, số lượng, giá thay thế)
-- **Cập nhật thiết bị** – Chỉnh sửa thông tin mục kho
-- **Xóa thiết bị** – Xóa mục khỏi kho
-- **Sao chép kho** – Clone toàn bộ thiết bị từ phòng này sang phòng khác
-
-### 8. Quản lý bài viết / Blog (`/api/articles`)
-
-- **Danh sách bài viết** – Lấy tất cả bài viết
-- **Chi tiết bài viết** – Xem theo ID
-- **Tạo bài viết** – Thêm bài viết mới (tiêu đề, slug, nội dung, thumbnail, danh mục, tác giả)
-- **Cập nhật bài viết** – Chỉnh sửa nội dung
-- **Xóa bài viết** – Xóa bài viết
-- **Cập nhật thumbnail** – Thay đổi ảnh đại diện bài viết
-
-### 9. Quản lý danh mục bài viết (`/api/articleCategories`)
-
-- **Danh sách danh mục** – Lấy tất cả danh mục
-- **Chi tiết danh mục** – Xem theo ID
-- **Tạo danh mục** – Thêm danh mục mới
-- **Cập nhật danh mục** – Chỉnh sửa thông tin
-- **Xóa danh mục** – Xóa danh mục
-
-### 10. Quản lý địa điểm tham quan (`/api/attractions`)
-
-- **Danh sách địa điểm** – Lấy tất cả địa điểm tham quan gần khách sạn
-- **Chi tiết địa điểm** – Xem theo ID
-- **Tạo địa điểm** – Thêm địa điểm mới (tên, khoảng cách, mô tả, link bản đồ, tọa độ)
-- **Cập nhật địa điểm** – Chỉnh sửa thông tin
-- **Xóa địa điểm** – Xóa địa điểm
-
-### 11. Quản lý vai trò & quyền hạn (`/api/roles`)
-
-- **Gán quyền cho vai trò** – Phân quyền cụ thể cho từng Role
-- **Xem quyền hiện tại** – Lấy danh sách quyền của người dùng đang đăng nhập
+### 2) Các module nghiệp vụ chính
+- Hồ sơ người dùng (`/api/userProfile`)
+- Quản lý người dùng (`/api/userManagement`)
+- Quản lý phòng (`/api/rooms`)
+- Quản lý loại phòng (`/api/roomTypes`)
+- Quản lý tiện nghi (`/api/amenities`)
+- Quản lý kho thiết bị phòng (`/api/roomInventories`)
+- Quản lý bài viết/blog (`/api/articles`)
+- Quản lý danh mục bài viết (`/api/articleCategories`)
+- Quản lý địa điểm tham quan (`/api/attractions`)
+- Quản lý vai trò & quyền hạn (`/api/roles`)
 
 ---
 
-## 🔐 Danh sách 24 quyền hạn trong hệ thống
+## 🔐 RBAC: Role & Permission
+
+Hệ thống dùng **4 vai trò chính**:
+- **Admin**: toàn quyền hệ thống
+- **Receptionist**: lễ tân – vận hành phòng + quản lý nội dung (CMS) + quản lý kho thiết bị
+- **Housekeeping**: buồng phòng – cập nhật trạng thái vệ sinh + cập nhật kho thiết bị
+- **Guest**: khách hàng bên ngoài – **không có quyền nội bộ** (các quyền dành cho khách hàng sẽ được tách riêng theo nhu cầu)
+
+### Danh sách Permission (24 quyền)
 
 | Nhóm | Quyền |
 |---|---|
@@ -147,6 +79,165 @@ Nhom8_ThietKeWeb/
 | Tiện nghi | `create_amenity`, `update_amenity`, `delete_amenity` |
 | Địa điểm tham quan | `manage_attraction` |
 | Người dùng & Vai trò | `manage_user`, `manage_role`, `assign_role` |
+
+---
+
+## 🧩 Permission được gắn cho Role nào?
+
+> Mapping dưới đây là cấu hình RBAC đã chốt:
+- Receptionist **chỉ cập nhật trạng thái phòng** (không tạo/sửa/xóa phòng)
+- Housekeeping **có xem kho** và **chỉ update kho** (không create/delete kho)
+- Guest là khách hàng bên ngoài ⇒ **không gán permission nội bộ**
+
+### 1) Admin
+**Có tất cả quyền** (full permissions):
+- Toàn bộ 24 permission ở danh sách trên.
+
+### 2) Receptionist (Lễ tân)
+**Phòng & trạng thái phòng**
+- `get_all_rooms`
+- `change_room_status`
+- `change_room_cleaning_status`
+
+**Kho thiết bị phòng (inventory)**
+- `get_all_room_inventory`
+- `create_room_inventory`
+- `update_room_inventory`
+- `delete_room_inventory`
+
+**Bài viết / CMS**
+- `create_article`
+- `update_article`
+- `delete_article`
+- `update_thumbnail`
+- `create_article_category`
+- `update_article_category`
+- `delete_article_category`
+
+### 3) Housekeeping (Buồng phòng)
+**Phòng & vệ sinh**
+- `get_all_rooms`
+- `change_room_cleaning_status`
+
+**Kho thiết bị phòng**
+- `get_all_room_inventory`
+- `update_room_inventory`
+
+### 4) Guest (Khách hàng)
+- **Không gán permission nội bộ** trong danh sách 24 quyền hiện tại.
+
+---
+
+# 🔎 API Endpoints & Quyền cần có (Permission Matrix)
+
+> Dựa trên code hiện tại trong `BE/Controllers/*` (các action được gắn `[Permission("...")]`).
+> Những endpoint **không có** `[Permission]` thường là **public** (không bắt quyền) hoặc chỉ phụ thuộc JWT (tuỳ controller).
+>
+> Lưu ý: `RolesController.GetMyPermissions` hiện không gắn `[Authorize]` trong code, nhưng bên trong có đọc `User` claim. Khuyến nghị bổ sung `[Authorize]` để tránh gọi anonymous (hiện tại có thể trả về userId=0).
+
+## 1) Auth (`/api/auth`) – Không yêu cầu permission
+| Method | Endpoint | Yêu cầu |
+|---|---|---|
+| POST | `/api/auth/register` | Public |
+| POST | `/api/auth/login` | Public |
+| POST | `/api/auth/google-login` | Public |
+| POST | `/api/auth/refresh-token` | Public |
+| POST | `/api/auth/logout` | Public |
+
+## 2) User Profile (`/api/userProfile`)
+| Method | Endpoint | Yêu cầu |
+|---|---|---|
+| GET | `/api/userProfile/my-profile` | **JWT** (`[Authorize]`) |
+| PUT | `/api/userProfile/update-profile` |  **JWT** (`[Authorize]`) |
+| PUT | `/api/userProfile/change-password` | **JWT** (`[Authorize]`) |
+| POST | `/api/userProfile/upload-avatar` |  **JWT** (`[Authorize]`) |
+
+
+## 3) User Management (`/api/userManagement`) – `manage_user`
+| Method | Endpoint | Permission |
+|---|---|---|
+| GET | `/api/userManagement` | `manage_user` |
+| POST | `/api/userManagement` | `manage_user` |
+| PUT | `/api/userManagement/{userId}` | `manage_user` |
+| PUT | `/api/userManagement/{userId}/change-role` | `manage_user` |
+| DELETE | `/api/userManagement/{userId}` | `manage_user` |
+
+## 4) Roles (`/api/roles`)
+| Method | Endpoint | Permission |
+|---|---|---|
+| POST | `/api/roles/assign-permission` | `manage_role` (và có `[Authorize]`) |
+| GET | `/api/roles/my-permissions` | `[Authorize]` |
+
+## 5) Rooms (`/api/rooms`)
+| Method | Endpoint | Permission |
+|---|---|---|
+| GET | `/api/rooms` | Public (không gắn permission) |
+| GET | `/api/rooms/{id}` | Public (không gắn permission) |
+| POST | `/api/rooms` | `create_room` |
+| PUT | `/api/rooms/{id}` | `update_room` |
+| DELETE | `/api/rooms/{id}` | `delete_room` |
+| PATCH | `/api/rooms/{id}/status` | `change_room_status` |
+| PATCH | `/api/rooms/{id}/cleaning-status` | `change_room_cleaning_status` |
+
+## 6) Room Inventories (`/api/roomInventories`)
+| Method | Endpoint | Permission |
+|---|---|---|
+| GET | `/api/roomInventories` | `get_all_room_inventory` |
+| GET | `/api/roomInventories/room/{roomId}` | Public (không gắn permission) |
+| GET | `/api/roomInventories/{id}` | Public (không gắn permission) |
+| POST | `/api/roomInventories` | `create_room_inventory` |
+| PUT | `/api/roomInventories/{id}` | `update_room_inventory` |
+| DELETE | `/api/roomInventories/{id}` | `delete_room_inventory` |
+| POST | `/api/roomInventories/clone/{idClone}/to/{newRoomId}` | `create_room_inventory` |
+
+## 7) Room Types (`/api/roomTypes`) – `manage_room_type`
+| Method | Endpoint | Permission |
+|---|---|---|
+| GET | `/api/roomTypes` | Public |
+| GET | `/api/roomTypes/{id}` | Public |
+| POST | `/api/roomTypes` | `manage_room_type` |
+| PUT | `/api/roomTypes/{id}` | `manage_room_type` |
+| DELETE | `/api/roomTypes/{id}` | `manage_room_type` |
+| POST | `/api/roomTypes/{id}/images` | `manage_room_type` |
+| DELETE | `/api/roomTypes/images/{imageId}` | `manage_room_type` |
+| PATCH | `/api/roomTypes/{roomTypeId}/images/{imageId}/set-primary` | `manage_room_type` |
+
+## 8) Amenities (`/api/amenities`)
+| Method | Endpoint | Permission |
+|---|---|---|
+| GET | `/api/amenities` | Public |
+| GET | `/api/amenities/{id}` | Public |
+| POST | `/api/amenities` | `create_amenity` |
+| PUT | `/api/amenities/{id}` | `update_amenity` |
+| DELETE | `/api/amenities/{id}` | `delete_amenity` |
+
+## 9) Articles (`/api/articles`)
+| Method | Endpoint | Permission |
+|---|---|---|
+| GET | `/api/articles` | Public |
+| GET | `/api/articles/{id}` | Public |
+| POST | `/api/articles` | `create_article` |
+| PUT | `/api/articles/{id}` | `update_article` |
+| DELETE | `/api/articles/{id}` | `delete_article` |
+| POST | `/api/articles/{id}/thumbnail` | `update_thumbnail` |
+
+## 10) Article Categories (`/api/articleCategories`)
+| Method | Endpoint | Permission |
+|---|---|---|
+| GET | `/api/articleCategories` | Public |
+| GET | `/api/articleCategories/{id}` | Public |
+| POST | `/api/articleCategories` | `create_article_category` |
+| PUT | `/api/articleCategories/{id}` | `update_article_category` |
+| DELETE | `/api/articleCategories/{id}` | `delete_article_category` |
+
+## 11) Attractions (`/api/attractions`)
+| Method | Endpoint | Permission |
+|---|---|---|
+| GET | `/api/attractions` | Public |
+| GET | `/api/attractions/{id}` | Public |
+| POST | `/api/attractions` | `manage_attraction` |
+| PUT | `/api/attractions/{id}` | `manage_attraction` |
+| DELETE | `/api/attractions/{id}` | `manage_attraction` |
 
 ---
 
@@ -166,7 +257,6 @@ Nhom8_ThietKeWeb/
 ---
 
 ## 🚀 Hướng dẫn chạy dự án
-
 ### Backend
 
 ```bash
@@ -189,5 +279,7 @@ npm run dev
 ---
 
 ## 👥 Thành viên nhóm 8
-
-Dự án môn Thiết Kế Web – Nhóm 8.
+- Nguyễn Hoàng Nguyên Vũ 
+- Phạm Minh Tình
+- Ngô Quang Vinh
+- Lù Vĩnh Văn
