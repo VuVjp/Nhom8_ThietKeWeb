@@ -113,6 +113,8 @@ var app = builder.Build();
 app.UseSwagger();
 app.UseSwaggerUI();
 
+app.UseCors(policy => policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+
 app.UseMiddleware<ExceptionMiddleware>();
 
 app.UseAuthentication();

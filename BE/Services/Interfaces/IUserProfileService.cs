@@ -3,8 +3,8 @@ using HotelManagement.Entities;
 
 public interface IUserProfileService
 {
-    Task<User?> GetProfileByEmailAsync(string email);
-    Task<User?> UpdateProfileAsync(string email, UpdateProfileDto updateProfileDto);
-    Task<User?> ChangePasswordAsync(string email, string newPassword, string currentPassword);
-    Task<User?> UploadAvatarAsync(string email, string avatarUrl);
+    Task<UserDto?> GetProfileByEmailAsync(string email);
+    Task<UserDto?> UpdateProfileAsync(string email, UpdateProfileDto updateProfileDto);
+    Task<UserDto?> ChangePasswordAsync(string email, string newPassword, string currentPassword);
+    Task<UserDto?> UploadAvatarAsync(string email, string avatarUrl);
 }

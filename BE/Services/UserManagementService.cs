@@ -1,3 +1,4 @@
+using HotelManagement.Dtos;
 using HotelManagement.Entities;
 public class UserManagementService : IUserManagementService
 {
@@ -66,9 +67,16 @@ public class UserManagementService : IUserManagementService
         await _userManagementRepository.SaveChangesAsync();
     }
 
-    public async Task<IEnumerable<User>> GetAllUsersAsync()
+    public async Task<IEnumerable<UserDto>> GetAllUsersAsync()
     {
-        return await _userManagementRepository.GetAllAsync();
+        var users = await _userManagementRepository.GetAllUsersAsync();
+        return users.Select(u => new UserDto
+        {
+            Id = u.Id,
+            Email = u.Email,
+            RoleName = u.Role!.Name,
+            IsActive = u.IsActive
+        });
     }
 
     public async Task SoftDeleteUserByIdAsync(int userId)

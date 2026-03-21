@@ -7,6 +7,12 @@ public class UserManagementRepository : Repository<User>, IUserManagementReposit
     public UserManagementRepository(AppDbContext context) : base(context)
     {
     }
+
+    public async Task<IEnumerable<User>> GetAllUsersAsync()
+    {
+        return await _context.Users.Include(u => u.Role).ToListAsync();
+    }
+
     public async Task<User?> SoftDeleteUserByIdAsync(int userId)
     {
         var user = await GetByIdAsync(userId);

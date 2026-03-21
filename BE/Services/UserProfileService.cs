@@ -10,12 +10,26 @@ public class UserProfileService : IUserProfileService
         _userRepository = userRepository;
     }
 
-    public async Task<User?> GetProfileByEmailAsync(string email)
+    public async Task<UserDto?> GetProfileByEmailAsync(string email)
     {
-        return await _userRepository.GetByEmailAsync(email);
+        var user = await _userRepository.GetByEmailAsync(email);
+        if (user == null)
+        {
+            throw new NotFoundException("User not found.");
+        }
+        return new UserDto
+        {
+            Id = user.Id,
+            Email = user.Email,
+            FullName = user.FullName,
+            Phone = user.Phone,
+            RoleName = user.Role.Name ?? string.Empty,
+            IsActive = user.IsActive,
+            AvatarUrl = user.AvatarUrl
+        };
     }
 
-    public async Task<User?> UpdateProfileAsync(string email, UpdateProfileDto updateProfileDto)
+    public async Task<UserDto?> UpdateProfileAsync(string email, UpdateProfileDto updateProfileDto)
     {
         var user = await _userRepository.GetByEmailAsync(email);
 
@@ -28,7 +42,7 @@ public class UserProfileService : IUserProfileService
 
         _userRepository.Update(user);
         await _userRepository.SaveChangesAsync();
-        return new User
+        return new UserDto
         {
             FullName = updateProfileDto.FullName ?? user.FullName,
             Email = user.Email,
@@ -37,7 +51,7 @@ public class UserProfileService : IUserProfileService
         };
     }
 
-    public async Task<User?> ChangePasswordAsync(string email, string newPassword, string currentPassword)
+    public async Task<UserDto?> ChangePasswordAsync(string email, string newPassword, string currentPassword)
     {
         var user = await _userRepository.GetByEmailAsync(email);
         if (user == null)
@@ -51,10 +65,19 @@ public class UserProfileService : IUserProfileService
         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
         _userRepository.Update(user);
         await _userRepository.SaveChangesAsync();
-        return user;
+        return new UserDto
+        {
+            Id = user.Id,
+            Email = user.Email,
+            FullName = user.FullName,
+            Phone = user.Phone,
+            RoleName = user.Role.Name ?? string.Empty,
+            IsActive = user.IsActive,
+            AvatarUrl = user.AvatarUrl
+        };
     }
 
-    public async Task<User?> UploadAvatarAsync(string email, string avatarUrl)
+    public async Task<UserDto?> UploadAvatarAsync(string email, string avatarUrl)
     {
         var user = await _userRepository.GetByEmailAsync(email);
         if (user == null)
@@ -64,7 +87,7 @@ public class UserProfileService : IUserProfileService
         user.AvatarUrl = avatarUrl;
         _userRepository.Update(user);
         await _userRepository.SaveChangesAsync();
-        return new User
+        return new UserDto
         {
             AvatarUrl = avatarUrl
         };
