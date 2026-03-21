@@ -33,13 +33,13 @@ public class AuthService : IAuthService
             Email = email,
             FullName = fullName,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
-            Role = new Role { Name = "Guest" },
+            RoleId = 2, // Assuming 2 is the ID for the "Guest" role
         };
 
         await _userRepository.AddAsync(user);
         await _userRepository.SaveChangesAsync();
 
-        return (user.Id, user.Email, user.Role.Name);
+        return (user.Id, user.Email, user.Role!.Name);
     }
 
     public async Task<(string, string)> LoginAsync(string email, string password)
@@ -83,7 +83,7 @@ public class AuthService : IAuthService
                 Email = email,
                 FullName = name,
                 GoogleId = googleId,
-                Role = new Role { Name = "Guest" }
+                RoleId = 2, // Assuming 2 is the ID for the "Guest" role
             };
             await _userRepository.AddAsync(user);
             await _userRepository.SaveChangesAsync();

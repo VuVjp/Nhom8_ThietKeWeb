@@ -4,6 +4,7 @@ using HotelManagement.Services.Interfaces;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System;
+using HotelManagement.Dtos;
 
 namespace HotelManagement.Services.Implementations;
 
@@ -16,13 +17,44 @@ public class RoomService : IRoomService
 		_repository = repository;
 	}
 
-	public async Task<IEnumerable<Room>> GetListAsync() => await _repository.GetAllAsync();
-
-	public async Task<Room?> GetDetailAsync(int id) => await _repository.GetByIdAsync(id);
-
-	public async Task<bool> CreateRoomAsync(Room room)
+	public async Task<IEnumerable<RoomDto>> GetListAsync()
 	{
-		// LOGIC 1: Kiểm tra số phòng trống/trùng
+		var rooms = await _repository.GetAllAsync();
+		var roomDtos = new List<RoomDto>();
+
+		foreach (var room in rooms)
+		{
+			roomDtos.Add(new RoomDto
+			{
+				RoomNumber = room.RoomNumber,
+				Floor = room.Floor,
+				Status = room.Status,
+				CleaningStatus = room.CleaningStatus,
+				RoomTypeId = room.RoomTypeId
+			});
+		}
+
+		return roomDtos;
+	}
+
+	public async Task<RoomDto?> GetDetailAsync(int id)
+	{
+		var room = await _repository.GetByIdAsync(id);
+		if (room == null) return null;
+
+		return new RoomDto
+		{
+			RoomNumber = room.RoomNumber,
+			Floor = room.Floor,
+			Status = room.Status,
+			CleaningStatus = room.CleaningStatus,
+			RoomTypeId = room.RoomTypeId
+		};
+	}
+
+	public async Task<bool> CreateRoomAsync(RoomDto room)
+	{
+		// LOGIC 1: Kiểm tra số phòng trống/trùng	
 		if (string.IsNullOrWhiteSpace(room.RoomNumber))
 			throw new ArgumentException("Số phòng không được để trống.");
 
@@ -36,11 +68,20 @@ public class RoomService : IRoomService
 		// LOGIC 3: Mặc định trạng thái
 		if (string.IsNullOrEmpty(room.Status)) room.Status = "Available";
 
-		await _repository.AddAsync(room);
+		var newRoom = new Room
+		{
+			RoomNumber = room.RoomNumber,
+			Floor = room.Floor,
+			Status = room.Status,
+			CleaningStatus = room.CleaningStatus,
+			RoomTypeId = room.RoomTypeId
+		};
+
+		await _repository.AddAsync(newRoom);
 		return await _repository.SaveChangesAsync();
 	}
 
-	public async Task<bool> UpdateRoomAsync(int id, Room room)
+	public async Task<bool> UpdateRoomAsync(int id, RoomDto room)
 	{
 		var existing = await _repository.GetByIdAsync(id);
 		if (existing == null) return false;
@@ -52,10 +93,31 @@ public class RoomService : IRoomService
 		existing.RoomNumber = room.RoomNumber;
 		existing.Floor = room.Floor;
 		existing.Status = room.Status;
+		existing.CleaningStatus = room.CleaningStatus;
 		existing.RoomTypeId = room.RoomTypeId;
 
 		_repository.Update(existing);
 		return await _repository.SaveChangesAsync();
+	}
+
+	public async Task ChangeRoomStatusAsync(int id, string newStatus)
+	{
+		var room = await _repository.GetByIdAsync(id);
+		if (room == null) throw new NotFoundException("Room not found.");
+
+		room.Status = newStatus;
+		_repository.Update(room);
+		await _repository.SaveChangesAsync();
+	}
+
+	public async Task ChangeRoomCleaningStatusAsync(int id, string newCleaningStatus)
+	{
+		var room = await _repository.GetByIdAsync(id);
+		if (room == null) throw new NotFoundException("Room not found.");
+
+		room.CleaningStatus = newCleaningStatus;
+		_repository.Update(room);
+		await _repository.SaveChangesAsync();
 	}
 
 	public async Task<bool> DeleteRoomAsync(int id)

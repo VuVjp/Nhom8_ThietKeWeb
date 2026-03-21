@@ -7,6 +7,7 @@ public class Room
     public string RoomNumber { get; set; } = string.Empty;
     public int? Floor { get; set; }
     public string? Status { get; set; }
+    public string? CleaningStatus { get; set; }
 
     public RoomType? RoomType { get; set; }
     public ICollection<RoomInventory> RoomInventories { get; set; } = new List<RoomInventory>();

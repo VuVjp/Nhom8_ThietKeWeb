@@ -1,4 +1,5 @@
 ﻿using HotelManagement.Data;
+using HotelManagement.Dtos;
 using HotelManagement.Entities;
 using HotelManagement.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -15,14 +16,14 @@ public class RoomRepository : IRoomRepository
 
 	public async Task<IEnumerable<Room>> GetAllAsync()
 		=> await _context.Rooms
-			.Include(r => r.RoomType) 
+			.Include(r => r.RoomType)
 			.AsNoTracking()
 			.ToListAsync();
 
 	public async Task<Room?> GetByIdAsync(int id)
 		=> await _context.Rooms
 			.Include(r => r.RoomType)
-			.Include(r => r.RoomInventories) 
+			.Include(r => r.RoomInventories)
 			.FirstOrDefaultAsync(r => r.Id == id);
 
 	public async Task<bool> IsRoomNumberExistsAsync(string roomNumber)

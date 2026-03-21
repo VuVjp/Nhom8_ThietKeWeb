@@ -3,6 +3,7 @@ using HotelManagement.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 using System;
+using HotelManagement.Dtos;
 
 namespace HotelManagement.Controllers;
 
@@ -22,17 +23,17 @@ public class RoomsController : ControllerBase
 	public async Task<IActionResult> GetById(int id)
 	{
 		var room = await _service.GetDetailAsync(id);
-		return room == null ? NotFound("Không tìm thấy phòng.") : Ok(room);
+		return room == null ? NotFound("Room not found.") : Ok(room);
 	}
 
 	[Permission("create_room")]
 	[HttpPost]
-	public async Task<IActionResult> Create([FromBody] Room room)
+	public async Task<IActionResult> Create([FromBody] RoomDto room)
 	{
 		try
 		{
 			var result = await _service.CreateRoomAsync(room);
-			return result ? CreatedAtAction(nameof(GetById), new { id = room.Id }, room) : BadRequest();
+			return result ? CreatedAtAction(nameof(GetById), new { id = room.RoomNumber }, room) : BadRequest();
 		}
 		catch (ArgumentException ex)
 		{
@@ -40,9 +41,39 @@ public class RoomsController : ControllerBase
 		}
 	}
 
+	[Permission("change_room_status")]
+	[HttpPatch("{id}/status")]
+	public async Task<IActionResult> ChangeStatus(int id, [FromBody] string newStatus)
+	{
+		try
+		{
+			await _service.ChangeRoomStatusAsync(id, newStatus);
+			return Ok("Room status updated successfully.");
+		}
+		catch (NotFoundException ex)
+		{
+			return NotFound(ex.Message);
+		}
+	}
+
+	[Permission("change_room_cleaning_status")]
+	[HttpPatch("{id}/cleaning-status")]
+	public async Task<IActionResult> ChangeCleaningStatus(int id, [FromBody] string newCleaningStatus)
+	{
+		try
+		{
+			await _service.ChangeRoomCleaningStatusAsync(id, newCleaningStatus);
+			return Ok("Room cleaning status updated successfully.");
+		}
+		catch (NotFoundException ex)
+		{
+			return NotFound(ex.Message);
+		}
+	}
+
 	[Permission("update_room")]
 	[HttpPut("{id}")]
-	public async Task<IActionResult> Update(int id, [FromBody] Room room)
+	public async Task<IActionResult> Update(int id, [FromBody] RoomDto room)
 	{
 		try
 		{
@@ -60,6 +91,6 @@ public class RoomsController : ControllerBase
 	public async Task<IActionResult> Delete(int id)
 	{
 		var result = await _service.DeleteRoomAsync(id);
-		return result ? Ok("Đã xóa phòng thành công.") : NotFound();
+		return result ? Ok("Room deleted successfully.") : NotFound();
 	}
 }

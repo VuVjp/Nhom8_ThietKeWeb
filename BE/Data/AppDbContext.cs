@@ -266,6 +266,7 @@ public class AppDbContext : DbContext
             e.Property(x => x.RoomNumber).HasColumnName("room_number");
             e.Property(x => x.Floor).HasColumnName("floor");
             e.Property(x => x.Status).HasColumnName("status");
+            e.Property(x => x.CleaningStatus).HasColumnName("cleaning_status");
         });
 
         modelBuilder.Entity<ServiceCategory>(e =>

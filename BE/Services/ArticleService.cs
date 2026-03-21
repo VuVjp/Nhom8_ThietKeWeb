@@ -13,6 +13,7 @@ public class ArticleService : IArticleService
     {
         var data = await _repo.GetAllActiveAsync();
 
+        Console.Error.WriteLine($"[ArticleService] GetAllAsync: Retrieved {data.Count()} articles from repository.");
         return data.Select(a => new ArticleDto
         {
             Id = a.Id,

@@ -1,3 +1,4 @@
+using HotelManagement.Dtos;
 using HotelManagement.Entities;
 using System.Collections.Generic;
 using System.Threading.Tasks;
