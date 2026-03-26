@@ -3,10 +3,12 @@ using HotelManagement.Entities;
 public class AmenityService : IAmenityService
 {
     private readonly IAmenityRepository _repo;
+    private readonly CloudinaryService _cloudinary;
 
-    public AmenityService(IAmenityRepository repo)
+    public AmenityService(IAmenityRepository repo, CloudinaryService cloudinary)
     {
         _repo = repo;
+        _cloudinary = cloudinary;
     }
 
     public async Task<IEnumerable<AmenityDto>> GetAllAsync()
@@ -34,12 +36,19 @@ public class AmenityService : IAmenityService
         };
     }
 
-    public async Task<bool> CreateAsync(CreateAmenityDto dto)
+    public async Task<bool> CreateAsync(CreateAmenityRequestDto dto)
     {
+        string? iconUrl = null;
+
+        if (dto.File != null)
+        {
+            iconUrl = await _cloudinary.UploadImageAsync(dto.File, "amenities", dto.Name);
+        }
+
         var entity = new Amenity
         {
             Name = dto.Name,
-            IconUrl = dto.IconUrl
+            IconUrl = iconUrl
         };
 
         await _repo.AddAsync(entity);

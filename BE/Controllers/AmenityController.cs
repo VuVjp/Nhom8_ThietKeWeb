@@ -6,7 +6,7 @@ public class AmenitiesController : ControllerBase
 {
     private readonly IAmenityService _service;
 
-    public AmenitiesController(IAmenityService service)
+    public AmenitiesController(IAmenityService service, CloudinaryService cloudinary)
     {
         _service = service;
     }
@@ -25,11 +25,12 @@ public class AmenitiesController : ControllerBase
         return Ok(data);
     }
 
-    [Permission("create_amenity")]
+    [Permission("")]
     [HttpPost]
-    public async Task<IActionResult> Create(CreateAmenityDto dto)
+    public async Task<IActionResult> Create(CreateAmenityRequestDto dto)
     {
         var ok = await _service.CreateAsync(dto);
+
         if (!ok) return BadRequest();
         return Ok();
     }
