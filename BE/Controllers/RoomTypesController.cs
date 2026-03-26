@@ -66,7 +66,7 @@ namespace HotelManagement.Controllers
 
         [Permission("('manage_room_type')")]
         [HttpPost("{id}/images")]
-        public async Task<ActionResult<RoomImageDto>> AddImage(int id, [FromBody] AddRoomImageDto dto)
+        public async Task<ActionResult<RoomImageDto>> AddImage(int id, [FromForm] AddRoomImageDto dto)
         {
             var result = await _roomTypeService.AddImageAsync(id, dto);
             if (!result)
@@ -87,7 +87,7 @@ namespace HotelManagement.Controllers
             return NoContent();
         }
 
-        [Permission("('manage_room_type')")]            
+        [Permission("('manage_room_type')")]
         [HttpPatch("{roomTypeId}/images/{imageId}/set-primary")]
         public async Task<IActionResult> SetPrimaryImage(int roomTypeId, int imageId)
         {
@@ -98,5 +98,5 @@ namespace HotelManagement.Controllers
 
             return NoContent();
         }
-            }
+    }
 }

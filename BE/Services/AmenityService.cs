@@ -3,9 +3,9 @@ using HotelManagement.Entities;
 public class AmenityService : IAmenityService
 {
     private readonly IAmenityRepository _repo;
-    private readonly CloudinaryService _cloudinary;
+    private readonly ICloudinaryService _cloudinary;
 
-    public AmenityService(IAmenityRepository repo, CloudinaryService cloudinary)
+    public AmenityService(IAmenityRepository repo, ICloudinaryService cloudinary)
     {
         _repo = repo;
         _cloudinary = cloudinary;
@@ -63,7 +63,14 @@ public class AmenityService : IAmenityService
         if (entity == null || !entity.IsActive) throw new NotFoundException($"Amenity with ID {id} not found.");
 
         entity.Name = dto.Name;
-        entity.IconUrl = dto.IconUrl;
+        if (dto.File != null)
+        {
+            entity.IconUrl = await _cloudinary.UploadImageAsync(dto.File, "amenities", dto.Name);
+        }
+        else
+        {
+            entity.IconUrl = dto.IconUrl;
+        }
 
         _repo.Update(entity);
         await _repo.SaveChangesAsync();

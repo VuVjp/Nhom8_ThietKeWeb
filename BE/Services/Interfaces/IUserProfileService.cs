@@ -6,5 +6,5 @@ public interface IUserProfileService
     Task<UserDto?> GetProfileByEmailAsync(string email);
     Task<UserDto?> UpdateProfileAsync(string email, UpdateProfileDto updateProfileDto);
     Task<UserDto?> ChangePasswordAsync(string email, string newPassword, string currentPassword);
-    Task<UserDto?> UploadAvatarAsync(string email, string avatarUrl);
+    Task<UserDto?> UploadAvatarAsync(string email, IFormFile? avatarFile, string? avatarUrl);
 }

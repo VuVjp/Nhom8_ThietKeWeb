@@ -4,10 +4,12 @@ using HotelManagement.Entities;
 public class UserProfileService : IUserProfileService
 {
     private readonly IUserRepository _userRepository;
+    private readonly ICloudinaryService _cloudinaryService;
 
-    public UserProfileService(IUserRepository userRepository)
+    public UserProfileService(IUserRepository userRepository, ICloudinaryService cloudinaryService)
     {
         _userRepository = userRepository;
+        _cloudinaryService = cloudinaryService;
     }
 
     public async Task<UserDto?> GetProfileByEmailAsync(string email)
@@ -77,13 +79,24 @@ public class UserProfileService : IUserProfileService
         };
     }
 
-    public async Task<UserDto?> UploadAvatarAsync(string email, string avatarUrl)
+    public async Task<UserDto?> UploadAvatarAsync(string email, IFormFile? avatarFile, string? avatarUrl)
     {
         var user = await _userRepository.GetByEmailAsync(email);
         if (user == null)
         {
             throw new NotFoundException("User not found.");
         }
+
+        if (avatarFile != null)
+        {
+            avatarUrl = await _cloudinaryService.UploadImageAsync(avatarFile, "users/avatar", user.Id.ToString());
+        }
+
+        if (string.IsNullOrWhiteSpace(avatarUrl))
+        {
+            throw new Exception("Avatar file or avatar URL is required.");
+        }
+
         user.AvatarUrl = avatarUrl;
         _userRepository.Update(user);
         await _userRepository.SaveChangesAsync();

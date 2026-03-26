@@ -55,14 +55,14 @@ namespace HotelManagement.Controllers
         }
 
         [HttpPost("upload-avatar")]
-        public async Task<IActionResult> UploadAvatar([FromBody] UploadAvatarDto uploadAvatarDto)
+        public async Task<IActionResult> UploadAvatar([FromForm] UploadAvatarDto uploadAvatarDto)
         {
             var email = User.FindFirst(ClaimTypes.Email)?.Value;
             if (email == null)
             {
                 return Unauthorized();
             }
-            var updatedProfile = await _userProfileService.UploadAvatarAsync(email, uploadAvatarDto.AvatarUrl);
+            var updatedProfile = await _userProfileService.UploadAvatarAsync(email, uploadAvatarDto.AvatarFile, uploadAvatarDto.AvatarUrl);
             return Ok(updatedProfile);
         }
     }
