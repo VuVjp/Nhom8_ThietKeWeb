@@ -180,6 +180,8 @@ public class AuthService : IAuthService
                 new Claim(ClaimTypes.Email, user.Email),
                 new Claim(ClaimTypes.Role, user.Role?.Name ?? "Guest"),
                 new Claim("sub", user.Id.ToString()),
+                new Claim("email", user.Email),
+                new Claim("role", user.Role?.Name ?? "Guest")
             };
 
         var token = new JwtSecurityToken(

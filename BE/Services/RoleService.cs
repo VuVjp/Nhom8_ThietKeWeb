@@ -1,3 +1,5 @@
+using HotelManagement.Dtos;
+
 public class RoleService : IRoleService
 {
     private readonly IRoleRepository _roleRepository;
@@ -5,6 +7,11 @@ public class RoleService : IRoleService
     public RoleService(IRoleRepository roleRepository)
     {
         _roleRepository = roleRepository;
+    }
+
+    public async Task<List<RoleResponseDto>> GetAllRolesAsync()
+    {
+        return await _roleRepository.GetAllRolesAsync();
     }
 
     public async Task AssignPermissionAsync(int roleId, int permissionId)
@@ -15,5 +22,15 @@ public class RoleService : IRoleService
     public async Task<List<string>> GetMyPermissionsAsync(int userId)
     {
         return await _roleRepository.GetMyPermissionsAsync(userId);
+    }
+
+    public async Task<List<string>> GetAllPermissionNamesAsync()
+    {
+        return await _roleRepository.GetAllPermissionNamesAsync();
+    }
+
+    public async Task UpdateRolePermissionsAsync(int roleId, IEnumerable<string> permissionNames)
+    {
+        await _roleRepository.UpdateRolePermissionsAsync(roleId, permissionNames);
     }
 }

@@ -425,6 +425,56 @@ namespace BE.Migrations
                     b.ToTable("Memberships", (string)null);
                 });
 
+            modelBuilder.Entity("HotelManagement.Entities.Notification", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("content");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<bool>("IsRead")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_read");
+
+                    b.Property<string>("ReferenceLink")
+                        .HasColumnType("varchar(255)")
+                        .HasColumnName("reference_link");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(255)")
+                        .HasColumnName("title");
+
+                    b.Property<string>("Type")
+                        .HasColumnType("varchar(50)")
+                        .HasColumnName("type");
+
+                    b.Property<int?>("UserId")
+                        .HasColumnType("int")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Notifications", (string)null);
+                });
+
             modelBuilder.Entity("HotelManagement.Entities.OrderService", b =>
                 {
                     b.Property<int>("Id")
@@ -1076,6 +1126,16 @@ namespace BE.Migrations
                     b.Navigation("RoomInventory");
                 });
 
+            modelBuilder.Entity("HotelManagement.Entities.Notification", b =>
+                {
+                    b.HasOne("HotelManagement.Entities.User", "User")
+                        .WithMany("Notifications")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("HotelManagement.Entities.OrderService", b =>
                 {
                     b.HasOne("HotelManagement.Entities.BookingDetail", "BookingDetail")
@@ -1329,6 +1389,8 @@ namespace BE.Migrations
                     b.Navigation("AuditLogs");
 
                     b.Navigation("Bookings");
+
+                    b.Navigation("Notifications");
 
                     b.Navigation("RefreshTokens");
 

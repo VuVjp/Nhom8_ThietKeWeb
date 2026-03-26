@@ -3,10 +3,12 @@ using HotelManagement.Entities;
 public class ArticleService : IArticleService
 {
     private readonly IArticleRepository _repo;
+    private readonly ICloudinaryService _cloudinaryService;
 
-    public ArticleService(IArticleRepository repo)
+    public ArticleService(IArticleRepository repo, ICloudinaryService cloudinaryService)
     {
         _repo = repo;
+        _cloudinaryService = cloudinaryService;
     }
 
     public async Task<IEnumerable<ArticleDto>> GetAllAsync()
@@ -50,13 +52,19 @@ public class ArticleService : IArticleService
     }
     public async Task<bool> CreateAsync(CreateArticleDto dto)
     {
+        var thumbnailUrl = dto.ThumbnailUrl;
+        if (dto.ThumbnailFile != null)
+        {
+            thumbnailUrl = await _cloudinaryService.UploadImageAsync(dto.ThumbnailFile, "articles/thumbnail", dto.Title);
+        }
+
         var entity = new Article
         {
             CategoryId = dto.CategoryId,
             AuthorId = dto.AuthorId,
             Title = dto.Title,
             Content = dto.Content,
-            ThumbnailUrl = dto.ThumbnailUrl
+            ThumbnailUrl = thumbnailUrl
         };
 
         await _repo.AddAsync(entity);
@@ -70,11 +78,21 @@ public class ArticleService : IArticleService
         var entity = await _repo.GetByIdAsync(id);
         if (entity == null || !entity.IsActive) throw new NotFoundException($"Article with ID {id} not found.");
 
+        var thumbnailUrl = entity.ThumbnailUrl;
+        if (dto.ThumbnailFile != null)
+        {
+            thumbnailUrl = await _cloudinaryService.UploadImageAsync(dto.ThumbnailFile, "articles/thumbnail", dto.Title);
+        }
+        else if (!string.IsNullOrWhiteSpace(dto.ThumbnailUrl))
+        {
+            thumbnailUrl = dto.ThumbnailUrl;
+        }
+
         entity.CategoryId = dto.CategoryId;
         entity.AuthorId = dto.AuthorId;
         entity.Title = dto.Title;
         entity.Content = dto.Content;
-        entity.ThumbnailUrl = dto.ThumbnailUrl;
+        entity.ThumbnailUrl = thumbnailUrl;
 
         _repo.Update(entity);
         await _repo.SaveChangesAsync();
@@ -98,7 +116,14 @@ public class ArticleService : IArticleService
         var entity = await _repo.GetByIdAsync(id);
         if (entity == null || !entity.IsActive) throw new NotFoundException($"Article with ID {id} not found.");
 
-        entity.ThumbnailUrl = dto.ThumbnailUrl;
+        if (dto.ThumbnailFile != null)
+        {
+            entity.ThumbnailUrl = await _cloudinaryService.UploadImageAsync(dto.ThumbnailFile, "articles/thumbnail", $"article-{id}");
+        }
+        else if (!string.IsNullOrWhiteSpace(dto.ThumbnailUrl))
+        {
+            entity.ThumbnailUrl = dto.ThumbnailUrl;
+        }
 
         _repo.Update(entity);
         await _repo.SaveChangesAsync();

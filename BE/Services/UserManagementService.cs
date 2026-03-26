@@ -1,16 +1,27 @@
 using HotelManagement.Dtos;
 using HotelManagement.Entities;
+using System.Security.Cryptography;
 public class UserManagementService : IUserManagementService
 {
     private readonly IUserManagementRepository _userManagementRepository;
     private readonly IRoleRepository _roleRepository;
     private readonly IUserRepository _userRepository;
+    private readonly IEmailService _emailService;
 
-    public UserManagementService(IUserManagementRepository userManagementRepository, IRoleRepository roleRepository, IUserRepository userRepository)
+    public UserManagementService(IUserManagementRepository userManagementRepository, IRoleRepository roleRepository, IUserRepository userRepository, IEmailService emailService)
     {
         _userManagementRepository = userManagementRepository;
         _roleRepository = roleRepository;
         _userRepository = userRepository;
+        _emailService = emailService;
+    }
+
+    private static string GenerateRandomPassword(int length = 12)
+    {
+        const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%";
+        var bytes = new byte[length];
+        RandomNumberGenerator.Fill(bytes);
+        return new string(bytes.Select(b => chars[b % chars.Length]).ToArray());
     }
 
     public async Task ChangeRoleByIdAsync(int userId, int roleId)
@@ -79,13 +90,40 @@ public class UserManagementService : IUserManagementService
         });
     }
 
-    public async Task SoftDeleteUserByIdAsync(int userId)
+    public async Task ToggleUserActiveByIdAsync(int userId)
     {
-        var user = await _userRepository.GetByIdAsync(userId);
+        var user = await _userManagementRepository.GetByIdAsync(userId);
         if (user == null)
         {
             throw new NotFoundException("User not found.");
         }
-        await _userRepository.SoftDeleteAsync(user);
+
+        await _userManagementRepository.ToggleUserActiveByIdAsync(userId);
+    }
+
+    public async Task ResetPasswordAndSendEmailAsync(int userId)
+    {
+        var user = await _userManagementRepository.GetByIdAsync(userId);
+        if (user == null)
+        {
+            throw new NotFoundException("User not found.");
+        }
+
+        if (string.IsNullOrWhiteSpace(user.Email))
+        {
+            throw new InvalidOperationException("User email is missing.");
+        }
+
+        var newPassword = GenerateRandomPassword();
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+        _userManagementRepository.Update(user);
+        await _userManagementRepository.SaveChangesAsync();
+
+        var body = $"<p>Hello {user.FullName},</p>"
+            + "<p>Your account password has been reset by admin.</p>"
+            + $"<p><strong>New password:</strong> {newPassword}</p>"
+            + "<p>Please log in and change your password immediately.</p>";
+
+        await _emailService.SendAsync(user.Email, "Your new account password", body);
     }
 }

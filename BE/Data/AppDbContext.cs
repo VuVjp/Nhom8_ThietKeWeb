@@ -19,6 +19,7 @@ public class AppDbContext : DbContext
     public DbSet<Membership> Memberships { get; set; }
     public DbSet<OrderServiceDetail> OrderServiceDetails { get; set; }
     public DbSet<OrderService> OrderServices { get; set; }
+    public DbSet<Notification> Notifications { get; set; }
     public DbSet<Payment> Payments { get; set; }
     public DbSet<Permission> Permissions { get; set; }
     public DbSet<Review> Reviews { get; set; }
@@ -40,6 +41,10 @@ public class AppDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
+        modelBuilder.Entity<Notification>()
+        .Property(n => n.Type)
+        .HasConversion<string>();
+
         // Table name mappings
         modelBuilder.Entity<Amenity>().ToTable("Amenities");
         modelBuilder.Entity<ArticleCategory>().ToTable("Article_Categories");
@@ -53,6 +58,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Membership>().ToTable("Memberships");
         modelBuilder.Entity<OrderServiceDetail>().ToTable("Order_Service_Details");
         modelBuilder.Entity<OrderService>().ToTable("Order_Services");
+        modelBuilder.Entity<Notification>().ToTable("Notifications");
         modelBuilder.Entity<Payment>().ToTable("Payments");
         modelBuilder.Entity<Permission>().ToTable("Permissions");
         modelBuilder.Entity<Review>().ToTable("Reviews");
@@ -195,6 +201,18 @@ public class AppDbContext : DbContext
             e.Property(x => x.OrderDate).HasColumnName("order_date");
             e.Property(x => x.TotalAmount).HasColumnName("total_amount").HasColumnType("decimal(18,2)");
             e.Property(x => x.Status).HasColumnName("status");
+        });
+
+        modelBuilder.Entity<Notification>(e =>
+        {
+            e.Property(x => x.Id).HasColumnName("id");
+            e.Property(x => x.UserId).HasColumnName("user_id");
+            e.Property(x => x.Title).HasColumnName("title").HasColumnType("nvarchar(255)");
+            e.Property(x => x.Content).HasColumnName("content").HasColumnType("nvarchar(max)");
+            e.Property(x => x.Type).HasColumnName("type").HasColumnType("varchar(50)");
+            e.Property(x => x.ReferenceLink).HasColumnName("reference_link").HasColumnType("varchar(255)");
+            e.Property(x => x.IsRead).HasColumnName("is_read").HasDefaultValue(false);
+            e.Property(x => x.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("GETDATE()");
         });
 
         modelBuilder.Entity<Payment>(e =>
@@ -400,6 +418,9 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<OrderService>()
             .HasOne(os => os.BookingDetail).WithMany(bd => bd.OrderServices).HasForeignKey(os => os.BookingDetailId).OnDelete(DeleteBehavior.SetNull);
 
+        modelBuilder.Entity<Notification>()
+            .HasOne(n => n.User).WithMany(u => u.Notifications).HasForeignKey(n => n.UserId).OnDelete(DeleteBehavior.SetNull);
+
         modelBuilder.Entity<OrderServiceDetail>()
             .HasOne(osd => osd.OrderService).WithMany(os => os.OrderServiceDetails).HasForeignKey(osd => osd.OrderServiceId).OnDelete(DeleteBehavior.SetNull);
 
@@ -431,3 +452,4 @@ public class AppDbContext : DbContext
             .HasOne(a => a.Author).WithMany(u => u.Articles).HasForeignKey(a => a.AuthorId).OnDelete(DeleteBehavior.SetNull);
     }
 }
+

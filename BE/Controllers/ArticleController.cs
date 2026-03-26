@@ -27,7 +27,7 @@ public class ArticlesController : ControllerBase
 
     [Permission("create_article")]
     [HttpPost]
-    public async Task<IActionResult> Create(CreateArticleDto dto)
+    public async Task<IActionResult> Create([FromForm] CreateArticleDto dto)
     {
         var ok = await _service.CreateAsync(dto);
         if (!ok) return BadRequest();
@@ -36,7 +36,7 @@ public class ArticlesController : ControllerBase
 
     [Permission("update_article")]
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(int id, UpdateArticleDto dto)
+    public async Task<IActionResult> Update(int id, [FromForm] UpdateArticleDto dto)
     {
         var ok = await _service.UpdateAsync(id, dto);
         if (!ok) return NotFound();
@@ -51,10 +51,10 @@ public class ArticlesController : ControllerBase
         if (!ok) return NotFound();
         return NoContent();
     }
-    
+
     [Permission("update_thumbnail")]
     [HttpPost("{id}/thumbnail")]
-    public async Task<IActionResult> UpdateThumbnail(int id, UpdateArticleThumbnailDto dto)
+    public async Task<IActionResult> UpdateThumbnail(int id, [FromForm] UpdateArticleThumbnailDto dto)
     {
         var ok = await _service.UpdateThumbnailAsync(id, dto);
         if (!ok) return NotFound();
