@@ -31,6 +31,7 @@ namespace HotelManagement.Controllers
             return Ok(profile);
         }
 
+        [Authorize]
         [HttpPut("update-profile")]
         public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileDto updateProfileDto)
         {
@@ -43,6 +44,7 @@ namespace HotelManagement.Controllers
             return Ok(updatedProfile);
         }
 
+        [Authorize]
         [HttpPut("change-password")]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto changePasswordDto)
         {
@@ -54,7 +56,8 @@ namespace HotelManagement.Controllers
             var updatedProfile = await _userProfileService.ChangePasswordAsync(email, changePasswordDto.NewPassword, changePasswordDto.CurrentPassword);
             return Ok(updatedProfile);
         }
-
+        
+        [Authorize]
         [HttpPost("upload-avatar")]
         public async Task<IActionResult> UploadAvatar([FromForm] UploadAvatarDto uploadAvatarDto)
         {
@@ -63,7 +66,7 @@ namespace HotelManagement.Controllers
             {
                 return Unauthorized();
             }
-            var updatedProfile = await _userProfileService.UploadAvatarAsync(email, uploadAvatarDto.AvatarFile, uploadAvatarDto.AvatarUrl);
+            var updatedProfile = await _userProfileService.UploadAvatarAsync(email, uploadAvatarDto.AvatarFile, email);
             return Ok(updatedProfile);
         }
     }
