@@ -25,7 +25,7 @@ public class AmenitiesController : ControllerBase
         return Ok(data);
     }
 
-    [Permission("")]
+    [Permission("create_amenity")]
     [HttpPost]
     public async Task<IActionResult> Create([FromForm] CreateAmenityRequestDto dto)
     {
@@ -44,6 +44,7 @@ public class AmenitiesController : ControllerBase
         return NoContent();
     }
 
+    
     [Permission("delete_amenity")]
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)

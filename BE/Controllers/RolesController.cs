@@ -24,6 +24,7 @@ namespace HotelManagement.Controllers
             return Ok();
         }
 
+        [Authorize]
         [HttpGet("my-permissions")]
         public async Task<IActionResult> GetMyPermissions()
         {
