@@ -12,6 +12,7 @@ using Services.Interfaces;
 using System.Text;
 using CloudinaryDotNet;
 using Microsoft.Extensions.Options;
+using Microsoft.AspNetCore.SignalR;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -69,6 +70,11 @@ builder.Services.AddAuthorization(options =>
             policy.AddRequirements(new PermissionRequirement(permission)));
     }
 });
+
+builder.Services.AddSignalR();
+
+builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 
 builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
 
@@ -135,6 +141,8 @@ app.UseSwaggerUI();
 app.UseCors(policy => policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
 
 app.UseMiddleware<ExceptionMiddleware>();
+
+app.MapHub<NotificationHub>("/hubs/notification");
 
 app.UseAuthentication();
 app.UseAuthorization();

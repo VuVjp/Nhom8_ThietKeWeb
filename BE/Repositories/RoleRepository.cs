@@ -1,4 +1,5 @@
 using HotelManagement.Data;
+using HotelManagement.Dtos;
 using HotelManagement.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -41,6 +42,21 @@ class RoleRepository : Repository<Role>, IRoleRepository
         });
 
         await _context.SaveChangesAsync();
+    }
+
+    public async Task<List<RoleResponseDto>> GetAllRolesAsync()
+    {
+        var roles = await _context.Roles
+            .Include(r => r.RolePermissions)
+                .ThenInclude(rp => rp.Permission)
+            .ToListAsync();
+
+        return roles.Select(r => new RoleResponseDto
+        {
+            Id = r.Id,
+            Name = r.Name,
+            Permissions = r.RolePermissions.Select(rp => rp.Permission.Name).ToList()
+        }).ToList();
     }
 
     public async Task<List<string>> GetMyPermissionsAsync(int userId)

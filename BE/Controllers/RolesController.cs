@@ -9,10 +9,12 @@ namespace HotelManagement.Controllers
     public class RolesController : ControllerBase
     {
         private readonly IRoleService _roleService;
+        private readonly INotificationService _notificationService;
 
-        public RolesController(IRoleService roleService)
+        public RolesController(IRoleService roleService, INotificationService notificationService)
         {
             _roleService = roleService;
+            _notificationService = notificationService;
         }
 
         [Permission("manage_role")]
