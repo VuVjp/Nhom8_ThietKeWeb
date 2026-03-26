@@ -50,11 +50,15 @@ public class NotificationService : INotificationService
             });
     }
 
-    public async Task<List<NotificationResponseDto>> GetNotificationsByUserIdAsync(int userId)
+    public async Task<PaginatedResultDto<NotificationResponseDto>> GetNotificationsByUserIdAsync(int userId, int page, int pageSize)
     {
-        var notifications = await _repo.GetByUserIdAsync(userId);
+        page = Math.Max(page, 1);
+        pageSize = Math.Clamp(pageSize, 1, 100);
 
-        return notifications.Select(n => new NotificationResponseDto
+        var notifications = await _repo.GetByUserIdPagedAsync(userId, page, pageSize);
+        var total = await _repo.CountByUserIdAsync(userId);
+
+        var items = notifications.Select(n => new NotificationResponseDto
         {
             Id = n.Id,
             Title = n.Title,
@@ -64,6 +68,14 @@ public class NotificationService : INotificationService
             IsRead = n.IsRead,
             CreatedAt = n.CreatedAt
         }).ToList();
+
+        return new PaginatedResultDto<NotificationResponseDto>
+        {
+            Items = items,
+            Total = total,
+            Page = page,
+            PageSize = pageSize
+        };
     }
 
     public async Task<int> CountUnreadNotificationsAsync(int userId)
@@ -71,14 +83,18 @@ public class NotificationService : INotificationService
         return await _repo.CountUnreadAsync(userId);
     }
 
-    public async Task MarkAsReadAsync(int notificationId)
+    public async Task MarkAsReadAsync(int notificationId, int userId)
     {
-        var notifications = await _repo.GetByUserIdAsync(notificationId);
-        var notification = notifications.FirstOrDefault(n => n.Id == notificationId);
+        var notification = await _repo.GetByIdAsync(notificationId);
         if (notification != null && !notification.IsRead)
         {
+            if (notification.UserId != userId)
+            {
+                throw new UnauthorizedAccessException("You are not allowed to mark this notification.");
+            }
+
             notification.IsRead = true;
-            await _repo.AddAsync(notification);
+            await _repo.SaveChangesAsync();
         }
     }
 }

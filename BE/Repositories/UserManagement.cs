@@ -13,12 +13,12 @@ public class UserManagementRepository : Repository<User>, IUserManagementReposit
         return await _context.Users.Include(u => u.Role).ToListAsync();
     }
 
-    public async Task<User?> SoftDeleteUserByIdAsync(int userId)
+    public async Task<User?> ToggleUserActiveByIdAsync(int userId)
     {
         var user = await GetByIdAsync(userId);
         if (user != null)
         {
-            user.IsActive = false;
+            user.IsActive = !user.IsActive;
             await SaveChangesAsync();
         }
         else

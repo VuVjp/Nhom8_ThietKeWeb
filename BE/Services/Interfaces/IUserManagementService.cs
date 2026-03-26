@@ -7,5 +7,6 @@ public interface IUserManagementService
     Task CreateUserAsync(string email, string password, int roleId);
     Task EditUserAsync(int userId, string email, string password, int roleId);
     Task ChangeRoleByIdAsync(int userId, int roleId);
-    Task SoftDeleteUserByIdAsync(int userId);
+    Task ToggleUserActiveByIdAsync(int userId);
+    Task ResetPasswordAndSendEmailAsync(int userId);
 }

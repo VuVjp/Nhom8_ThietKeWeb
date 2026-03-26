@@ -3,7 +3,7 @@ using HotelManagement.Dtos;
 public interface INotificationService
 {
     Task SendByRoleAsync(RoleName role, CreateNotificationDto dto);
-    Task<List<NotificationResponseDto>> GetNotificationsByUserIdAsync(int userId);
+    Task<PaginatedResultDto<NotificationResponseDto>> GetNotificationsByUserIdAsync(int userId, int page, int pageSize);
     Task<int> CountUnreadNotificationsAsync(int userId);
-    Task MarkAsReadAsync(int notificationId);
+    Task MarkAsReadAsync(int notificationId, int userId);
 }

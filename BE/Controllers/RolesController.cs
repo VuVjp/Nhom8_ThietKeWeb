@@ -17,13 +17,99 @@ namespace HotelManagement.Controllers
             _notificationService = notificationService;
         }
 
+        private static RoleName? ToRoleName(int roleId)
+        {
+            return Enum.IsDefined(typeof(RoleName), roleId) ? (RoleName)roleId : null;
+        }
+
+        private async Task NotifyRolesAsync(IEnumerable<RoleName> roles, CreateNotificationDto dto)
+        {
+            var tasks = roles.Distinct().Select(role => _notificationService.SendByRoleAsync(role, dto));
+            await Task.WhenAll(tasks);
+        }
+
+        private async Task TryNotifyRolesAsync(IEnumerable<RoleName> roles, CreateNotificationDto dto)
+        {
+            try
+            {
+                await NotifyRolesAsync(roles, dto);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Notification Warning] {ex.Message}");
+            }
+        }
+
+        [Permission("manage_role")]
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> GetAllRoles()
+        {
+            var roles = await _roleService.GetAllRolesAsync();
+            return Ok(roles);
+        }
+
+        [Permission("manage_role")]
+        [HttpGet("permissions")]
+        [Authorize]
+        public async Task<IActionResult> GetAllPermissions()
+        {
+            var permissions = await _roleService.GetAllPermissionNamesAsync();
+            return Ok(permissions);
+        }
+
         [Permission("manage_role")]
         [HttpPost("assign-permission")]
         [Authorize]
         public async Task<IActionResult> AssignPermission([FromBody] AssignPermissionDto dto)
         {
             await _roleService.AssignPermissionAsync(dto.roleId, dto.PermissionId);
+
+            var targetRole = ToRoleName(dto.roleId);
+            var rolesToNotify = new List<RoleName> { RoleName.Admin, RoleName.Manager };
+            if (targetRole.HasValue)
+            {
+                rolesToNotify.Add(targetRole.Value);
+            }
+
+            await TryNotifyRolesAsync(
+                rolesToNotify,
+                new CreateNotificationDto
+                {
+                    Title = "Role permission updated",
+                    Content = $"Admin assigned permission ID {dto.PermissionId} to role ID {dto.roleId}.",
+                    Type = NotificationAction.ChangeRole,
+                    ReferenceLink = "/roles"
+                });
+
             return Ok();
+        }
+
+        [Permission("manage_role")]
+        [HttpPut("{roleId}/permissions")]
+        [Authorize]
+        public async Task<IActionResult> UpdateRolePermissions(int roleId, [FromBody] UpdateRolePermissionsDto dto)
+        {
+            await _roleService.UpdateRolePermissionsAsync(roleId, dto.PermissionNames);
+
+            var targetRole = ToRoleName(roleId);
+            var rolesToNotify = new List<RoleName> { RoleName.Admin, RoleName.Manager };
+            if (targetRole.HasValue)
+            {
+                rolesToNotify.Add(targetRole.Value);
+            }
+
+            await TryNotifyRolesAsync(
+                rolesToNotify,
+                new CreateNotificationDto
+                {
+                    Title = "Role permissions changed",
+                    Content = $"Admin updated permissions for role ID {roleId}.",
+                    Type = NotificationAction.ChangeRole,
+                    ReferenceLink = "/roles"
+                });
+
+            return NoContent();
         }
 
         [Authorize]

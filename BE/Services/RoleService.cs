@@ -23,4 +23,14 @@ public class RoleService : IRoleService
     {
         return await _roleRepository.GetMyPermissionsAsync(userId);
     }
+
+    public async Task<List<string>> GetAllPermissionNamesAsync()
+    {
+        return await _roleRepository.GetAllPermissionNamesAsync();
+    }
+
+    public async Task UpdateRolePermissionsAsync(int roleId, IEnumerable<string> permissionNames)
+    {
+        await _roleRepository.UpdateRolePermissionsAsync(roleId, permissionNames);
+    }
 }
