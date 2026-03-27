@@ -46,7 +46,7 @@
         "ApiSecret": "your_api_secret"
     },
     "AllowedHosts": "*",
-    "SmtpSettings": {
+    "EmailSettings": {
         "Host": "smtp.example.com",
         "Port": 587,
         "Username": "your_smtp_username",

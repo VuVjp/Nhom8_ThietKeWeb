@@ -27,7 +27,7 @@ public class CloudinaryService : ICloudinaryService
                 .Crop("fill"),
             UseFilename = false,
             UniqueFilename = true,
-            Overwrite = false
+            Overwrite = true
         };
 
         var result = await _cloudinary.UploadAsync(uploadParams);

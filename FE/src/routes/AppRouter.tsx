@@ -11,19 +11,21 @@ import { PrivateRoute } from './PrivateRoute';
 export const AppRouter = () => {
     return (
         <Routes>
-            <Route path="/login" element={<LoginPage />} />
+            <Route path="/admin/login" element={<LoginPage />} />
             <Route path="/403" element={<ForbiddenPage />} />
 
             <Route element={<PrivateRoute requiredPermissions={['view_dashboard']} />}>
                 <Route element={<AdminLayout />}>
-                    <Route path="/" element={<DashboardPage />} />
+                    <Route element={<PrivateRoute requiredRoles={['Admin', 'Manager']} />} >
+                        <Route path="/admin/dashboard" element={<DashboardPage />} />
+                    </Route>
 
                     <Route element={<PrivateRoute requiredPermissions={['view_user']} requiredRoles={['Admin', 'Manager']} />}>
-                        <Route path="/users" element={<UsersPage />} />
+                        <Route path="/admin/users" element={<UsersPage />} />
                     </Route>
 
                     <Route element={<PrivateRoute requiredPermissions={['view_role']} requiredRoles={['Admin']} />}>
-                        <Route path="/roles" element={<RolesPage />} />
+                        <Route path="/admin/roles" element={<RolesPage />} />
                     </Route>
                 </Route>
             </Route>

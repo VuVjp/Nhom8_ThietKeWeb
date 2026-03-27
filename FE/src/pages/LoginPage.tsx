@@ -16,7 +16,7 @@ export const LoginPage = () => {
             await login(payload);
         },
         onSuccess: () => {
-            const redirectPath = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? '/';
+            const redirectPath = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? '/admin/dashboard';
             navigate(redirectPath, { replace: true });
         },
         onError: () => {

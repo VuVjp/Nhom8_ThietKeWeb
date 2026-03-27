@@ -50,25 +50,25 @@ export const AdminLayout = () => {
     const menuItems = useMemo(
         () => [
             {
-                key: '/',
+                key: '/admin/dashboard',
                 icon: <DashboardOutlined />,
-                label: <Link to="/">Dashboard</Link>,
+                label: <Link to="/admin/dashboard">Dashboard</Link>,
             },
             {
-                key: '/users',
+                key: '/admin/users',
                 icon: <TeamOutlined />,
                 label: (
                     <PermissionGuard permissions="view_user" fallback={<span className="disabled-link">Users</span>}>
-                        <Link to="/users">Users</Link>
+                        <Link to="admin/users">Users</Link>
                     </PermissionGuard>
                 ),
             },
             {
-                key: '/roles',
+                key: '/admin/roles',
                 icon: <SafetyCertificateOutlined />,
                 label: (
                     <PermissionGuard permissions="view_role" fallback={<span className="disabled-link">Roles</span>}>
-                        <Link to="/roles">Roles</Link>
+                        <Link to="/admin/roles">Roles</Link>
                     </PermissionGuard>
                 ),
             },
@@ -174,10 +174,11 @@ export const AdminLayout = () => {
 
     const handleLogout = async () => {
         await logout();
-        navigate('/login', { replace: true });
+        navigate('/admin/login', { replace: true });
     };
 
-    return (
+    return (<>
+        <title>Nhom8 - Admin Dashboard</title>
         <Layout className="app-shell">
             {contextHolder}
             <Sider trigger={null} collapsible collapsed={collapsed} className="app-sider">
@@ -275,5 +276,6 @@ export const AdminLayout = () => {
                 </Content>
             </Layout>
         </Layout>
+    </>
     );
 };

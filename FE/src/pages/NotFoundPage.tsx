@@ -1,19 +1,19 @@
-import { Button, Result } from 'antd';
-import { Link } from 'react-router-dom';
+import { Button } from 'antd';
+import { useNavigate } from 'react-router-dom';
+import notFoundImg from '../../public/404.png';
 
 export const NotFoundPage = () => {
+  const navigate = useNavigate();
+
   return (
     <div className="center-screen">
-      <Result
-        status="404"
-        title="404"
-        subTitle="Page not found."
-        extra={
-          <Link to="/">
-            <Button type="primary">Go Home</Button>
-          </Link>
-        }
-      />
+      <div className="flex flex-col items-center ">
+          <img
+            src={notFoundImg} alt="404 Not Found"
+            style={{ width: '700px' }}
+          />
+          <Button onClick={() => navigate('/')} type="primary">Go Home</Button>
+      </div>
     </div>
   );
 };
