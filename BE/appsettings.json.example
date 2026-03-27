@@ -1,0 +1,55 @@
+{
+    "Logging": {
+        "LogLevel": {
+            "Default": "Information",
+            "Microsoft.AspNetCore": "Warning"
+        }
+    },
+    "Jwt": {
+        "Key": "your_jwt_secret_key_here_replace_with_secure_value",
+        "Issuer": "Nhom8",
+        "Audience": "Nhom8"
+    },
+    "ConnectionStrings": {
+        "DefaultConnection": "Server=.;Database=HotelManagement;Trusted_Connection=True;TrustServerCertificate=True;"
+    },
+    "Permissions": [
+        "create_article",
+        "update_article",
+        "delete_article",
+        "get_all_room_inventory",
+        "create_room_inventory",
+        "update_room_inventory",
+        "delete_room_inventory",
+        "get_all_rooms",
+        "create_room",
+        "update_room",
+        "change_room_status",
+        "change_room_cleaning_status",
+        "delete_room",
+        "manage_role",
+        "manage_user",
+        "manage_room_type",
+        "manage_attraction",
+        "create_article_category",
+        "delete_article_category",
+        "update_article_category",
+        "create_amenity",
+        "update_amenity",
+        "delete_amenity",
+        "update_thumbnail",
+        "assign_role"
+    ],
+    "CloudinarySettings": {
+        "CloudName": "your_cloud_name",
+        "ApiKey": "your_api_key",
+        "ApiSecret": "your_api_secret"
+    },
+    "AllowedHosts": "*",
+    "SmtpSettings": {
+        "Host": "smtp.example.com",
+        "Port": 587,
+        "Username": "your_smtp_username",
+        "Password": "your_smtp_password"
+    }
+}
