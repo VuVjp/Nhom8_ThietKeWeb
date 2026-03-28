@@ -14,6 +14,7 @@ public class AppDbContext : DbContext
     public DbSet<AuditLog> AuditLogs { get; set; }
     public DbSet<BookingDetail> BookingDetails { get; set; }
     public DbSet<Booking> Bookings { get; set; }
+    public DbSet<Equipment> Equipments { get; set; }
     public DbSet<Invoice> Invoices { get; set; }
     public DbSet<LossAndDamage> LossAndDamages { get; set; }
     public DbSet<Membership> Memberships { get; set; }
@@ -53,6 +54,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<AuditLog>().ToTable("Audit_Logs");
         modelBuilder.Entity<BookingDetail>().ToTable("Booking_Details");
         modelBuilder.Entity<Booking>().ToTable("Bookings");
+        modelBuilder.Entity<Equipment>().ToTable("Equipments");
         modelBuilder.Entity<Invoice>().ToTable("Invoices");
         modelBuilder.Entity<LossAndDamage>().ToTable("Loss_And_Damages");
         modelBuilder.Entity<Membership>().ToTable("Memberships");
@@ -152,6 +154,27 @@ public class AppDbContext : DbContext
             e.Property(x => x.VoucherId).HasColumnName("voucher_id");
             e.Property(x => x.Status).HasColumnName("status");
             e.HasIndex(x => x.BookingCode).IsUnique();
+        });
+
+        modelBuilder.Entity<Equipment>(e =>
+        {
+            e.Property(x => x.Id).HasColumnName("id");
+            e.Property(x => x.ItemCode).HasColumnName("item_code");
+            e.Property(x => x.Name).HasColumnName("name");
+            e.Property(x => x.Category).HasColumnName("category");
+            e.Property(x => x.Unit).HasColumnName("unit");
+            e.Property(x => x.TotalQuantity).HasColumnName("total_quantity");
+            e.Property(x => x.InUseQuantity).HasColumnName("in_use_quantity");
+            e.Property(x => x.DamagedQuantity).HasColumnName("damaged_quantity");
+            e.Property(x => x.LiquidatedQuantity).HasColumnName("liquidated_quantity");
+            e.Property(x => x.BasePrice).HasColumnName("base_price").HasColumnType("decimal(18,2)");
+            e.Property(x => x.DefaultPriceIfLost).HasColumnName("default_price_if_lost").HasColumnType("decimal(18,2)");
+            e.Property(x => x.Supplier).HasColumnName("supplier");
+            e.Property(x => x.IsActive).HasColumnName("is_active");
+            e.Property(x => x.CreatedAt).HasColumnName("created_at");
+            e.Property(x => x.UpdatedAt).HasColumnName("updated_at");
+            e.Property(x => x.ImageUrl).HasColumnName("image_url");
+            e.HasIndex(x => x.ItemCode).IsUnique();
         });
 
         modelBuilder.Entity<Invoice>(e =>
@@ -260,6 +283,7 @@ public class AppDbContext : DbContext
         {
             e.Property(x => x.Id).HasColumnName("id");
             e.Property(x => x.RoomId).HasColumnName("room_id");
+            e.Property(x => x.EquipmentId).HasColumnName("equipment_id");
             e.Property(x => x.ItemName).HasColumnName("item_name");
             e.Property(x => x.Quantity).HasColumnName("quantity");
             e.Property(x => x.PriceIfLost).HasColumnName("price_if_lost").HasColumnType("decimal(18,2)");
@@ -393,6 +417,9 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<RoomInventory>()
             .HasOne(ri => ri.Room).WithMany(r => r.RoomInventories).HasForeignKey(ri => ri.RoomId).OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<RoomInventory>()
+            .HasOne(ri => ri.Equipment).WithMany(e => e.RoomInventories).HasForeignKey(ri => ri.EquipmentId).OnDelete(DeleteBehavior.SetNull);
 
         modelBuilder.Entity<Booking>()
             .HasOne(b => b.User).WithMany(u => u.Bookings).HasForeignKey(b => b.UserId).OnDelete(DeleteBehavior.SetNull);
