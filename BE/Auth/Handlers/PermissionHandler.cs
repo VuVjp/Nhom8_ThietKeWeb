@@ -28,6 +28,12 @@ public class PermissionHandler : AuthorizationHandler<PermissionRequirement>
 
         var userId = int.Parse(userIdClaim.Value);
 
+        if (context.User.FindFirst(ClaimTypes.Role)?.Value == "Admin")
+        {
+            context.Succeed(requirement);
+            return;
+        }
+
         var hasPermission = await _context.Users
             .Where(u => u.Id == userId)
             .SelectMany(u => u.Role!.RolePermissions)
