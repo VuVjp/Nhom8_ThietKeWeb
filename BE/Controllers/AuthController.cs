@@ -20,7 +20,6 @@ namespace HotelManagement.Controllers
         {
             var (userId, email, role) = await _authService.RegisterAsync(dto.Email, dto.FullName, dto.Password);
 
-            Console.WriteLine($"Registered user: {email} with role: {role}");
             return Ok(new { Id = userId, Email = email, Role = role });
         }
 
