@@ -3,14 +3,13 @@ import { useState } from 'react';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import type { NotificationItem } from '../types/models';
-import { notificationsSeed } from '../mock/data';
-import { useAppAuth } from '../auth/appAuth';
+import { useAppAuth } from '../auth/useAppAuth';
 
 export function AdminLayout() {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [mobileOpen, setMobileOpen] = useState(false);
     const [search, setSearch] = useState('');
-    const [notifications, setNotifications] = useState<NotificationItem[]>(notificationsSeed);
+    const [notifications, setNotifications] = useState<NotificationItem[]>([]);
     const { user, logout } = useAppAuth();
 
     return (

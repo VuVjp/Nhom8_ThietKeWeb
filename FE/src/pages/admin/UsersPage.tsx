@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { KeyIcon, PencilSquareIcon, PlusIcon } from '@heroicons/react/24/outline';
-import { usersSeed } from '../../mock/data';
 import type { UserItem } from '../../types/models';
+import { toApiError } from '../../api/httpClient';
+import { toRoleId, usersApi } from '../../api/usersApi';
 import { Input } from '../../components/Input';
 import { Select } from '../../components/Select';
 import { Table } from '../../components/Table';
@@ -14,7 +15,8 @@ import { usePermissionCheck } from '../../hooks/usePermissionCheck';
 
 export function UsersPage() {
   const { ensure } = usePermissionCheck();
-  const [rows, setRows] = useState<UserItem[]>(usersSeed);
+  const [rows, setRows] = useState<UserItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [query, setQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -23,6 +25,23 @@ export function UsersPage() {
   const [openRole, setOpenRole] = useState(false);
   const [targetUser, setTargetUser] = useState<UserItem | null>(null);
   const [draft, setDraft] = useState<Partial<UserItem>>({ role: 'Staff', status: 'Active' });
+
+  const loadUsers = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const data = await usersApi.getAll();
+      setRows(data);
+    } catch (error) {
+      const apiError = toApiError(error);
+      toast.error(apiError.message || 'Failed to load users');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadUsers();
+  }, [loadUsers]);
 
   const filtered = useMemo(() => {
     const next = rows.filter((item) => {
@@ -52,12 +71,16 @@ export function UsersPage() {
             if (!ensure('manage_users', 'update user status')) {
               return;
             }
-            setRows((prev) =>
-              prev.map((item) =>
-                item.id === row.id ? { ...item, status: item.status === 'Active' ? 'Inactive' : 'Active' } : item,
-              ),
-            );
-            toast.success(`${row.name} status updated`);
+            void (async () => {
+              try {
+                await usersApi.toggleActive(row.id);
+                await loadUsers();
+                toast.success(`${row.name} status updated`);
+              } catch (error) {
+                const apiError = toApiError(error);
+                toast.error(apiError.message || 'Failed to update status');
+              }
+            })();
           }}
         >
           <Badge value={row.status} />
@@ -76,7 +99,15 @@ export function UsersPage() {
               if (!ensure('manage_users', 'reset user password')) {
                 return;
               }
-              toast.success(`Password reset sent to ${row.email}`);
+              void (async () => {
+                try {
+                  const response = await usersApi.resetPassword(row.id);
+                  toast.success(response.message ?? response.Message ?? `Password reset sent to ${row.email}`);
+                } catch (error) {
+                  const apiError = toApiError(error);
+                  toast.error(apiError.message || 'Failed to reset password');
+                }
+              })();
             }}
           >
             <KeyIcon className="h-4 w-4" /> Reset Password
@@ -109,23 +140,25 @@ export function UsersPage() {
       return;
     }
 
-    const safeName = draft.name;
     const safeEmail = draft.email;
     const safeRole = draft.role;
 
-    setRows((prev) => [
-      {
-        id: Date.now(),
-        name: safeName,
-        email: safeEmail,
-        role: safeRole,
-        status: (draft.status as UserItem['status']) ?? 'Active',
-      },
-      ...prev,
-    ]);
-    setOpenAdd(false);
-    setDraft({ role: 'Staff', status: 'Active' });
-    toast.success('User added successfully');
+    void (async () => {
+      try {
+        await usersApi.create({
+          email: safeEmail,
+          password: '123456',
+          roleId: toRoleId(safeRole),
+        });
+        await loadUsers();
+        setOpenAdd(false);
+        setDraft({ role: 'Staff', status: 'Active' });
+        toast.success('User added successfully');
+      } catch (error) {
+        const apiError = toApiError(error);
+        toast.error(apiError.message || 'Failed to add user');
+      }
+    })();
   };
 
   return (
@@ -155,7 +188,7 @@ export function UsersPage() {
         <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}><option value="all">All Statuses</option><option>Active</option><option>Inactive</option></Select>
       </div>
 
-      <Table columns={columns} rows={paged} />
+      <Table columns={columns} rows={isLoading ? [] : paged} />
       <Pagination page={page} pageSize={pageSize} total={filtered.length} onPageChange={setPage} />
 
       <Modal open={openAdd} title="Add User" onClose={() => setOpenAdd(false)}>
@@ -190,9 +223,19 @@ export function UsersPage() {
                 if (!ensure('manage_users', 'change user role')) {
                   return;
                 }
-                setRows((prev) => prev.map((item) => (item.id === targetUser.id ? targetUser : item)));
-                setOpenRole(false);
-                toast.success('Role changed successfully');
+                void (async () => {
+                  try {
+                    await usersApi.changeRole(targetUser.id, {
+                      roleId: toRoleId(targetUser.role),
+                    });
+                    await loadUsers();
+                    setOpenRole(false);
+                    toast.success('Role changed successfully');
+                  } catch (error) {
+                    const apiError = toApiError(error);
+                    toast.error(apiError.message || 'Failed to change role');
+                  }
+                })();
               }}
             >
               Save Role

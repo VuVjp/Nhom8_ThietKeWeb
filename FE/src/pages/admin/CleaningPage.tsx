@@ -1,14 +1,47 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { cleaningRoomsSeed } from '../../mock/data';
 import type { CleaningCondition, CleaningRoom } from '../../types/models';
 import { Select } from '../../components/Select';
 import { usePermissionCheck } from '../../hooks/usePermissionCheck';
+import { toApiError } from '../../api/httpClient';
+import { roomsApi } from '../../api/roomsApi';
 
 export function CleaningPage() {
   const { ensure } = usePermissionCheck();
-  const [rooms, setRooms] = useState<CleaningRoom[]>(cleaningRoomsSeed);
-  const [activeRoomId, setActiveRoomId] = useState<number>(cleaningRoomsSeed[0]?.id ?? 0);
+  const [rooms, setRooms] = useState<CleaningRoom[]>([]);
+  const [activeRoomId, setActiveRoomId] = useState<number>(0);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const loadRooms = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const apiRooms = await roomsApi.getAll();
+      if (apiRooms.length > 0) {
+        const mapped: CleaningRoom[] = apiRooms.map((room) => ({
+          id: room.id,
+          roomNumber: room.roomNumber,
+          assignedTo: 'Team A',
+          checklist: [
+            { id: 'c1', label: 'Bed linen check', status: room.cleaningStatus === 'Dirty' ? 'Damaged' : 'Normal' },
+            { id: 'c2', label: 'Bathroom amenities', status: 'Normal' },
+            { id: 'c3', label: 'Minibar count', status: room.cleaningStatus === 'Dirty' ? 'Missing' : 'Normal' },
+          ],
+        }));
+        setRooms(mapped);
+        setActiveRoomId((prev) => (mapped.some((room) => room.id === prev) ? prev : (mapped[0]?.id ?? 0)));
+      }
+    } catch (error) {
+      const apiError = toApiError(error);
+      toast.error(apiError.message || 'Failed to load cleaning rooms');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadRooms();
+  }, [loadRooms]);
+
   const active = rooms.find((room) => room.id === activeRoomId) ?? rooms[0];
 
   return (
@@ -39,17 +72,30 @@ export function CleaningPage() {
               if (!ensure('update_cleaning', 'complete room checklist')) {
                 return;
               }
-              setRooms((prev) =>
-                prev.map((room) =>
-                  room.id === active?.id
-                    ? {
-                      ...room,
-                      checklist: room.checklist.map((item) => ({ ...item, status: 'Normal' })),
-                    }
-                    : room,
-                ),
-              );
-              toast.success('All checklist items marked complete');
+              if (!active) {
+                return;
+              }
+              void (async () => {
+                try {
+                  if (active.id) {
+                    await roomsApi.changeCleaningStatus(active.id, 'Clean');
+                  }
+                  setRooms((prev) =>
+                    prev.map((room) =>
+                      room.id === active.id
+                        ? {
+                          ...room,
+                          checklist: room.checklist.map((item) => ({ ...item, status: 'Normal' })),
+                        }
+                        : room,
+                    ),
+                  );
+                  toast.success('All checklist items marked complete');
+                } catch (error) {
+                  const apiError = toApiError(error);
+                  toast.error(apiError.message || 'Failed to update cleaning status');
+                }
+              })();
             }}
           >
             Mark all complete
@@ -66,18 +112,32 @@ export function CleaningPage() {
                   if (!ensure('update_cleaning', 'update checklist item')) {
                     return;
                   }
+                  if (!active) {
+                    return;
+                  }
                   const status = e.target.value as CleaningCondition;
-                  setRooms((prev) =>
-                    prev.map((room) =>
-                      room.id === active.id
-                        ? {
-                          ...room,
-                          checklist: room.checklist.map((entry) => (entry.id === item.id ? { ...entry, status } : entry)),
-                        }
-                        : room,
-                    ),
-                  );
-                  toast.success(`Checklist updated: ${status}`);
+                  void (async () => {
+                    try {
+                      if (active.id) {
+                        const nextCleaningStatus = status === 'Normal' ? 'Clean' : 'Dirty';
+                        await roomsApi.changeCleaningStatus(active.id, nextCleaningStatus);
+                      }
+                      setRooms((prev) =>
+                        prev.map((room) =>
+                          room.id === active.id
+                            ? {
+                              ...room,
+                              checklist: room.checklist.map((entry) => (entry.id === item.id ? { ...entry, status } : entry)),
+                            }
+                            : room,
+                        ),
+                      );
+                      toast.success(`Checklist updated: ${status}`);
+                    } catch (error) {
+                      const apiError = toApiError(error);
+                      toast.error(apiError.message || 'Failed to update checklist');
+                    }
+                  })();
                 }}
               >
                 <option>Normal</option>
@@ -87,6 +147,8 @@ export function CleaningPage() {
             </div>
           ))}
         </div>
+        {!isLoading && rooms.length === 0 ? <p className="mt-3 text-xs text-slate-400">No rooms available for cleaning.</p> : null}
+        {isLoading ? <p className="mt-3 text-xs text-slate-400">Loading rooms...</p> : null}
       </div>
     </div>
   );

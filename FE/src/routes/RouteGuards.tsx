@@ -1,6 +1,6 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
-import type { AppPermission } from '../auth/appAuth';
-import { useAppAuth } from '../auth/appAuth';
+import type { AppPermission } from '../auth/auth.types';
+import { useAppAuth } from '../auth/useAppAuth';
 
 interface RequirePermissionProps {
     permission: AppPermission;

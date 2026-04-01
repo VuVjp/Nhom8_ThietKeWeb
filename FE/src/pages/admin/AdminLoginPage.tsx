@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { Input } from '../../components/Input';
-import { useAppAuth, mockLoginAccounts } from '../../auth/appAuth';
+import { useAppAuth } from '../../auth/useAppAuth';
 
 interface LoginLocationState {
     from?: {
@@ -18,16 +18,24 @@ export function AdminLoginPage() {
     const rawRedirectPath = state?.from?.pathname ?? '/admin/dashboard';
     const redirectPath = rawRedirectPath.startsWith('/admin/') ? rawRedirectPath : '/admin/dashboard';
 
-    const [email, setEmail] = useState('admin@hotel-admin.com');
-    const [password, setPassword] = useState('admin123');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     if (isAuthenticated) {
         return <Navigate to="/admin/dashboard" replace />;
     }
 
-    const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        const ok = login(email, password);
+        if (isSubmitting) {
+            return;
+        }
+
+        setIsSubmitting(true);
+        const ok = await login(email, password);
+        setIsSubmitting(false);
+
         if (!ok) {
             toast.error('Invalid credentials');
             return;
@@ -52,14 +60,8 @@ export function AdminLoginPage() {
                     </p>
 
                     <div className="rounded-2xl border border-slate-700/60 bg-slate-800/70 p-4">
-                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-300">Demo accounts</p>
-                        <ul className="mt-2 space-y-1.5 text-xs text-slate-300">
-                            {mockLoginAccounts.map((item) => (
-                                <li key={item.email}>
-                                    {item.role}: {item.email} / {item.password}
-                                </li>
-                            ))}
-                        </ul>
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-300">Secure access</p>
+                        <p className="mt-2 text-xs text-slate-300">Use your real admin account credentials to continue.</p>
                     </div>
                 </div>
 
@@ -76,7 +78,7 @@ export function AdminLoginPage() {
                             type="email"
                             value={email}
                             onChange={(event) => setEmail(event.target.value)}
-                            className="border-slate-700 bg-slate-800 text-slate-100 placeholder:text-slate-500"
+                            className="border-slate-700 bg-slate-800 text-slate-950 placeholder:text-slate-500"
                             placeholder="your@email.com"
                         />
                     </div>
@@ -90,16 +92,17 @@ export function AdminLoginPage() {
                             type="password"
                             value={password}
                             onChange={(event) => setPassword(event.target.value)}
-                            className="border-slate-700 bg-slate-800 text-slate-100 placeholder:text-slate-500"
+                            className="border-slate-700 bg-slate-800 text-slate-950 placeholder:text-slate-500"
                             placeholder="Enter password"
                         />
                     </div>
 
                     <button
                         type="submit"
+                        disabled={isSubmitting}
                         className="w-full rounded-xl bg-cyan-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-cyan-500"
                     >
-                        Continue to Admin
+                        {isSubmitting ? 'Signing in...' : 'Continue to Admin'}
                     </button>
                 </form>
             </div>

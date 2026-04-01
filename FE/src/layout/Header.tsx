@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import { NotificationBell } from '../components/NotificationBell';
 import type { NotificationItem } from '../types/models';
 import { Input } from '../components/Input';
-import type { AppUser } from '../auth/appAuth';
+import type { AppUser } from '../auth/auth.types';
 
 interface HeaderProps {
   onSidebarToggle: () => void;
@@ -13,7 +13,7 @@ interface HeaderProps {
   onSearchChange: (value: string) => void;
   notifications: NotificationItem[];
   user: AppUser | null;
-  onSignOut: () => void;
+  onSignOut: () => Promise<void>;
   onMarkRead: (id: number) => void;
   onMarkAllRead: () => void;
 }
@@ -58,8 +58,8 @@ export function Header({ onSidebarToggle, onMobileToggle, onSearchChange, notifi
                   <button
                     type="button"
                     className={`w-full rounded-lg px-3 py-2 text-left text-sm text-rose-600 ${focus ? 'bg-rose-50' : ''}`}
-                    onClick={() => {
-                      onSignOut();
+                    onClick={async () => {
+                      await onSignOut();
                       toast.success('Signed out');
                       navigate('/admin/login', { replace: true });
                     }}

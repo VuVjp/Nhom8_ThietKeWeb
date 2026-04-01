@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { EyeIcon, PlusIcon, Squares2X2Icon, PencilSquareIcon } from '@heroicons/react/24/outline';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -7,9 +7,10 @@ import { Select } from '../../components/Select';
 import { Table } from '../../components/Table';
 import { Pagination } from '../../components/Pagination';
 import { Modal } from '../../components/Modal';
-import { roomsSeed } from '../../mock/data';
 import type { LayoutOutletContext } from '../../types/layout';
 import type { Room } from '../../types/models';
+import { toApiError } from '../../api/httpClient';
+import { roomsApi } from '../../api/roomsApi';
 import { paginate, queryIncludes, sortBy } from '../../utils/table';
 import { usePermissionCheck } from '../../hooks/usePermissionCheck';
 
@@ -17,7 +18,7 @@ export function RoomsPage() {
   const navigate = useNavigate();
   const { ensure } = usePermissionCheck();
   const { globalSearch } = useOutletContext<LayoutOutletContext>();
-  const [rooms, setRooms] = useState<Room[]>(roomsSeed);
+  const [rooms, setRooms] = useState<Room[]>([]);
   const [status, setStatus] = useState('all');
   const [cleaningStatus, setCleaningStatus] = useState('all');
   const [roomType, setRoomType] = useState('all');
@@ -26,6 +27,20 @@ export function RoomsPage() {
   const [page, setPage] = useState(1);
   const [openCreate, setOpenCreate] = useState(false);
   const [draft, setDraft] = useState<Partial<Room>>({ roomType: 'Standard', status: 'Available', cleaningStatus: 'Clean' });
+
+  const loadRooms = useCallback(async () => {
+    try {
+      const data = await roomsApi.getAll();
+      setRooms(data);
+    } catch (error) {
+      const apiError = toApiError(error);
+      toast.error(apiError.message || 'Failed to load rooms');
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadRooms();
+  }, [loadRooms]);
 
   const filtered = useMemo(() => {
     const rows = rooms.filter((item) => {
@@ -46,6 +61,10 @@ export function RoomsPage() {
 
   const pageSize = 8;
   const paged = paginate(filtered, page, pageSize);
+  const floorOptions = useMemo(
+    () => Array.from(new Set(rooms.map((room) => room.floor))).sort((a, b) => a - b),
+    [rooms],
+  );
 
   const columns = [
     { key: 'roomNumber', label: 'Room Number', render: (row: Room) => row.roomNumber },
@@ -62,8 +81,16 @@ export function RoomsPage() {
               return;
             }
             const value = event.target.value as Room['status'];
-            setRooms((prev) => prev.map((item) => (item.id === row.id ? { ...item, status: value } : item)));
-            toast.success(`Room ${row.roomNumber} status updated`);
+            void (async () => {
+              try {
+                await roomsApi.changeStatus(row.id, value);
+                setRooms((prev) => prev.map((item) => (item.id === row.id ? { ...item, status: value } : item)));
+                toast.success(`Room ${row.roomNumber} status updated`);
+              } catch (error) {
+                const apiError = toApiError(error);
+                toast.error(apiError.message || 'Failed to update room status');
+              }
+            })();
           }}
         >
           <option>Available</option>
@@ -84,8 +111,16 @@ export function RoomsPage() {
               return;
             }
             const value = event.target.value as Room['cleaningStatus'];
-            setRooms((prev) => prev.map((item) => (item.id === row.id ? { ...item, cleaningStatus: value } : item)));
-            toast.success(`Room ${row.roomNumber} condition updated`);
+            void (async () => {
+              try {
+                await roomsApi.changeCleaningStatus(row.id, value);
+                setRooms((prev) => prev.map((item) => (item.id === row.id ? { ...item, cleaningStatus: value } : item)));
+                toast.success(`Room ${row.roomNumber} condition updated`);
+              } catch (error) {
+                const apiError = toApiError(error);
+                toast.error(apiError.message || 'Failed to update room condition');
+              }
+            })();
           }}
         >
           <option>Clean</option>
@@ -120,19 +155,28 @@ export function RoomsPage() {
       return;
     }
 
-    const next: Room = {
-      id: rooms.length + 10,
-      roomNumber: draft.roomNumber,
-      floor: Number(draft.floor),
-      roomType: draft.roomType as Room['roomType'],
-      status: (draft.status as Room['status']) ?? 'Available',
-      cleaningStatus: (draft.cleaningStatus as Room['cleaningStatus']) ?? 'Clean',
-    };
+    const roomNumber = draft.roomNumber;
+    const floorValue = Number(draft.floor);
+    const roomTypeValue = draft.roomType;
 
-    setRooms((prev) => [next, ...prev]);
-    setOpenCreate(false);
-    setDraft({ roomType: 'Standard', status: 'Available', cleaningStatus: 'Clean' });
-    toast.success(`Room ${next.roomNumber} created`);
+    void (async () => {
+      try {
+        await roomsApi.create({
+          roomNumber,
+          floor: floorValue,
+          roomType: roomTypeValue,
+          status: draft.status,
+          cleaningStatus: draft.cleaningStatus,
+        });
+        await loadRooms();
+        setOpenCreate(false);
+        setDraft({ roomType: 'Standard', status: 'Available', cleaningStatus: 'Clean' });
+        toast.success(`Room ${roomNumber} created`);
+      } catch (error) {
+        const apiError = toApiError(error);
+        toast.error(apiError.message || 'Failed to create room');
+      }
+    })();
   };
 
   return (
@@ -160,7 +204,7 @@ export function RoomsPage() {
         <Select value={status} onChange={(e) => setStatus(e.target.value)}><option value="all">Room Status</option><option>Available</option><option>Occupied</option></Select>
         <Select value={cleaningStatus} onChange={(e) => setCleaningStatus(e.target.value)}><option value="all">Cleaning Status</option><option>Clean</option><option>Dirty</option><option>Inspecting</option></Select>
         <Select value={roomType} onChange={(e) => setRoomType(e.target.value)}><option value="all">Room Type</option><option>Standard</option><option>Deluxe</option><option>Suite</option></Select>
-        <Select value={floor} onChange={(e) => setFloor(e.target.value)}><option value="all">Floor</option>{[6, 7, 8, 9].map((f) => <option key={f}>{f}</option>)}</Select>
+        <Select value={floor} onChange={(e) => setFloor(e.target.value)}><option value="all">Floor</option>{floorOptions.map((f) => <option key={f}>{f}</option>)}</Select>
         <Select value={sortMode} onChange={(e) => setSortMode(e.target.value as 'asc' | 'desc')}><option value="asc">Sort A-Z</option><option value="desc">Sort Z-A</option></Select>
       </div>
 

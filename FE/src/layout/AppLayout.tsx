@@ -3,15 +3,14 @@ import { useState } from 'react';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import type { NotificationItem } from '../types/models';
-import { notificationsSeed } from '../mock/data';
-import { useAppAuth } from '../auth/appAuth';
+import { useAppAuth } from '../auth/useAppAuth';
 
 export function AppLayout() {
     const { user, logout } = useAppAuth();
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [mobileOpen, setMobileOpen] = useState(false);
     const [search, setSearch] = useState('');
-    const [notifications, setNotifications] = useState<NotificationItem[]>(notificationsSeed);
+    const [notifications, setNotifications] = useState<NotificationItem[]>([]);
 
     return (
         <div className="min-h-screen bg-slate-100">

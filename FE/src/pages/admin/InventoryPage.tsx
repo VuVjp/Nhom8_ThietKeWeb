@@ -1,22 +1,41 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { ArrowPathIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { Input } from '../../components/Input';
 import { Select } from '../../components/Select';
 import { Table } from '../../components/Table';
 import { Pagination } from '../../components/Pagination';
-import { inventorySeed } from '../../mock/data';
 import type { InventoryItem } from '../../types/models';
+import { toApiError } from '../../api/httpClient';
+import { roomInventoriesApi } from '../../api/roomInventoriesApi';
 import { paginate, queryIncludes, sortBy } from '../../utils/table';
 import { usePermissionCheck } from '../../hooks/usePermissionCheck';
 
 export function InventoryPage() {
     const { ensure } = usePermissionCheck();
-    const [rows, setRows] = useState<InventoryItem[]>(inventorySeed);
+    const [rows, setRows] = useState<InventoryItem[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [search, setSearch] = useState('');
     const [category, setCategory] = useState('all');
     const [sortField, setSortField] = useState<'name' | 'code'>('name');
     const [page, setPage] = useState(1);
+
+    const loadInventory = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const data = await roomInventoriesApi.getAll();
+            setRows(data);
+        } catch (error) {
+            const apiError = toApiError(error);
+            toast.error(apiError.message || 'Failed to load inventory');
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        void loadInventory();
+    }, [loadInventory]);
 
     const filtered = useMemo(() => {
         const next = rows.filter((item) => {
@@ -62,8 +81,16 @@ export function InventoryPage() {
                             if (!ensure('manage_inventory', 'delete inventory item')) {
                                 return;
                             }
-                            setRows((prev) => prev.filter((item) => item.id !== row.id));
-                            toast.error(`Deleted ${row.code}`);
+                            void (async () => {
+                                try {
+                                    await roomInventoriesApi.remove(row.id);
+                                    setRows((prev) => prev.filter((item) => item.id !== row.id));
+                                    toast.success(`Deleted ${row.code}`);
+                                } catch (error) {
+                                    const apiError = toApiError(error);
+                                    toast.error(apiError.message || 'Failed to delete inventory item');
+                                }
+                            })();
                         }}
                     >
                         Delete
@@ -92,7 +119,7 @@ export function InventoryPage() {
                             if (!ensure('manage_inventory', 'add inventory item')) {
                                 return;
                             }
-                            toast.success('Add Item modal would open');
+                            toast('Create inventory API requires room context; use room detail page.', { icon: 'ℹ️' });
                         }}
                     >
                         <PlusIcon className="h-4 w-4" /> Add Item
@@ -104,6 +131,7 @@ export function InventoryPage() {
                             setSearch('');
                             setCategory('all');
                             setSortField('name');
+                            void loadInventory();
                             toast('Filters refreshed', { icon: 'ℹ️' });
                         }}
                     >
@@ -112,7 +140,7 @@ export function InventoryPage() {
                 </div>
             </div>
 
-            <Table columns={columns} rows={paged} />
+            <Table columns={columns} rows={isLoading ? [] : paged} />
             <Pagination page={page} pageSize={pageSize} total={filtered.length} onPageChange={setPage} />
         </div>
     );

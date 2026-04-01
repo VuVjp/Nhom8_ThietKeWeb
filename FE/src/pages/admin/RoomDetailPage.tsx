@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { TrashIcon, PencilIcon, PlusIcon, DocumentDuplicateIcon } from '@heroicons/react/24/outline';
@@ -6,17 +6,57 @@ import { Tabs } from '../../components/Tabs';
 import { Table } from '../../components/Table';
 import { Modal } from '../../components/Modal';
 import { Input } from '../../components/Input';
-import { roomTemplateInventory, inventorySeed, roomsSeed } from '../../mock/data';
-import type { InventoryItem } from '../../types/models';
+import type { InventoryItem, Room } from '../../types/models';
 import { usePermissionCheck } from '../../hooks/usePermissionCheck';
+import { toApiError } from '../../api/httpClient';
+import { roomInventoriesApi } from '../../api/roomInventoriesApi';
+import { roomsApi } from '../../api/roomsApi';
 
 export function RoomDetailPage() {
   const { ensure } = usePermissionCheck();
   const { roomId } = useParams();
-  const room = roomsSeed.find((item) => String(item.id) === roomId);
-  const [items, setItems] = useState<InventoryItem[]>(inventorySeed.slice(0, 12));
+  const [room, setRoom] = useState<Room | null>(null);
+  const [items, setItems] = useState<InventoryItem[]>([]);
   const [openAdd, setOpenAdd] = useState(false);
   const [draft, setDraft] = useState<Partial<InventoryItem>>({ unit: 'pcs' });
+
+  const roomIdNumber = Number(roomId ?? 0);
+
+  const loadRoom = useCallback(async () => {
+    if (!roomIdNumber) {
+      return;
+    }
+
+    try {
+      const data = await roomsApi.getById(roomIdNumber);
+      setRoom(data);
+    } catch (error) {
+      const apiError = toApiError(error);
+      toast.error(apiError.message || 'Failed to load room details');
+    }
+  }, [roomIdNumber]);
+
+  const loadInventory = useCallback(async () => {
+    if (!roomIdNumber) {
+      return;
+    }
+
+    try {
+      const data = await roomInventoriesApi.getByRoom(roomIdNumber);
+      setItems(data);
+    } catch (error) {
+      const apiError = toApiError(error);
+      toast.error(apiError.message || 'Failed to load room inventory');
+    }
+  }, [roomIdNumber]);
+
+  useEffect(() => {
+    void loadRoom();
+  }, [loadRoom]);
+
+  useEffect(() => {
+    void loadInventory();
+  }, [loadInventory]);
 
   const columns = useMemo(
     () => [
@@ -50,8 +90,16 @@ export function RoomDetailPage() {
                 if (!ensure('manage_inventory', 'delete room inventory item')) {
                   return;
                 }
-                setItems((prev) => prev.filter((item) => item.id !== row.id));
-                toast.error(`Deleted ${row.code}`);
+                void (async () => {
+                  try {
+                    await roomInventoriesApi.remove(row.id);
+                    setItems((prev) => prev.filter((item) => item.id !== row.id));
+                    toast.success(`Deleted ${row.code}`);
+                  } catch (error) {
+                    const apiError = toApiError(error);
+                    toast.error(apiError.message || 'Failed to delete item');
+                  }
+                })();
               }}
             >
               <TrashIcon className="h-4 w-4" />
@@ -68,6 +116,11 @@ export function RoomDetailPage() {
       return;
     }
 
+    if (!roomIdNumber) {
+      toast.error('Invalid room ID');
+      return;
+    }
+
     if (!draft.code || !draft.name || !draft.unit) {
       toast.error('Please complete item code, name and unit');
       return;
@@ -77,24 +130,26 @@ export function RoomDetailPage() {
     const safeName = draft.name;
     const safeUnit = draft.unit;
 
-    setItems((prev) => [
-      {
-        id: Date.now(),
-        code: safeCode,
-        name: safeName,
-        unit: safeUnit,
-        quantity: Number(draft.quantity ?? 1),
-        compensationPrice: Number(draft.compensationPrice ?? 0),
-        notes: draft.notes ?? 'Added manually',
-        category: 'Linen',
-        price: 0,
-        stock: 0,
-      },
-      ...prev,
-    ]);
-    setOpenAdd(false);
-    setDraft({ unit: 'pcs' });
-    toast.success('Inventory item added');
+    void (async () => {
+      try {
+        await roomInventoriesApi.create({
+          roomId: roomIdNumber,
+          itemCode: safeCode,
+          itemName: safeName,
+          unit: safeUnit,
+          quantity: Number(draft.quantity ?? 1),
+          compensationPrice: Number(draft.compensationPrice ?? 0),
+          notes: draft.notes ?? 'Added manually',
+        });
+        await loadInventory();
+        setOpenAdd(false);
+        setDraft({ unit: 'pcs' });
+        toast.success('Inventory item added');
+      } catch (error) {
+        const apiError = toApiError(error);
+        toast.error(apiError.message || 'Failed to add inventory item');
+      }
+    })();
   };
 
   return (
@@ -142,8 +197,7 @@ export function RoomDetailPage() {
                       if (!ensure('manage_inventory', 'clone template inventory')) {
                         return;
                       }
-                      setItems(roomTemplateInventory.map((item, idx) => ({ ...item, id: Date.now() + idx })));
-                      toast.success('Template applied to this room');
+                      toast.error('Clone template is not available');
                     }}
                   >
                     <DocumentDuplicateIcon className="h-4 w-4" /> Clone from Template

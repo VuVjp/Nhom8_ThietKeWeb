@@ -1,7 +1,7 @@
 import { HomeIcon, BuildingOffice2Icon, ArchiveBoxIcon, ExclamationTriangleIcon, SparklesIcon, UsersIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
 import { NavLink } from 'react-router-dom';
-import type { AppPermission } from '../auth/appAuth';
-import { useAppAuth } from '../auth/appAuth';
+import type { AppPermission } from '../auth/auth.types';
+import { useAppAuth } from '../auth/useAppAuth';
 
 interface SidebarProps {
   collapsed: boolean;

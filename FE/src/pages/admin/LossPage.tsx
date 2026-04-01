@@ -1,13 +1,17 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import toast from 'react-hot-toast';
 import { Input } from '../../components/Input';
 import { Table } from '../../components/Table';
 import { Pagination } from '../../components/Pagination';
-import { lossSeed } from '../../mock/data';
+import type { LossRecord } from '../../types/models';
+import { lossApi } from '../../api/lossApi';
+import { toApiError } from '../../api/httpClient';
 import { formatCurrency } from '../../utils/format';
 import { paginate, queryIncludes, sortBy } from '../../utils/table';
 import { StatCard } from '../../components/StatCard';
 
 export function LossPage() {
+  const [rows, setRows] = useState<LossRecord[]>([]);
   const [search, setSearch] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
@@ -16,8 +20,20 @@ export function LossPage() {
   const [hasImage, setHasImage] = useState(false);
   const [page, setPage] = useState(1);
 
+  useEffect(() => {
+    void (async () => {
+      try {
+        const data = await lossApi.getAll();
+        setRows(data);
+      } catch (error) {
+        const apiError = toApiError(error);
+        toast.error(apiError.message || 'Failed to load loss records');
+      }
+    })();
+  }, []);
+
   const filtered = useMemo(() => {
-    const rows = lossSeed.filter((item) => {
+    const nextRows = rows.filter((item) => {
       const matchSearch = queryIncludes(item.id, search) || queryIncludes(item.item, search) || queryIncludes(item.room, search);
       const matchFrom = !dateFrom || item.date >= dateFrom;
       const matchTo = !dateTo || item.date <= dateTo;
@@ -28,8 +44,8 @@ export function LossPage() {
       return matchSearch && matchFrom && matchTo && matchMin && matchMax && matchImage;
     });
 
-    return sortBy(rows, (row) => row.date, 'desc');
-  }, [search, dateFrom, dateTo, amountMin, amountMax, hasImage]);
+    return sortBy(nextRows, (row) => row.date, 'desc');
+  }, [rows, search, dateFrom, dateTo, amountMin, amountMax, hasImage]);
 
   const totalPenalty = filtered.reduce((sum, item) => sum + item.penalty, 0);
   const pageSize = 8;
@@ -37,7 +53,12 @@ export function LossPage() {
 
   const columns = [
     { key: 'id', label: 'ID', render: (row: (typeof filtered)[number]) => row.id },
-    { key: 'evidence', label: 'Evidence', render: (row: (typeof filtered)[number]) => <img src={row.evidence} alt={row.id} className="h-14 w-20 rounded-lg object-cover" /> },
+    {
+      key: 'evidence',
+      label: 'Evidence',
+      render: (row: (typeof filtered)[number]) =>
+        row.evidence ? <img src={row.evidence} alt={row.id} className="h-14 w-20 rounded-lg object-cover" /> : <span className="text-xs text-slate-400">No image</span>,
+    },
     { key: 'room', label: 'Room', render: (row: (typeof filtered)[number]) => row.room },
     { key: 'item', label: 'Item', render: (row: (typeof filtered)[number]) => row.item },
     { key: 'quantity', label: 'Quantity', render: (row: (typeof filtered)[number]) => row.quantity },
