@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { Input } from '../components/Input';
-import { useAppAuth, mockLoginAccounts } from '../auth/appAuth';
+import { Input } from '../../components/Input';
+import { useAppAuth, mockLoginAccounts } from '../../auth/appAuth';
 
 interface LoginLocationState {
     from?: {

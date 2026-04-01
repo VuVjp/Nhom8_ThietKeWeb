@@ -1,14 +1,14 @@
 import { useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { ArrowPathIcon, PlusIcon } from '@heroicons/react/24/outline';
-import { Input } from '../components/Input';
-import { Select } from '../components/Select';
-import { Table } from '../components/Table';
-import { Pagination } from '../components/Pagination';
-import { inventorySeed } from '../mock/data';
-import type { InventoryItem } from '../types/models';
-import { paginate, queryIncludes, sortBy } from '../utils/table';
-import { usePermissionCheck } from '../hooks/usePermissionCheck';
+import { Input } from '../../components/Input';
+import { Select } from '../../components/Select';
+import { Table } from '../../components/Table';
+import { Pagination } from '../../components/Pagination';
+import { inventorySeed } from '../../mock/data';
+import type { InventoryItem } from '../../types/models';
+import { paginate, queryIncludes, sortBy } from '../../utils/table';
+import { usePermissionCheck } from '../../hooks/usePermissionCheck';
 
 export function InventoryPage() {
     const { ensure } = usePermissionCheck();

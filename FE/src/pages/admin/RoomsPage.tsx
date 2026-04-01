@@ -2,16 +2,16 @@ import { useMemo, useState } from 'react';
 import { EyeIcon, PlusIcon, Squares2X2Icon, PencilSquareIcon } from '@heroicons/react/24/outline';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { Input } from '../components/Input';
-import { Select } from '../components/Select';
-import { Table } from '../components/Table';
-import { Pagination } from '../components/Pagination';
-import { Modal } from '../components/Modal';
-import { roomsSeed } from '../mock/data';
-import type { LayoutOutletContext } from '../types/layout';
-import type { Room } from '../types/models';
-import { paginate, queryIncludes, sortBy } from '../utils/table';
-import { usePermissionCheck } from '../hooks/usePermissionCheck';
+import { Input } from '../../components/Input';
+import { Select } from '../../components/Select';
+import { Table } from '../../components/Table';
+import { Pagination } from '../../components/Pagination';
+import { Modal } from '../../components/Modal';
+import { roomsSeed } from '../../mock/data';
+import type { LayoutOutletContext } from '../../types/layout';
+import type { Room } from '../../types/models';
+import { paginate, queryIncludes, sortBy } from '../../utils/table';
+import { usePermissionCheck } from '../../hooks/usePermissionCheck';
 
 export function RoomsPage() {
   const navigate = useNavigate();

@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
-import { cleaningRoomsSeed } from '../mock/data';
-import type { CleaningCondition, CleaningRoom } from '../types/models';
-import { Select } from '../components/Select';
-import { usePermissionCheck } from '../hooks/usePermissionCheck';
+import { cleaningRoomsSeed } from '../../mock/data';
+import type { CleaningCondition, CleaningRoom } from '../../types/models';
+import { Select } from '../../components/Select';
+import { usePermissionCheck } from '../../hooks/usePermissionCheck';
 
 export function CleaningPage() {
   const { ensure } = usePermissionCheck();

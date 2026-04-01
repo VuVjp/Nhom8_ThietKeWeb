@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { PlusIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
-import { allPermissions, rolesSeed } from '../mock/data';
-import type { RoleItem } from '../types/models';
-import { Modal } from '../components/Modal';
-import { Table } from '../components/Table';
-import { Input } from '../components/Input';
-import { usePermissionCheck } from '../hooks/usePermissionCheck';
+import { allPermissions, rolesSeed } from '../../mock/data';
+import type { RoleItem } from '../../types/models';
+import { Modal } from '../../components/Modal';
+import { Table } from '../../components/Table';
+import { Input } from '../../components/Input';
+import { usePermissionCheck } from '../../hooks/usePermissionCheck';
 
 export function RolesPage() {
   const { ensure } = usePermissionCheck();

@@ -1,15 +1,15 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { AdminLayout } from '../layout/AdminLayout';
-import { AdminLoginPage } from '../pages/AdminLoginPage';
-import { DashboardPage } from '../pages/DashboardPage';
-import { RoomsPage } from '../pages/RoomsPage';
-import { RoomDetailPage } from '../pages/RoomDetailPage';
-import { InventoryPage } from '../pages/InventoryPage';
-import { LossPage } from '../pages/LossPage';
-import { CleaningPage } from '../pages/CleaningPage';
+import { AdminLoginPage } from '../pages/admin/AdminLoginPage';
+import { DashboardPage } from '../pages/admin/DashboardPage';
+import { RoomsPage } from '../pages/admin/RoomsPage';
+import { RoomDetailPage } from '../pages/admin/RoomDetailPage';
+import { InventoryPage } from '../pages/admin/InventoryPage';
+import { LossPage } from '../pages/admin/LossPage';
+import { CleaningPage } from '../pages/admin/CleaningPage';
 import { NotFoundPage } from '../pages/NotFoundPage';
-import { RolesPage } from '../pages/RolesPage';
-import { UsersPage } from '../pages/UsersPage';
+import { RolesPage } from '../pages/admin/RolesPage';
+import { UsersPage } from '../pages/admin/UsersPage';
 import { ForbiddenPage } from '../pages/ForbiddenPage';
 import { RequireAuth, RequirePermission } from './RouteGuards';
 

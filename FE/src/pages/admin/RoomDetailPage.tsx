@@ -2,13 +2,13 @@ import { useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { TrashIcon, PencilIcon, PlusIcon, DocumentDuplicateIcon } from '@heroicons/react/24/outline';
-import { Tabs } from '../components/Tabs';
-import { Table } from '../components/Table';
-import { Modal } from '../components/Modal';
-import { Input } from '../components/Input';
-import { roomTemplateInventory, inventorySeed, roomsSeed } from '../mock/data';
-import type { InventoryItem } from '../types/models';
-import { usePermissionCheck } from '../hooks/usePermissionCheck';
+import { Tabs } from '../../components/Tabs';
+import { Table } from '../../components/Table';
+import { Modal } from '../../components/Modal';
+import { Input } from '../../components/Input';
+import { roomTemplateInventory, inventorySeed, roomsSeed } from '../../mock/data';
+import type { InventoryItem } from '../../types/models';
+import { usePermissionCheck } from '../../hooks/usePermissionCheck';
 
 export function RoomDetailPage() {
   const { ensure } = usePermissionCheck();

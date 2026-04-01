@@ -1,5 +1,5 @@
 import { ChartBarIcon, HomeModernIcon, BanknotesIcon } from '@heroicons/react/24/outline';
-import { StatCard } from '../components/StatCard';
+import { StatCard } from '../../components/StatCard';
 
 export function DashboardPage() {
     return (

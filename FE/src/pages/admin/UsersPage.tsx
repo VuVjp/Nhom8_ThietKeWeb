@@ -1,16 +1,16 @@
 import { useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { KeyIcon, PencilSquareIcon, PlusIcon } from '@heroicons/react/24/outline';
-import { usersSeed } from '../mock/data';
-import type { UserItem } from '../types/models';
-import { Input } from '../components/Input';
-import { Select } from '../components/Select';
-import { Table } from '../components/Table';
-import { Pagination } from '../components/Pagination';
-import { Modal } from '../components/Modal';
-import { Badge } from '../components/Badge';
-import { paginate, queryIncludes, sortBy } from '../utils/table';
-import { usePermissionCheck } from '../hooks/usePermissionCheck';
+import { usersSeed } from '../../mock/data';
+import type { UserItem } from '../../types/models';
+import { Input } from '../../components/Input';
+import { Select } from '../../components/Select';
+import { Table } from '../../components/Table';
+import { Pagination } from '../../components/Pagination';
+import { Modal } from '../../components/Modal';
+import { Badge } from '../../components/Badge';
+import { paginate, queryIncludes, sortBy } from '../../utils/table';
+import { usePermissionCheck } from '../../hooks/usePermissionCheck';
 
 export function UsersPage() {
   const { ensure } = usePermissionCheck();

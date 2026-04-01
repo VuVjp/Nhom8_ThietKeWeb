@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react';
-import { Input } from '../components/Input';
-import { Table } from '../components/Table';
-import { Pagination } from '../components/Pagination';
-import { lossSeed } from '../mock/data';
-import { formatCurrency } from '../utils/format';
-import { paginate, queryIncludes, sortBy } from '../utils/table';
-import { StatCard } from '../components/StatCard';
+import { Input } from '../../components/Input';
+import { Table } from '../../components/Table';
+import { Pagination } from '../../components/Pagination';
+import { lossSeed } from '../../mock/data';
+import { formatCurrency } from '../../utils/format';
+import { paginate, queryIncludes, sortBy } from '../../utils/table';
+import { StatCard } from '../../components/StatCard';
 
 export function LossPage() {
   const [search, setSearch] = useState('');
