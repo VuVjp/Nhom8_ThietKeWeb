@@ -7,6 +7,11 @@ public class UserRepository : Repository<User>, IUserRepository
     public UserRepository(AppDbContext context) : base(context)
     {
     }
+    public async Task<string> GetUserRoleAsync(int userId)
+    {
+        var user = await _dbSet.Include(u => u.Role).FirstOrDefaultAsync(u => u.Id == userId);
+        return user?.Role?.Name ?? "Unknown";
+    }
 
     public async Task<List<User>> GetUsersByRoleAsync(string roleName)
     {
@@ -15,7 +20,7 @@ public class UserRepository : Repository<User>, IUserRepository
             .Where(u => u.Role!.Name == roleName)
             .ToListAsync();
     }
-    
+
     public async Task<bool> IsEmailExistAsync(string email)
     {
         return await _dbSet.AnyAsync(u => u.Email == email);

@@ -39,7 +39,9 @@ public class AuthService : IAuthService
         await _userRepository.AddAsync(user);
         await _userRepository.SaveChangesAsync();
 
-        return (user.Id, user.Email, user.Role!.Name);
+        var userRole = await _userRepository.GetUserRoleAsync(user.Id);
+
+        return (user.Id, user.Email, userRole);
     }
 
     public async Task<(string, string)> LoginAsync(string email, string password)
