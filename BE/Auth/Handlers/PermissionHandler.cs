@@ -17,10 +17,6 @@ public class PermissionHandler : AuthorizationHandler<PermissionRequirement>
         AuthorizationHandlerContext context,
         PermissionRequirement requirement)
     {
-        foreach (var claim in context.User.Claims)
-        {
-            Console.WriteLine($"Claim Type: {claim.Type}, Claim Value: {claim.Value}");
-        }
         if (!context.User.Identity?.IsAuthenticated ?? false)
         {
             throw new UnauthorizedAccessException("User is not authenticated.");
