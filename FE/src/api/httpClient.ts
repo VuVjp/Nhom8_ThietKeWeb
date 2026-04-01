@@ -143,6 +143,7 @@ httpClient.interceptors.request.use((config) => {
     const token = getAccessToken();
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
+        console.log('[HTTP] Authorization header set:', config.headers.Authorization.substring(0, 30) + '...');
     }
     return config;
 });

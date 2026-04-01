@@ -17,8 +17,10 @@ import { usePermissionCheck } from '../../hooks/usePermissionCheck';
 export function RoomsPage() {
   const navigate = useNavigate();
   const { ensure } = usePermissionCheck();
-  const { globalSearch } = useOutletContext<LayoutOutletContext>();
+  const outletContext = useOutletContext<LayoutOutletContext>();
+  const globalSearch = outletContext?.globalSearch ?? '';
   const [rooms, setRooms] = useState<Room[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [status, setStatus] = useState('all');
   const [cleaningStatus, setCleaningStatus] = useState('all');
   const [roomType, setRoomType] = useState('all');
@@ -29,12 +31,16 @@ export function RoomsPage() {
   const [draft, setDraft] = useState<Partial<Room>>({ roomType: 'Standard', status: 'Available', cleaningStatus: 'Clean' });
 
   const loadRooms = useCallback(async () => {
+    setIsLoading(true);
     try {
       const data = await roomsApi.getAll();
       setRooms(data);
     } catch (error) {
       const apiError = toApiError(error);
       toast.error(apiError.message || 'Failed to load rooms');
+      setRooms([]);
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
@@ -208,8 +214,20 @@ export function RoomsPage() {
         <Select value={sortMode} onChange={(e) => setSortMode(e.target.value as 'asc' | 'desc')}><option value="asc">Sort A-Z</option><option value="desc">Sort Z-A</option></Select>
       </div>
 
-      <Table columns={columns} rows={paged} />
-      <Pagination page={page} pageSize={pageSize} total={filtered.length} onPageChange={setPage} />
+      {isLoading ? (
+        <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-slate-500">
+          Loading rooms...
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-slate-500">
+          {rooms.length === 0 ? 'No rooms found' : 'No results match your filters'}
+        </div>
+      ) : (
+        <>
+          <Table columns={columns} rows={paged} />
+          <Pagination page={page} pageSize={pageSize} total={filtered.length} onPageChange={setPage} />
+        </>
+      )}
 
       <Modal open={openCreate} title="Create Room" onClose={() => setOpenCreate(false)}>
         <div className="space-y-3">

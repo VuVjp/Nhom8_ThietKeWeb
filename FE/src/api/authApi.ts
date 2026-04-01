@@ -54,6 +54,10 @@ export const authApi = {
         const result = resolveAuthTokens(data);
         setAccessToken(result.token);
         setRefreshToken(result.refreshToken);
+        console.log('[AuthApi] Login tokens saved:', {
+            tokenLength: result.token.length,
+            refreshTokenLength: result.refreshToken.length,
+        });
         return result;
     },
 
