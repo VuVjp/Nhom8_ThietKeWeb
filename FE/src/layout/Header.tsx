@@ -12,13 +12,17 @@ interface HeaderProps {
   onMobileToggle: () => void;
   onSearchChange: (value: string) => void;
   notifications: NotificationItem[];
+  unreadCount: number;
+  hasMoreNotifications: boolean;
+  isLoadingMoreNotifications: boolean;
   user: AppUser | null;
   onSignOut: () => Promise<void>;
   onMarkRead: (id: number) => void;
   onMarkAllRead: () => void;
+  onLoadMoreNotifications: () => void;
 }
 
-export function Header({ onSidebarToggle, onMobileToggle, onSearchChange, notifications, user, onSignOut, onMarkRead, onMarkAllRead }: HeaderProps) {
+export function Header({ onSidebarToggle, onMobileToggle, onSearchChange, notifications, unreadCount, hasMoreNotifications, isLoadingMoreNotifications, user, onSignOut, onMarkRead, onMarkAllRead, onLoadMoreNotifications }: HeaderProps) {
   const navigate = useNavigate();
   const initial = user?.name?.charAt(0).toUpperCase() ?? 'U';
 
@@ -39,7 +43,15 @@ export function Header({ onSidebarToggle, onMobileToggle, onSearchChange, notifi
         </div>
 
         <div className="flex items-center gap-3">
-          <NotificationBell notifications={notifications} onMarkRead={onMarkRead} onMarkAllRead={onMarkAllRead} />
+          <NotificationBell
+            notifications={notifications}
+            unreadCount={unreadCount}
+            hasMore={hasMoreNotifications}
+            isLoadingMore={isLoadingMoreNotifications}
+            onMarkRead={onMarkRead}
+            onMarkAllRead={onMarkAllRead}
+            onLoadMore={onLoadMoreNotifications}
+          />
 
           <Menu as="div" className="relative">
             <MenuButton className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-2 py-1.5 text-sm hover:bg-slate-50">

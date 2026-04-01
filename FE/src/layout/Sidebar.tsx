@@ -26,13 +26,13 @@ export function Sidebar({ collapsed, mobileOpen, onCloseMobile }: SidebarProps) 
     <>
       <div className={`fixed inset-0 z-30 bg-slate-900/40 lg:hidden ${mobileOpen ? 'block' : 'hidden'}`} onClick={onCloseMobile} />
       <aside
-        className={`fixed left-0 top-0 z-40 h-screen border-r border-slate-200 bg-white shadow-sm transition-all lg:static lg:block ${collapsed ? 'w-20' : 'w-72'} ${mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
+        className={`fixed left-0 top-0 z-40 h-screen border-r border-slate-200 bg-white shadow-sm transition-all lg:sticky lg:top-0 lg:block ${collapsed ? 'w-20' : 'w-72'} ${mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
       >
         <div className="flex h-16 items-center border-b border-slate-200 px-4">
           <div className="rounded-lg bg-cyan-600/10 px-2 py-1 text-xs font-bold text-cyan-700">CG</div>
           {!collapsed ? <h1 className="ml-2 text-sm font-semibold text-slate-800">Celestia Grand Admin</h1> : null}
         </div>
-        <nav className="space-y-1 p-3">
+        <nav className="h-[calc(100vh-4rem)] space-y-1 overflow-y-auto p-3">
           {navItems.filter((item) => hasPermission(item.permission)).map((item) => {
             const Icon = item.icon;
             return (

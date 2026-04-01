@@ -2,10 +2,12 @@ import type { UserItem } from '../types/models';
 import { httpClient } from './httpClient';
 
 interface UserDto {
-    Id: number;
+    id: number;
     Email?: string;
+    email?: string;
     RoleName?: string;
-    IsActive?: boolean;
+    roleName?: string;
+    isActive?: boolean;
     FullName?: string;
 }
 
@@ -25,12 +27,17 @@ export interface ChangeRolePayload {
     roleId: number;
 }
 
-export type AppRoleName = UserItem['role'];
+export type AppRoleName = UserItem['roleName'];
 
 const roleIdMap: Record<AppRoleName, number> = {
     Admin: 1,
     Manager: 2,
-    Staff: 3,
+    Receptionist: 3,
+    Accountant: 4,
+    Housekeeping: 5,
+    Guest: 6,
+    Maintenance: 7,
+    Security: 8,
 };
 
 function normalizeRole(roleName?: string): AppRoleName {
@@ -45,15 +52,14 @@ function normalizeRole(roleName?: string): AppRoleName {
 }
 
 function mapUserDtoToItem(dto: UserDto): UserItem {
-    const email = dto.Email ?? 'unknown@hotel-admin.com';
-    const normalizedRole = normalizeRole(dto.RoleName);
-
+    const email = dto.email ?? 'unknown@hotel-admin.com';
+    const normalizedRole = dto.roleName || normalizeRole(dto.roleName);
     return {
-        id: dto.Id,
+        id: dto.id,
         name: dto.FullName?.trim() || email.split('@')[0],
         email,
-        role: normalizedRole,
-        status: dto.IsActive ? 'Active' : 'Inactive',
+        roleName: normalizedRole,
+        status: dto.isActive ? 'Active' : 'Inactive',
     };
 }
 

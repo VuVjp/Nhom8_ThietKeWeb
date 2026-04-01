@@ -1,8 +1,11 @@
 public enum RoleName
 {
     Admin = 1,
-    Customer = 2,
-    Housekeeping = 3,
-    Receptionist = 4,
-    Manager = 5
+    Manager = 2,
+    Receptionist = 3,
+    Accountant = 4,
+    Housekeeping = 5,
+    Guest = 6,
+    Maintenance = 7,
+    Security = 8
 }

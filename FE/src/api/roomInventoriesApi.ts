@@ -16,21 +16,16 @@ interface RoomInventoryDto {
 
 export interface CreateRoomInventoryPayload {
     roomId: number;
-    itemCode: string;
     itemName: string;
-    unit: string;
     quantity: number;
-    compensationPrice: number;
-    notes?: string;
+    priceIfLost: number;
 }
 
 export interface UpdateRoomInventoryPayload {
-    itemCode?: string;
+    roomId?: number;
     itemName?: string;
-    unit?: string;
     quantity?: number;
-    compensationPrice?: number;
-    notes?: string;
+    priceIfLost?: number;
 }
 
 function mapRoomInventoryToItem(dto: RoomInventoryDto): InventoryItem {

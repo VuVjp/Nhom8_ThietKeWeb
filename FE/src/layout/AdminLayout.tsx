@@ -2,19 +2,19 @@ import { Outlet } from 'react-router-dom';
 import { useState } from 'react';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
-import type { NotificationItem } from '../types/models';
 import { useAppAuth } from '../auth/useAppAuth';
+import { useRealtimeNotifications } from '../hooks/useRealtimeNotifications';
 
 export function AdminLayout() {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [mobileOpen, setMobileOpen] = useState(false);
     const [search, setSearch] = useState('');
-    const [notifications, setNotifications] = useState<NotificationItem[]>([]);
-    const { user, logout } = useAppAuth();
+    const { user, logout, isAuthenticated } = useAppAuth();
+    const { notifications, unreadCount, hasMore, isLoadingMore, markRead, markAllRead, loadMore } = useRealtimeNotifications(isAuthenticated);
 
     return (
         <div className="min-h-screen bg-slate-100">
-            <div className="flex min-h-screen sticky top-0">
+            <div className="flex min-h-screen">
                 <Sidebar
                     collapsed={sidebarCollapsed}
                     mobileOpen={mobileOpen}
@@ -26,16 +26,14 @@ export function AdminLayout() {
                         onMobileToggle={() => setMobileOpen((prev) => !prev)}
                         onSearchChange={setSearch}
                         notifications={notifications}
+                        unreadCount={unreadCount}
+                        hasMoreNotifications={hasMore}
+                        isLoadingMoreNotifications={isLoadingMore}
                         user={user}
                         onSignOut={logout}
-                        onMarkRead={(id) =>
-                            setNotifications((prev) =>
-                                prev.map((item) => (item.id === id ? { ...item, read: true } : item)),
-                            )
-                        }
-                        onMarkAllRead={() =>
-                            setNotifications((prev) => prev.map((item) => ({ ...item, read: true })))
-                        }
+                        onMarkRead={markRead}
+                        onMarkAllRead={markAllRead}
+                        onLoadMoreNotifications={loadMore}
                     />
                     <main className="flex-1 p-4 lg:p-6">
                         <Outlet context={{ globalSearch: search }} />

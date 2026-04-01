@@ -67,7 +67,7 @@ public class UserManagementController : ControllerBase
                 Title = "User account created",
                 Content = $"Admin created account for {dto.Email}.",
                 Type = NotificationAction.CreateAccount,
-                ReferenceLink = "/users"
+                ReferenceLink = "admin/users"
             });
 
         return NoContent();
@@ -101,7 +101,7 @@ public class UserManagementController : ControllerBase
                 Title = "User role changed",
                 Content = $"Admin changed role for user ID {userId}.",
                 Type = NotificationAction.ChangeRole,
-                ReferenceLink = "/users"
+                ReferenceLink = "admin/users"
             });
 
         return NoContent();
@@ -122,7 +122,7 @@ public class UserManagementController : ControllerBase
                 Title = isNowActive ? "User activated" : "User deactivated",
                 Content = $"Admin {(isNowActive ? "activated" : "deactivated")} user ID {userId}.",
                 Type = isNowActive ? NotificationAction.UnlockAccount : NotificationAction.LockAccount,
-                ReferenceLink = "/users"
+                ReferenceLink = "admin/users"
             });
 
         return NoContent();
@@ -141,7 +141,7 @@ public class UserManagementController : ControllerBase
                 Title = "Password reset",
                 Content = $"Admin reset password for user ID {userId}.",
                 Type = NotificationAction.ResetPassword,
-                ReferenceLink = "/users"
+                ReferenceLink = "admin/users"
             });
 
         return Ok(new { Message = "New password has been sent via email." });

@@ -25,15 +25,17 @@ export function RolesPage() {
         rolesApi.getAll(),
         rolesApi.getAllPermissions(),
       ]);
-
       setRoles(rolesData);
       if (rolesData.length > 0) {
-        setSelectedRoleId(rolesData[0].id);
+        setSelectedRoleId((prev) => {
+          if (prev && rolesData.some((role) => role.id === prev)) {
+            return prev;
+          }
+          return rolesData[0].id;
+        });
       }
 
-      if (permissionsData.length > 0) {
-        setPermissionOptions(permissionsData);
-      }
+      setPermissionOptions(Array.from(new Set(permissionsData)));
     } catch (error) {
       const apiError = toApiError(error);
       toast.error(apiError.message || 'Failed to load roles');
@@ -49,7 +51,7 @@ export function RolesPage() {
   const selectedRole = useMemo(() => roles.find((item) => item.id === selectedRoleId) ?? null, [roles, selectedRoleId]);
 
   const columns = [
-    { key: 'name', label: 'Role Name', render: (row: RoleItem) => row.roleName },
+    { key: 'name', label: 'Role Name', render: (row: RoleItem) => row.name },
     {
       key: 'permissions',
       label: 'Permissions',
@@ -67,15 +69,12 @@ export function RolesPage() {
       render: (row: RoleItem) => (
         <button
           type="button"
-          className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-xs"
+          className={`inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-xs ${selectedRoleId === row.id ? 'border-cyan-300 bg-cyan-50 text-cyan-700' : 'border-slate-200'}`}
           onClick={() => {
-            if (!ensure('manage_roles', 'edit role')) {
-              return;
-            }
             setSelectedRoleId(row.id);
           }}
         >
-          <PencilSquareIcon className="h-4 w-4" /> Edit
+          <PencilSquareIcon className="h-4 w-4" /> {selectedRoleId === row.id ? 'Selected' : 'Edit'}
         </button>
       ),
     },
@@ -105,7 +104,7 @@ export function RolesPage() {
       <Table columns={columns} rows={isLoading ? [] : roles} />
 
       <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h3 className="text-lg font-semibold text-slate-900">Permission Matrix: {selectedRole?.roleName ?? 'No role selected'}</h3>
+        <h3 className="text-lg font-semibold text-slate-900">Permission Matrix: {selectedRole?.name ?? 'No role selected'}</h3>
         <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {permissionOptions.map((permission) => {
             const checked = selectedRole?.permissions.includes(permission) ?? false;

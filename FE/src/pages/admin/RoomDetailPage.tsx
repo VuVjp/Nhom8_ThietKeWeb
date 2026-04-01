@@ -126,20 +126,15 @@ export function RoomDetailPage() {
       return;
     }
 
-    const safeCode = draft.code;
     const safeName = draft.name;
-    const safeUnit = draft.unit;
 
     void (async () => {
       try {
         await roomInventoriesApi.create({
           roomId: roomIdNumber,
-          itemCode: safeCode,
           itemName: safeName,
-          unit: safeUnit,
           quantity: Number(draft.quantity ?? 1),
-          compensationPrice: Number(draft.compensationPrice ?? 0),
-          notes: draft.notes ?? 'Added manually',
+          priceIfLost: Number(draft.compensationPrice ?? 0),
         });
         await loadInventory();
         setOpenAdd(false);

@@ -1,7 +1,10 @@
 namespace HotelManagement.Dtos;
+
 public class RoomDto
 {
+    public int Id { get; set; }
     public int? RoomTypeId { get; set; }
+    public string? RoomTypeName { get; set; }
     public string RoomNumber { get; set; } = string.Empty;
     public int? Floor { get; set; }
     public string? Status { get; set; }

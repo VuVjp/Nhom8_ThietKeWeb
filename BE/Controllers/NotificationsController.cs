@@ -16,6 +16,19 @@ public class NotificationsController : ControllerBase
         _notificationService = notificationService;
     }
 
+    [HttpPost("mark-all-as-read")]  
+    public async Task<IActionResult> MarkAllAsRead()
+    {
+        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "0");
+        if (userId <= 0)
+        {
+            return Unauthorized();
+        }
+
+        await _notificationService.MarkAllAsReadAsync(userId);
+        return NoContent();
+    }
+
     [HttpGet("me")]
     public async Task<IActionResult> GetMine([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {

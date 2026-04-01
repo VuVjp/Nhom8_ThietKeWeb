@@ -4,12 +4,15 @@ import type { NotificationItem } from '../types/models';
 
 interface NotificationDropdownProps {
   items: NotificationItem[];
+  unreadCount: number;
+  hasMore: boolean;
+  isLoadingMore: boolean;
   onMarkRead: (id: number) => void;
   onMarkAllRead: () => void;
+  onLoadMore: () => void;
 }
 
-export function NotificationDropdown({ items, onMarkRead, onMarkAllRead }: NotificationDropdownProps) {
-  const unreadCount = items.filter((item) => !item.read).length;
+export function NotificationDropdown({ items, unreadCount, hasMore, isLoadingMore, onMarkRead, onMarkAllRead, onLoadMore }: NotificationDropdownProps) {
 
   return (
     <Popover className="relative">
@@ -47,7 +50,24 @@ export function NotificationDropdown({ items, onMarkRead, onMarkAllRead }: Notif
               </div>
             </div>
           ))}
+
+          {items.length === 0 ? (
+            <p className="py-4 text-center text-sm text-slate-500">No notifications yet.</p>
+          ) : null}
         </div>
+
+        {hasMore ? (
+          <div className="mt-3 border-t border-slate-100 pt-3">
+            <button
+              type="button"
+              onClick={onLoadMore}
+              disabled={isLoadingMore}
+              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isLoadingMore ? 'Loading...' : 'Load more'}
+            </button>
+          </div>
+        ) : null}
       </PopoverPanel>
     </Popover>
   );

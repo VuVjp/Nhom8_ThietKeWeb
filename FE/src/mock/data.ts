@@ -68,14 +68,14 @@ export const usersSeed: UserItem[] = Array.from({ length: 20 }).map((_, idx) => 
   id: idx + 1,
   name: `User ${idx + 1}`,
   email: `user${idx + 1}@hotel-admin.com`,
-  role: (['Admin', 'Manager', 'Staff'] as const)[idx % 3],
+  roleName: (['Admin', 'Manager', 'Receptionist'] as const)[idx % 3],
   status: idx % 4 === 0 ? 'Inactive' : 'Active',
 }));
 
 export const rolesSeed: RoleItem[] = [
-  { id: 1, roleName: 'Admin', permissions: ['view_dashboard', 'view_rooms', 'manage_rooms', 'manage_inventory', 'update_cleaning', 'approve_loss', 'manage_users', 'manage_roles'] },
-  { id: 2, roleName: 'Manager', permissions: ['view_dashboard', 'view_rooms', 'manage_rooms', 'manage_inventory', 'update_cleaning', 'approve_loss'] },
-  { id: 3, roleName: 'Staff', permissions: ['view_dashboard', 'view_rooms', 'update_cleaning'] },
+  { id: 1, name: 'Admin', permissions: ['view_dashboard', 'view_rooms', 'manage_rooms', 'manage_inventory', 'update_cleaning', 'approve_loss', 'manage_users', 'manage_roles'] },
+  { id: 2, name: 'Manager', permissions: ['view_dashboard', 'view_rooms', 'manage_rooms', 'manage_inventory', 'update_cleaning', 'approve_loss'] },
+  { id: 3, name: 'Staff', permissions: ['view_dashboard', 'view_rooms', 'update_cleaning'] },
 ];
 
 export const allPermissions = [

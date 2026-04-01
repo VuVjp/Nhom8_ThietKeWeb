@@ -53,12 +53,12 @@ export interface UserItem {
   id: number;
   name: string;
   email: string;
-  role: 'Admin' | 'Manager' | 'Staff';
+  roleName: string;
   status: 'Active' | 'Inactive';
 }
 
 export interface RoleItem {
   id: number;
-  roleName: string;
+  name: string;
   permissions: string[];
 }

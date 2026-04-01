@@ -18,6 +18,18 @@ public class NotificationService : INotificationService
         _userRepository = userRepository;
     }
 
+    public async Task MarkAllAsReadAsync(int userId)
+    {
+        var notifications = await _repo.GetByUserIdAsync(userId);
+        foreach (var notification in notifications)
+        {
+            if (!notification.IsRead)
+            {
+                notification.IsRead = true;
+            }
+        }
+        await _repo.SaveChangesAsync();
+    }
     public async Task SendByRoleAsync(RoleName role, CreateNotificationDto dto)
     {
         var users = await _userRepository.GetUsersByRoleAsync(role.ToString());

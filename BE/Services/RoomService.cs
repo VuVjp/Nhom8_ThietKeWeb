@@ -26,11 +26,13 @@ public class RoomService : IRoomService
 		{
 			roomDtos.Add(new RoomDto
 			{
+				Id = room.Id,
 				RoomNumber = room.RoomNumber,
 				Floor = room.Floor,
 				Status = room.Status,
 				CleaningStatus = room.CleaningStatus,
-				RoomTypeId = room.RoomTypeId
+				RoomTypeId = room.RoomTypeId,
+				RoomTypeName = room.RoomType?.Name
 			});
 		}
 
@@ -44,11 +46,13 @@ public class RoomService : IRoomService
 
 		return new RoomDto
 		{
+			Id = room.Id,
 			RoomNumber = room.RoomNumber,
 			Floor = room.Floor,
 			Status = room.Status,
 			CleaningStatus = room.CleaningStatus,
-			RoomTypeId = room.RoomTypeId
+			RoomTypeId = room.RoomTypeId,
+			RoomTypeName = room.RoomType?.Name
 		};
 	}
 

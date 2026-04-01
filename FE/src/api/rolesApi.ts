@@ -2,9 +2,11 @@ import { httpClient } from './httpClient';
 import type { RoleItem } from '../types/models';
 
 export interface RoleDto {
-    Id: number;
-    Name: string;
-    permissions: string[];
+    Id?: number;
+    id?: number;
+    Name?: string;
+    name?: string;
+    permissions?: string[];
     Permissions?: string[];
 }
 
@@ -22,9 +24,9 @@ export const rolesApi = {
         const { data } = await httpClient.get<RoleDto[]>('roles');
         return data.map(
             (item): RoleItem => ({
-                id: item.Id,
-                roleName: item.Name,
-                permissions: item.Permissions ?? item.permissions ?? [],
+                id: Number(item.Id ?? item.id ?? 0),
+                name: item.Name ?? item.name ?? `Role ${item.Id ?? item.id ?? ''}`,
+                permissions: Array.from(new Set(item.Permissions ?? item.permissions ?? [])),
             }),
         );
     },

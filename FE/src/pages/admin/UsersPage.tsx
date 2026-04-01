@@ -24,7 +24,7 @@ export function UsersPage() {
   const [openAdd, setOpenAdd] = useState(false);
   const [openRole, setOpenRole] = useState(false);
   const [targetUser, setTargetUser] = useState<UserItem | null>(null);
-  const [draft, setDraft] = useState<Partial<UserItem>>({ role: 'Staff', status: 'Active' });
+  const [draft, setDraft] = useState<Partial<UserItem>>({ roleName: 'Admin', status: 'Active' });
 
   const loadUsers = useCallback(async () => {
     setIsLoading(true);
@@ -46,7 +46,7 @@ export function UsersPage() {
   const filtered = useMemo(() => {
     const next = rows.filter((item) => {
       const matchQuery = queryIncludes(item.name, query) || queryIncludes(item.email, query);
-      const matchRole = roleFilter === 'all' || item.role === roleFilter;
+      const matchRole = roleFilter === 'all' || item.roleName === roleFilter;
       const matchStatus = statusFilter === 'all' || item.status === statusFilter;
       return matchQuery && matchRole && matchStatus;
     });
@@ -58,14 +58,15 @@ export function UsersPage() {
   const paged = paginate(filtered, page, pageSize);
 
   const columns = [
-    { key: 'name', label: 'Name', render: (row: UserItem) => row.name },
+    { key: 'id', label: 'ID', render: (row: UserItem) => row.id },
     { key: 'email', label: 'Email', render: (row: UserItem) => row.email },
-    { key: 'role', label: 'Role', render: (row: UserItem) => row.role },
+    { key: 'role', label: 'Role', render: (row: UserItem) => row.roleName },
     {
       key: 'status',
       label: 'Status',
       render: (row: UserItem) => (
         <button
+          style={{ cursor: 'pointer' }}
           type="button"
           onClick={() => {
             if (!ensure('manage_users', 'update user status')) {
@@ -130,18 +131,20 @@ export function UsersPage() {
     },
   ];
 
+  const roles = ['Admin', 'Manager', 'Receptionist', 'Accountant', 'Housekeeping', 'Guest', 'Maintenance', 'Security'] as const;
+
   const addUser = () => {
     if (!ensure('manage_users', 'add new user')) {
       return;
     }
 
-    if (!draft.name || !draft.email || !draft.role) {
+    if (!draft.name || !draft.email || !draft.roleName) {
       toast.error('Name, email and role are required');
       return;
     }
 
     const safeEmail = draft.email;
-    const safeRole = draft.role;
+    const safeRole = draft.roleName;
 
     void (async () => {
       try {
@@ -152,7 +155,7 @@ export function UsersPage() {
         });
         await loadUsers();
         setOpenAdd(false);
-        setDraft({ role: 'Staff', status: 'Active' });
+        setDraft({ roleName: 'Staff', status: 'Active' });
         toast.success('User added successfully');
       } catch (error) {
         const apiError = toApiError(error);
@@ -184,7 +187,10 @@ export function UsersPage() {
 
       <div className="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-3">
         <Input placeholder="Search name/email" value={query} onChange={(e) => setQuery(e.target.value)} />
-        <Select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}><option value="all">All Roles</option><option>Admin</option><option>Manager</option><option>Staff</option></Select>
+        <Select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}><option value="all">All Roles</option>
+          {roles.map((role) => (<option key={role}>{role}</option>
+          ))}
+        </Select>
         <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}><option value="all">All Statuses</option><option>Active</option><option>Inactive</option></Select>
       </div>
 
@@ -195,7 +201,13 @@ export function UsersPage() {
         <div className="space-y-3">
           <Input placeholder="Full name" value={draft.name ?? ''} onChange={(e) => setDraft((prev) => ({ ...prev, name: e.target.value }))} />
           <Input placeholder="Email" value={draft.email ?? ''} onChange={(e) => setDraft((prev) => ({ ...prev, email: e.target.value }))} />
-          <Select value={draft.role} onChange={(e) => setDraft((prev) => ({ ...prev, role: e.target.value as UserItem['role'] }))}><option>Admin</option><option>Manager</option><option>Staff</option></Select>
+          <Select value={draft.roleName} onChange={(e) => setDraft((prev) => ({ ...prev, roleName: e.target.value as UserItem['roleName'] }))}>
+            {roles.map((role) => (
+              <option key={role} value={role}>
+                {role}
+              </option>
+            ))}
+          </Select>
           <div className="flex justify-end gap-2">
             <button type="button" className="rounded-lg border border-slate-200 px-3 py-2 text-sm" onClick={() => setOpenAdd(false)}>Cancel</button>
             <button type="button" className="rounded-lg bg-cyan-700 px-3 py-2 text-sm font-semibold text-white" onClick={addUser}>Create</button>
@@ -207,10 +219,14 @@ export function UsersPage() {
         <div className="space-y-3">
           <p className="text-sm text-slate-600">Update role for {targetUser?.name}</p>
           <Select
-            value={targetUser?.role ?? 'Staff'}
-            onChange={(e) => setTargetUser((prev) => (prev ? { ...prev, role: e.target.value as UserItem['role'] } : prev))}
+            value={targetUser?.roleName ?? 'Staff'}
+            onChange={(e) => setTargetUser((prev) => (prev ? { ...prev, roleName: e.target.value as UserItem['roleName'] } : prev))}
           >
-            <option>Admin</option><option>Manager</option><option>Staff</option>
+            {roles.map((role) => (
+              <option key={role} value={role}>
+                {role}
+              </option>
+            ))}
           </Select>
           <div className="flex justify-end">
             <button
@@ -226,7 +242,7 @@ export function UsersPage() {
                 void (async () => {
                   try {
                     await usersApi.changeRole(targetUser.id, {
-                      roleId: toRoleId(targetUser.role),
+                      roleId: toRoleId(targetUser.roleName),
                     });
                     await loadUsers();
                     setOpenRole(false);

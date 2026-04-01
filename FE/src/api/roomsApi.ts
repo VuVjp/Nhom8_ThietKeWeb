@@ -21,7 +21,7 @@ interface RoomDto {
 export interface RoomPayload {
     roomNumber: string;
     floor: number;
-    roomType: string;
+    roomTypeId: number;
     status?: string;
     cleaningStatus?: string;
 }
@@ -31,7 +31,7 @@ function normalizeRoom(dto: RoomDto): Room {
         id: Number(dto.id ?? dto.Id ?? 0),
         roomNumber: String(dto.roomNumber ?? dto.RoomNumber ?? ''),
         floor: Number(dto.floor ?? dto.Floor ?? 0),
-        roomType: String(dto.roomType ?? dto.RoomType ?? dto.roomTypeName ?? dto.RoomTypeName ?? 'Standard') as Room['roomType'],
+        roomType: String(dto.roomTypeName ?? dto.RoomTypeName ?? dto.roomType ?? dto.RoomType ?? 'Standard') as Room['roomType'],
         status: String(dto.status ?? dto.Status ?? 'Available') as Room['status'],
         cleaningStatus: String(dto.cleaningStatus ?? dto.CleaningStatus ?? 'Clean') as Room['cleaningStatus'],
     };
