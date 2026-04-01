@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { Input } from '../components/Input';
 import { useAppAuth, mockLoginAccounts } from '../auth/appAuth';
@@ -11,14 +11,19 @@ interface LoginLocationState {
 }
 
 export function AdminLoginPage() {
-    const { login } = useAppAuth();
+    const { login, isAuthenticated } = useAppAuth();
     const navigate = useNavigate();
     const location = useLocation();
     const state = location.state as LoginLocationState | null;
-    const redirectPath = state?.from?.pathname ?? '/admin/dashboard';
+    const rawRedirectPath = state?.from?.pathname ?? '/admin/dashboard';
+    const redirectPath = rawRedirectPath.startsWith('/admin/') ? rawRedirectPath : '/admin/dashboard';
 
     const [email, setEmail] = useState('admin@hotel-admin.com');
     const [password, setPassword] = useState('admin123');
+
+    if (isAuthenticated) {
+        return <Navigate to="/admin/dashboard" replace />;
+    }
 
     const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
