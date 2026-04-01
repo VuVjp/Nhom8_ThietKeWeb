@@ -1,381 +1,205 @@
-import { useMemo, useState, type ChangeEvent } from 'react';
-import { Button, Form, Input, Modal, Select, Space, Table, Tag, message } from 'antd';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { ColumnsType } from 'antd/es/table';
-import { rolesService } from '../api/roles.service';
-import { usersService } from '../api/users.service';
-import { PageHeader } from '../components/PageHeader';
-import { PermissionGuard } from '../auth/PermissionGuard';
-import { useDebounce } from '../hooks/useDebounce';
-import type { User } from '../types/user';
+import { useMemo, useState } from 'react';
+import toast from 'react-hot-toast';
+import { KeyIcon, PencilSquareIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { usersSeed } from '../mock/data';
+import type { UserItem } from '../types/models';
+import { Input } from '../components/Input';
+import { Select } from '../components/Select';
+import { Table } from '../components/Table';
+import { Pagination } from '../components/Pagination';
+import { Modal } from '../components/Modal';
+import { Badge } from '../components/Badge';
+import { paginate, queryIncludes, sortBy } from '../utils/table';
+import { usePermissionCheck } from '../hooks/usePermissionCheck';
 
-const DEFAULT_PAGE_SIZE = 10;
+export function UsersPage() {
+  const { ensure } = usePermissionCheck();
+  const [rows, setRows] = useState<UserItem[]>(usersSeed);
+  const [query, setQuery] = useState('');
+  const [roleFilter, setRoleFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [page, setPage] = useState(1);
+  const [openAdd, setOpenAdd] = useState(false);
+  const [openRole, setOpenRole] = useState(false);
+  const [targetUser, setTargetUser] = useState<UserItem | null>(null);
+  const [draft, setDraft] = useState<Partial<UserItem>>({ role: 'Staff', status: 'Active' });
 
-export const UsersPage = () => {
-    const queryClient = useQueryClient();
-    const [messageApi, contextHolder] = message.useMessage();
-    const [currentPage, setCurrentPage] = useState(1);
-    const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
-    const [search, setSearch] = useState('');
-    const [roleFilter, setRoleFilter] = useState<string | undefined>(undefined);
-    const [activeFilter, setActiveFilter] = useState<boolean | undefined>(undefined);
-    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-    const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
-    const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-    const [createForm] = Form.useForm<{ email: string; password: string; roleId: number }>();
-    const [roleForm] = Form.useForm<{ roleId: string }>();
-
-    const debouncedSearch = useDebounce(search, 350);
-
-    const usersQuery = useQuery({
-        queryKey: ['users', currentPage, pageSize, debouncedSearch, roleFilter, activeFilter],
-        queryFn: () =>
-            usersService.list({
-                page: currentPage,
-                pageSize,
-                search: debouncedSearch || undefined,
-                role: roleFilter,
-                isActive: activeFilter,
-            }),
+  const filtered = useMemo(() => {
+    const next = rows.filter((item) => {
+      const matchQuery = queryIncludes(item.name, query) || queryIncludes(item.email, query);
+      const matchRole = roleFilter === 'all' || item.role === roleFilter;
+      const matchStatus = statusFilter === 'all' || item.status === statusFilter;
+      return matchQuery && matchRole && matchStatus;
     });
 
-    const rolesQuery = useQuery({
-        queryKey: ['roles-for-user-assign'],
-        queryFn: async () => {
-            const response = await rolesService.list(1, 200);
-            return response.items;
-        },
-    });
+    return sortBy(next, (item) => item.name, 'asc');
+  }, [rows, query, roleFilter, statusFilter]);
 
-    const createUserMutation = useMutation({
-        mutationFn: (payload: { email: string; password: string; roleId: number }) => usersService.create(payload),
-        onSuccess: () => {
-            messageApi.success('User created successfully.');
-            setIsCreateModalOpen(false);
-            createForm.resetFields();
-        },
-        onError: () => {
-            messageApi.error('Failed to create user.');
-        },
-        onSettled: () => {
-            void queryClient.invalidateQueries({ queryKey: ['users'] });
-            void queryClient.invalidateQueries({ queryKey: ['notifications'] });
-            void queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] });
-        },
-    });
+  const pageSize = 8;
+  const paged = paginate(filtered, page, pageSize);
 
-    const toggleActiveMutation = useMutation({
-        mutationFn: (userId: string) => usersService.toggleActive(userId),
-        onSettled: () => {
-            void queryClient.invalidateQueries({ queryKey: ['users'] });
-            void queryClient.invalidateQueries({ queryKey: ['notifications'] });
-            void queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] });
-        },
-    });
-
-    const handleToggleActive = async (record: User) => {
-        const previousStatus = record.isActive;
-
-        try {
-            await toggleActiveMutation.mutateAsync(record.id);
-        } catch {
-            // Continue to refetch and verify actual state before showing message.
-        }
-
-        const refreshed = await usersQuery.refetch();
-        const updated = refreshed.data?.items.find((item) => item.id === record.id);
-
-        if (updated) {
-            if (updated.isActive !== previousStatus) {
-                messageApi.success('User status updated successfully.');
-                return;
+  const columns = [
+    { key: 'name', label: 'Name', render: (row: UserItem) => row.name },
+    { key: 'email', label: 'Email', render: (row: UserItem) => row.email },
+    { key: 'role', label: 'Role', render: (row: UserItem) => row.role },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (row: UserItem) => (
+        <button
+          type="button"
+          onClick={() => {
+            if (!ensure('manage_users', 'update user status')) {
+              return;
             }
+            setRows((prev) =>
+              prev.map((item) =>
+                item.id === row.id ? { ...item, status: item.status === 'Active' ? 'Inactive' : 'Active' } : item,
+              ),
+            );
+            toast.success(`${row.name} status updated`);
+          }}
+        >
+          <Badge value={row.status} />
+        </button>
+      ),
+    },
+    {
+      key: 'actions',
+      label: 'Actions',
+      render: (row: UserItem) => (
+        <div className="flex gap-2">
+          <button
+            type="button"
+            className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-xs"
+            onClick={() => {
+              if (!ensure('manage_users', 'reset user password')) {
+                return;
+              }
+              toast.success(`Password reset sent to ${row.email}`);
+            }}
+          >
+            <KeyIcon className="h-4 w-4" /> Reset Password
+          </button>
+          <button
+            type="button"
+            className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-xs"
+            onClick={() => {
+              if (!ensure('manage_users', 'change user role')) {
+                return;
+              }
+              setTargetUser(row);
+              setOpenRole(true);
+            }}
+          >
+            <PencilSquareIcon className="h-4 w-4" /> Change Role
+          </button>
+        </div>
+      ),
+    },
+  ];
 
-            messageApi.error('User status was not changed. Please try again.');
-            return;
-        }
+  const addUser = () => {
+    if (!ensure('manage_users', 'add new user')) {
+      return;
+    }
 
-        if (activeFilter !== undefined && activeFilter === previousStatus) {
-            messageApi.success('User status updated successfully.');
-            return;
-        }
+    if (!draft.name || !draft.email || !draft.role) {
+      toast.error('Name, email and role are required');
+      return;
+    }
 
-        messageApi.warning('Could not verify user status response. Please check again.');
-    };
+    const safeName = draft.name;
+    const safeEmail = draft.email;
+    const safeRole = draft.role;
 
-    const resetPasswordMutation = useMutation({
-        mutationFn: (userId: string) => usersService.resetPassword(userId),
-        onError: () => {
-            messageApi.error('Failed to reset password.');
-        },
-        onSuccess: () => {
-            messageApi.success('New password has been sent to user email.');
-        },
-    });
+    setRows((prev) => [
+      {
+        id: Date.now(),
+        name: safeName,
+        email: safeEmail,
+        role: safeRole,
+        status: (draft.status as UserItem['status']) ?? 'Active',
+      },
+      ...prev,
+    ]);
+    setOpenAdd(false);
+    setDraft({ role: 'Staff', status: 'Active' });
+    toast.success('User added successfully');
+  };
 
-    const changeRoleMutation = useMutation({
-        mutationFn: ({ userId, roleId }: { userId: string; roleId: number }) =>
-            usersService.assignRole(userId, roleId),
-        onError: () => {
-            messageApi.error('Failed to change user role.');
-        },
-        onSuccess: () => {
-            messageApi.success('User role updated successfully.');
-            setIsRoleModalOpen(false);
-            setSelectedUserId(null);
-            roleForm.resetFields();
-        },
-        onSettled: () => {
-            void queryClient.invalidateQueries({ queryKey: ['users'] });
-            void queryClient.invalidateQueries({ queryKey: ['notifications'] });
-            void queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] });
-        },
-    });
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-900">Users</h2>
+          <p className="text-sm text-slate-500">Manage identity, roles and account status.</p>
+        </div>
+        <button
+          type="button"
+          className="inline-flex items-center gap-2 rounded-xl bg-cyan-700 px-4 py-2 text-sm font-semibold text-white"
+          onClick={() => {
+            if (!ensure('manage_users', 'open create user form')) {
+              return;
+            }
+            setOpenAdd(true);
+          }}
+        >
+          <PlusIcon className="h-4 w-4" /> Add User
+        </button>
+      </div>
 
-    const columns = useMemo<ColumnsType<User>>(
-        () => [
-            {
-                title: 'Name',
-                dataIndex: 'fullName',
-                key: 'fullName',
-            },
-            {
-                title: 'Email',
-                dataIndex: 'email',
-                key: 'email',
-            },
-            {
-                title: 'Role',
-                dataIndex: 'role',
-                key: 'role',
-                render: (value: User['role']) => <Tag color="geekblue">{value}</Tag>,
-            },
-            {
-                title: 'Status',
-                dataIndex: 'isActive',
-                key: 'isActive',
-                render: (value: boolean) => <Tag color={value ? 'green' : 'red'}>{value ? 'Active' : 'Inactive'}</Tag>,
-            },
-            {
-                title: 'Actions',
-                key: 'actions',
-                render: (_, record) => (
-                    <Space>
-                        <PermissionGuard permissions={['edit_user']} fallback={<Button disabled>Toggle Active</Button>}>
-                            <Button
-                                onClick={() => {
-                                    void handleToggleActive(record);
-                                }}
-                                loading={toggleActiveMutation.isPending}
-                            >
-                                {record.isActive ? 'Deactivate' : 'Activate'}
-                            </Button>
-                        </PermissionGuard>
-                        <PermissionGuard permissions={['edit_user']} fallback={<Button disabled>Reset Password</Button>}>
-                            <Button
-                                onClick={() => {
-                                    resetPasswordMutation.mutate(record.id);
-                                }}
-                                loading={resetPasswordMutation.isPending}
-                            >
-                                Reset Password
-                            </Button>
-                        </PermissionGuard>
-                        <PermissionGuard permissions={['edit_user']} fallback={<Button disabled>Change Role</Button>}>
-                            <Button
-                                onClick={() => {
-                                    setSelectedUserId(record.id);
-                                    const matchedRole = rolesQuery.data?.find((role) => role.name === record.role);
-                                    roleForm.setFieldValue('roleId', matchedRole?.id ?? undefined);
-                                    setIsRoleModalOpen(true);
-                                }}
-                            >
-                                Change Role
-                            </Button>
-                        </PermissionGuard>
-                    </Space>
-                ),
-            },
-        ],
-        [resetPasswordMutation, roleForm, rolesQuery.data, toggleActiveMutation],
-    );
+      <div className="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-3">
+        <Input placeholder="Search name/email" value={query} onChange={(e) => setQuery(e.target.value)} />
+        <Select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}><option value="all">All Roles</option><option>Admin</option><option>Manager</option><option>Staff</option></Select>
+        <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}><option value="all">All Statuses</option><option>Active</option><option>Inactive</option></Select>
+      </div>
 
-    return (
-        <>
-            {contextHolder}
-            <PageHeader
-                title="User Management"
-                description="Manage users, roles, and lifecycle actions."
-                extra={
-                    <PermissionGuard permissions={['create_user']} fallback={<Button disabled>Add User</Button>}>
-                        <Button
-                            type="primary"
-                            onClick={() => {
-                                setIsCreateModalOpen(true);
-                            }}
-                        >
-                            Add User
-                        </Button>
-                    </PermissionGuard>
+      <Table columns={columns} rows={paged} />
+      <Pagination page={page} pageSize={pageSize} total={filtered.length} onPageChange={setPage} />
+
+      <Modal open={openAdd} title="Add User" onClose={() => setOpenAdd(false)}>
+        <div className="space-y-3">
+          <Input placeholder="Full name" value={draft.name ?? ''} onChange={(e) => setDraft((prev) => ({ ...prev, name: e.target.value }))} />
+          <Input placeholder="Email" value={draft.email ?? ''} onChange={(e) => setDraft((prev) => ({ ...prev, email: e.target.value }))} />
+          <Select value={draft.role} onChange={(e) => setDraft((prev) => ({ ...prev, role: e.target.value as UserItem['role'] }))}><option>Admin</option><option>Manager</option><option>Staff</option></Select>
+          <div className="flex justify-end gap-2">
+            <button type="button" className="rounded-lg border border-slate-200 px-3 py-2 text-sm" onClick={() => setOpenAdd(false)}>Cancel</button>
+            <button type="button" className="rounded-lg bg-cyan-700 px-3 py-2 text-sm font-semibold text-white" onClick={addUser}>Create</button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal open={openRole} title="Change Role" onClose={() => setOpenRole(false)}>
+        <div className="space-y-3">
+          <p className="text-sm text-slate-600">Update role for {targetUser?.name}</p>
+          <Select
+            value={targetUser?.role ?? 'Staff'}
+            onChange={(e) => setTargetUser((prev) => (prev ? { ...prev, role: e.target.value as UserItem['role'] } : prev))}
+          >
+            <option>Admin</option><option>Manager</option><option>Staff</option>
+          </Select>
+          <div className="flex justify-end">
+            <button
+              type="button"
+              className="rounded-lg bg-cyan-700 px-3 py-2 text-sm font-semibold text-white"
+              onClick={() => {
+                if (!targetUser) {
+                  return;
                 }
-            />
-
-            <Space wrap style={{ marginBottom: 16 }}>
-                <Input.Search
-                    allowClear
-                    placeholder="Search by name or email"
-                    style={{ width: 360 }}
-                    onChange={(event: ChangeEvent<HTMLInputElement>) => {
-                        setCurrentPage(1);
-                        setSearch(event.target.value);
-                    }}
-                />
-
-                <Select
-                    allowClear
-                    style={{ width: 180 }}
-                    placeholder="Filter by role"
-                    value={roleFilter}
-                    onChange={(value) => {
-                        setCurrentPage(1);
-                        setRoleFilter(value);
-                    }}
-                    options={(rolesQuery.data ?? []).map((role) => ({
-                        label: role.name,
-                        value: role.name,
-                    }))}
-                />
-
-                <Select
-                    allowClear
-                    style={{ width: 180 }}
-                    placeholder="Filter by status"
-                    value={activeFilter}
-                    onChange={(value) => {
-                        setCurrentPage(1);
-                        setActiveFilter(value);
-                    }}
-                    options={[
-                        { label: 'Active', value: true },
-                        { label: 'Inactive', value: false },
-                    ]}
-                />
-            </Space>
-
-            <Table<User>
-                rowKey="id"
-                loading={usersQuery.isLoading}
-                columns={columns}
-                dataSource={usersQuery.data?.items ?? []}
-                pagination={{
-                    current: currentPage,
-                    pageSize,
-                    total: usersQuery.data?.total ?? 0,
-                    showSizeChanger: true,
-                    onChange: (page: number, nextPageSize: number) => {
-                        setCurrentPage(page);
-                        setPageSize(nextPageSize);
-                    },
-                }}
-            />
-
-            <Modal
-                title="Add User"
-                open={isCreateModalOpen}
-                onCancel={() => {
-                    setIsCreateModalOpen(false);
-                    createForm.resetFields();
-                }}
-                footer={null}
-                destroyOnHidden
+                if (!ensure('manage_users', 'change user role')) {
+                  return;
+                }
+                setRows((prev) => prev.map((item) => (item.id === targetUser.id ? targetUser : item)));
+                setOpenRole(false);
+                toast.success('Role changed successfully');
+              }}
             >
-                <Form<{ email: string; password: string; roleId: number }>
-                    form={createForm}
-                    layout="vertical"
-                    onFinish={(values) => {
-                        createUserMutation.mutate(values);
-                    }}
-                >
-                    <Form.Item
-                        label="Email"
-                        name="email"
-                        rules={[
-                            { required: true, message: 'Please enter email' },
-                            { type: 'email', message: 'Please enter a valid email' },
-                        ]}
-                    >
-                        <Input placeholder="Enter email" />
-                    </Form.Item>
-
-                    <Form.Item
-                        label="Password"
-                        name="password"
-                        rules={[
-                            { required: true, message: 'Please enter password' },
-                            { min: 8, message: 'Password must be at least 8 characters' },
-                        ]}
-                    >
-                        <Input.Password placeholder="Enter password" />
-                    </Form.Item>
-
-                    <Form.Item label="Role" name="roleId" rules={[{ required: true, message: 'Please select a role' }]}>
-                        <Select
-                            loading={rolesQuery.isLoading}
-                            options={(rolesQuery.data ?? []).map((role) => ({
-                                label: role.name,
-                                value: Number(role.id),
-                            }))}
-                            placeholder="Select role"
-                        />
-                    </Form.Item>
-
-                    <Button type="primary" htmlType="submit" loading={createUserMutation.isPending}>
-                        Create User
-                    </Button>
-                </Form>
-            </Modal>
-
-            <Modal
-                title="Change User Role"
-                open={isRoleModalOpen}
-                onCancel={() => {
-                    setIsRoleModalOpen(false);
-                    setSelectedUserId(null);
-                    roleForm.resetFields();
-                }}
-                footer={null}
-                destroyOnHidden
-            >
-                <Form<{ roleId: string }>
-                    form={roleForm}
-                    layout="vertical"
-                    onFinish={(values) => {
-                        if (!selectedUserId) {
-                            return;
-                        }
-
-                        changeRoleMutation.mutate({
-                            userId: selectedUserId,
-                            roleId: Number(values.roleId),
-                        });
-                    }}
-                >
-                    <Form.Item label="Role" name="roleId" rules={[{ required: true, message: 'Please select a role' }]}>
-                        <Select
-                            loading={rolesQuery.isLoading}
-                            options={(rolesQuery.data ?? []).map((role) => ({
-                                label: role.name,
-                                value: role.id,
-                            }))}
-                            placeholder="Select role"
-                        />
-                    </Form.Item>
-
-                    <Button type="primary" htmlType="submit" loading={changeRoleMutation.isPending}>
-                        Save
-                    </Button>
-                </Form>
-            </Modal>
-        </>
-    );
-};
+              Save Role
+            </button>
+          </div>
+        </div>
+      </Modal>
+    </div>
+  );
+}

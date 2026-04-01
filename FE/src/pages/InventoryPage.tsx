@@ -1,0 +1,119 @@
+import { useMemo, useState } from 'react';
+import toast from 'react-hot-toast';
+import { ArrowPathIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { Input } from '../components/Input';
+import { Select } from '../components/Select';
+import { Table } from '../components/Table';
+import { Pagination } from '../components/Pagination';
+import { inventorySeed } from '../mock/data';
+import type { InventoryItem } from '../types/models';
+import { paginate, queryIncludes, sortBy } from '../utils/table';
+import { usePermissionCheck } from '../hooks/usePermissionCheck';
+
+export function InventoryPage() {
+    const { ensure } = usePermissionCheck();
+    const [rows, setRows] = useState<InventoryItem[]>(inventorySeed);
+    const [search, setSearch] = useState('');
+    const [category, setCategory] = useState('all');
+    const [sortField, setSortField] = useState<'name' | 'code'>('name');
+    const [page, setPage] = useState(1);
+
+    const filtered = useMemo(() => {
+        const next = rows.filter((item) => {
+            const byQuery = queryIncludes(item.name, search) || queryIncludes(item.code, search);
+            const byCategory = category === 'all' || item.category === category;
+            return byQuery && byCategory;
+        });
+
+        return sortBy(next, (item) => (sortField === 'name' ? item.name : item.code), 'asc');
+    }, [rows, search, category, sortField]);
+
+    const pageSize = 10;
+    const paged = paginate(filtered, page, pageSize);
+
+    const columns = [
+        { key: 'code', label: 'Code', render: (row: InventoryItem) => row.code },
+        { key: 'name', label: 'Name', render: (row: InventoryItem) => row.name },
+        { key: 'category', label: 'Category', render: (row: InventoryItem) => row.category },
+        { key: 'unit', label: 'Unit', render: (row: InventoryItem) => row.unit },
+        { key: 'price', label: 'Price', render: (row: InventoryItem) => `$${row.price}` },
+        { key: 'stock', label: 'Stock', render: (row: InventoryItem) => row.stock },
+        {
+            key: 'actions',
+            label: 'Actions',
+            render: (row: InventoryItem) => (
+                <div className="flex gap-2">
+                    <button
+                        type="button"
+                        className="rounded-lg border border-slate-200 px-2 py-1 text-xs"
+                        onClick={() => {
+                            if (!ensure('manage_inventory', 'edit inventory item')) {
+                                return;
+                            }
+                            toast.success(`Edited ${row.code}`);
+                        }}
+                    >
+                        Edit
+                    </button>
+                    <button
+                        type="button"
+                        className="rounded-lg border border-rose-200 px-2 py-1 text-xs text-rose-600"
+                        onClick={() => {
+                            if (!ensure('manage_inventory', 'delete inventory item')) {
+                                return;
+                            }
+                            setRows((prev) => prev.filter((item) => item.id !== row.id));
+                            toast.error(`Deleted ${row.code}`);
+                        }}
+                    >
+                        Delete
+                    </button>
+                </div>
+            ),
+        },
+    ];
+
+    return (
+        <div className="space-y-4">
+            <div>
+                <h2 className="text-2xl font-bold text-slate-900">Inventory</h2>
+                <p className="text-sm text-slate-500">Search, sort, filter and maintain hotel inventory.</p>
+            </div>
+
+            <div className="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-4">
+                <Input placeholder="Search by name or code" value={search} onChange={(e) => setSearch(e.target.value)} />
+                <Select value={sortField} onChange={(e) => setSortField(e.target.value as 'name' | 'code')}><option value="name">Sort: Name</option><option value="code">Sort: Code</option></Select>
+                <Select value={category} onChange={(e) => setCategory(e.target.value)}><option value="all">All Categories</option><option>Linen</option><option>Bathroom</option><option>Electronics</option><option>Minibar</option></Select>
+                <div className="flex gap-2">
+                    <button
+                        type="button"
+                        className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-cyan-700 px-3 py-2 text-sm font-semibold text-white hover:bg-cyan-800"
+                        onClick={() => {
+                            if (!ensure('manage_inventory', 'add inventory item')) {
+                                return;
+                            }
+                            toast.success('Add Item modal would open');
+                        }}
+                    >
+                        <PlusIcon className="h-4 w-4" /> Add Item
+                    </button>
+                    <button
+                        type="button"
+                        className="inline-flex items-center justify-center rounded-lg border border-slate-200 px-3 py-2 text-sm hover:bg-slate-50"
+                        onClick={() => {
+                            setSearch('');
+                            setCategory('all');
+                            setSortField('name');
+                            toast('Filters refreshed', { icon: 'ℹ️' });
+                        }}
+                    >
+                        <ArrowPathIcon className="h-4 w-4" />
+                    </button>
+                </div>
+            </div>
+
+            <Table columns={columns} rows={paged} />
+            <Pagination page={page} pageSize={pageSize} total={filtered.length} onPageChange={setPage} />
+        </div>
+    );
+}

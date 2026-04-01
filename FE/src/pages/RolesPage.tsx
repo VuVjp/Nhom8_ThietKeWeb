@@ -1,198 +1,148 @@
 import { useMemo, useState } from 'react';
-import { Button, Checkbox, Form, Modal, Select, Space, Table, Tag, message } from 'antd';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { ColumnsType } from 'antd/es/table';
-import { rolesService } from '../api/roles.service';
-import { PageHeader } from '../components/PageHeader';
-import { PERMISSIONS, ROLES } from '../types/rbac';
-import type { RoleModel, UpsertRolePayload } from '../types/role';
-import { PermissionGuard } from '../auth/PermissionGuard';
+import toast from 'react-hot-toast';
+import { PlusIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
+import { allPermissions, rolesSeed } from '../mock/data';
+import type { RoleItem } from '../types/models';
+import { Modal } from '../components/Modal';
+import { Table } from '../components/Table';
+import { Input } from '../components/Input';
+import { usePermissionCheck } from '../hooks/usePermissionCheck';
 
-export const RolesPage = () => {
-    const [currentPage, setCurrentPage] = useState(1);
-    const [pageSize, setPageSize] = useState(10);
-    const queryClient = useQueryClient();
-    const [messageApi, contextHolder] = message.useMessage();
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [selectedRole, setSelectedRole] = useState<RoleModel | null>(null);
-    const [editForm] = Form.useForm<{ permissions: string[] }>();
+export function RolesPage() {
+  const { ensure } = usePermissionCheck();
+  const [roles, setRoles] = useState<RoleItem[]>(rolesSeed);
+  const [selectedRoleId, setSelectedRoleId] = useState<number>(rolesSeed[0].id);
+  const [openAdd, setOpenAdd] = useState(false);
+  const [draftName, setDraftName] = useState('');
 
-    const rolesQuery = useQuery({
-        queryKey: ['roles', currentPage, pageSize],
-        queryFn: () => rolesService.list(currentPage, pageSize),
-    });
+  const selectedRole = useMemo(() => roles.find((item) => item.id === selectedRoleId) ?? roles[0], [roles, selectedRoleId]);
 
-    const permissionsQuery = useQuery({
-        queryKey: ['all-permissions'],
-        queryFn: rolesService.getAllPermissions,
-    });
+  const columns = [
+    { key: 'name', label: 'Role Name', render: (row: RoleItem) => row.roleName },
+    {
+      key: 'permissions',
+      label: 'Permissions',
+      render: (row: RoleItem) => (
+        <div className="flex flex-wrap gap-1">
+          {row.permissions.map((permission) => (
+            <span key={permission} className="rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-700">{permission}</span>
+          ))}
+        </div>
+      ),
+    },
+    {
+      key: 'actions',
+      label: 'Actions',
+      render: (row: RoleItem) => (
+        <button
+          type="button"
+          className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-xs"
+          onClick={() => {
+            if (!ensure('manage_roles', 'edit role')) {
+              return;
+            }
+            setSelectedRoleId(row.id);
+          }}
+        >
+          <PencilSquareIcon className="h-4 w-4" /> Edit
+        </button>
+      ),
+    },
+  ];
 
-    const createRoleMutation = useMutation({
-        mutationFn: (payload: UpsertRolePayload) => rolesService.create(payload),
-        onSuccess: () => {
-            messageApi.success('Role created successfully.');
-            setIsModalOpen(false);
-        },
-        onError: () => {
-            messageApi.error('Unable to create role.');
-        },
-        onSettled: () => {
-            void queryClient.invalidateQueries({ queryKey: ['roles'] });
-            void queryClient.invalidateQueries({ queryKey: ['notifications'] });
-            void queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] });
-        },
-    });
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-900">Roles</h2>
+          <p className="text-sm text-slate-500">Permission matrix for each role profile.</p>
+        </div>
+        <button
+          type="button"
+          className="inline-flex items-center gap-2 rounded-xl bg-cyan-700 px-4 py-2 text-sm font-semibold text-white"
+          onClick={() => {
+            if (!ensure('manage_roles', 'open create role form')) {
+              return;
+            }
+            setOpenAdd(true);
+          }}
+        >
+          <PlusIcon className="h-4 w-4" /> Add Role
+        </button>
+      </div>
 
-    const updateRolePermissionsMutation = useMutation({
-        mutationFn: ({ roleId, permissions }: { roleId: string; permissions: string[] }) =>
-            rolesService.updatePermissions(roleId, permissions),
-        onSuccess: () => {
-            messageApi.success('Role permissions updated successfully.');
-            setSelectedRole(null);
-            editForm.resetFields();
-        },
-        onError: () => {
-            messageApi.error('Unable to update role permissions.');
-        },
-        onSettled: () => {
-            void queryClient.invalidateQueries({ queryKey: ['roles'] });
-            void queryClient.invalidateQueries({ queryKey: ['notifications'] });
-            void queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] });
-        },
-    });
+      <Table columns={columns} rows={roles} />
 
-    const columns = useMemo<ColumnsType<RoleModel>>(
-        () => [
-            {
-                title: 'Role',
-                dataIndex: 'name',
-                key: 'name',
-                render: (name: string) => <Tag color="blue">{name}</Tag>,
-            },
-            {
-                title: 'Permissions',
-                dataIndex: 'permissions',
-                key: 'permissions',
-                render: (permissions: RoleModel['permissions']) => (
-                    <Space size={[4, 8]} wrap>
-                        {permissions.map((permission) => (
-                            <Tag key={permission}>{permission}</Tag>
-                        ))}
-                    </Space>
-                ),
-            },
-            {
-                title: 'Actions',
-                key: 'actions',
-                render: (_, role) => (
-                    <PermissionGuard permissions={['assign_permissions']} fallback={<Button disabled>Edit Permissions</Button>}>
-                        <Button
-                            onClick={() => {
-                                setSelectedRole(role);
-                                editForm.setFieldsValue({ permissions: role.permissions });
-                            }}
-                        >
-                            Edit Permissions
-                        </Button>
-                    </PermissionGuard>
-                ),
-            },
-        ],
-        [editForm],
-    );
+      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <h3 className="text-lg font-semibold text-slate-900">Permission Matrix: {selectedRole?.roleName}</h3>
+        <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          {allPermissions.map((permission) => {
+            const checked = selectedRole.permissions.includes(permission);
+            return (
+              <label key={permission} className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={(event) => {
+                    if (!ensure('manage_roles', 'update role permissions')) {
+                      return;
+                    }
+                    const next = event.target.checked
+                      ? [...selectedRole.permissions, permission]
+                      : selectedRole.permissions.filter((item) => item !== permission);
 
-    return (
-        <>
-            {contextHolder}
-            <PageHeader
-                title="Role & Permission Management"
-                description="Create roles and map permissions precisely for RBAC."
-                extra={
-                    <PermissionGuard permissions={['create_role']} fallback={<Button disabled>Add Role</Button>}>
-                        <Button type="primary" onClick={() => setIsModalOpen(true)}>
-                            Add Role
-                        </Button>
-                    </PermissionGuard>
+                    setRoles((prev) => prev.map((role) => (role.id === selectedRole.id ? { ...role, permissions: next } : role)));
+                  }}
+                />
+                {permission}
+              </label>
+            );
+          })}
+        </div>
+
+        <div className="mt-4 flex justify-end">
+          <button
+            type="button"
+            className="rounded-lg bg-cyan-700 px-4 py-2 text-sm font-semibold text-white"
+            onClick={() => {
+              if (!ensure('manage_roles', 'save role permissions')) {
+                return;
+              }
+              toast.success('Role permissions saved');
+            }}
+          >
+            Save Changes
+          </button>
+        </div>
+      </div>
+
+      <Modal open={openAdd} title="Add Role" onClose={() => setOpenAdd(false)}>
+        <div className="space-y-3">
+          <Input value={draftName} onChange={(e) => setDraftName(e.target.value)} placeholder="Role name" />
+          <div className="flex justify-end gap-2">
+            <button type="button" className="rounded-lg border border-slate-200 px-3 py-2 text-sm" onClick={() => setOpenAdd(false)}>Cancel</button>
+            <button
+              type="button"
+              className="rounded-lg bg-cyan-700 px-3 py-2 text-sm font-semibold text-white"
+              onClick={() => {
+                if (!ensure('manage_roles', 'create role')) {
+                  return;
                 }
-            />
-
-            <Table<RoleModel>
-                rowKey="id"
-                columns={columns}
-                loading={rolesQuery.isLoading}
-                dataSource={rolesQuery.data?.items ?? []}
-                pagination={{
-                    current: currentPage,
-                    pageSize,
-                    total: rolesQuery.data?.total ?? 0,
-                    showSizeChanger: true,
-                    onChange: (page, nextPageSize) => {
-                        setCurrentPage(page);
-                        setPageSize(nextPageSize);
-                    },
-                }}
-            />
-
-            <Modal
-                title={selectedRole ? `Edit Permissions - ${selectedRole.name}` : 'Edit Permissions'}
-                open={Boolean(selectedRole)}
-                onCancel={() => {
-                    setSelectedRole(null);
-                    editForm.resetFields();
-                }}
-                footer={null}
-                destroyOnHidden
+                if (!draftName.trim()) {
+                  toast.error('Role name is required');
+                  return;
+                }
+                setRoles((prev) => [...prev, { id: Date.now(), roleName: draftName.trim(), permissions: ['view_rooms'] }]);
+                setDraftName('');
+                setOpenAdd(false);
+                toast.success('Role created');
+              }}
             >
-                <Form<{ permissions: string[] }>
-                    form={editForm}
-                    layout="vertical"
-                    onFinish={(values) => {
-                        if (!selectedRole) {
-                            return;
-                        }
-
-                        updateRolePermissionsMutation.mutate({
-                            roleId: selectedRole.id,
-                            permissions: values.permissions,
-                        });
-                    }}
-                >
-                    <Form.Item label="Permissions" name="permissions" rules={[{ required: true }]}>
-                        <Checkbox.Group
-                            options={(permissionsQuery.data ?? PERMISSIONS).map((permission) => ({
-                                label: permission,
-                                value: permission,
-                            }))}
-                        />
-                    </Form.Item>
-
-                    <Button type="primary" htmlType="submit" loading={updateRolePermissionsMutation.isPending}>
-                        Save Changes
-                    </Button>
-                </Form>
-            </Modal>
-
-            <Modal title="Create Role" open={isModalOpen} onCancel={() => setIsModalOpen(false)} footer={null} destroyOnHidden>
-                <Form<UpsertRolePayload>
-                    layout="vertical"
-                    initialValues={{ name: ROLES[1], permissions: ['view_dashboard'] }}
-                    onFinish={(values: UpsertRolePayload) => {
-                        createRoleMutation.mutate(values);
-                    }}
-                >
-                    <Form.Item label="Role Name" name="name" rules={[{ required: true }]}>
-                        <Select options={ROLES.map((role) => ({ label: role, value: role }))} />
-                    </Form.Item>
-
-                    <Form.Item label="Permissions" name="permissions" rules={[{ required: true }]}>
-                        <Checkbox.Group options={PERMISSIONS.map((permission) => ({ label: permission, value: permission }))} />
-                    </Form.Item>
-
-                    <Button type="primary" htmlType="submit" loading={createRoleMutation.isPending}>
-                        Create
-                    </Button>
-                </Form>
-            </Modal>
-        </>
-    );
-};
+              Create
+            </button>
+          </div>
+        </div>
+      </Modal>
+    </div>
+  );
+}
