@@ -4,7 +4,6 @@ using HotelManagement.Services.Interfaces;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System;
-using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace HotelManagement.Services.Implementations;
 
@@ -58,10 +57,20 @@ public class RoomInventoryService : IRoomInventoryService
 
 	public async Task<bool> AddItemAsync(CreateRoomInventoryDto dto)
 	{
+		if (!dto.RoomId.HasValue)
+			throw new ArgumentException("Room ID is required.");
+
+		if (string.IsNullOrWhiteSpace(dto.ItemName))
+			throw new ArgumentException("Item name is required.");
+
+		var duplicated = await _repository.GetActiveByRoomAndItemNameAsync(dto.RoomId.Value, dto.ItemName);
+		if (duplicated != null)
+			throw new ConflictException("This item already exists in room inventory.");
+
 		var inventory = new RoomInventory
 		{
 			RoomId = dto.RoomId,
-			ItemName = dto.ItemName,
+			ItemName = dto.ItemName.Trim(),
 			Quantity = dto.Quantity,
 			PriceIfLost = dto.PriceIfLost
 		};
@@ -75,7 +84,17 @@ public class RoomInventoryService : IRoomInventoryService
 		var existing = await _repository.GetByIdAsync(id);
 		if (existing == null) return false;
 
-		existing.ItemName = dto.ItemName;
+		if (!dto.RoomId.HasValue)
+			throw new ArgumentException("Room ID is required.");
+
+		if (string.IsNullOrWhiteSpace(dto.ItemName))
+			throw new ArgumentException("Item name is required.");
+
+		var duplicated = await _repository.GetActiveByRoomAndItemNameAsync(dto.RoomId.Value, dto.ItemName, id);
+		if (duplicated != null)
+			throw new ConflictException("This item already exists in room inventory.");
+
+		existing.ItemName = dto.ItemName.Trim();
 		existing.Quantity = dto.Quantity;
 		existing.PriceIfLost = dto.PriceIfLost;
 		existing.RoomId = dto.RoomId;
@@ -91,6 +110,13 @@ public class RoomInventoryService : IRoomInventoryService
 
 		foreach (var item in clone)
 		{
+			if (string.IsNullOrWhiteSpace(item.ItemName))
+				continue;
+
+			var duplicated = await _repository.GetActiveByRoomAndItemNameAsync(newRoomId, item.ItemName);
+			if (duplicated != null)
+				throw new ConflictException($"Item '{item.ItemName}' already exists in target room inventory.");
+
 			var newClone = new RoomInventory
 			{
 				ItemName = item.ItemName,
@@ -105,14 +131,14 @@ public class RoomInventoryService : IRoomInventoryService
 	}
 
 	public async Task<bool> RemoveItemAsync(int id)
-    {
-        var entity = await _repository.GetByIdAsync(id);
-        if (entity == null || !entity.IsActive) throw new NotFoundException($"Amenity with ID {id} not found.");
+	{
+		var entity = await _repository.GetByIdAsync(id);
+		if (entity == null || !entity.IsActive) throw new NotFoundException($"Room inventory item with ID {id} not found.");
 
-        entity.IsActive = false;
-        _repository.Update(entity);
-        await _repository.SaveChangesAsync();
+		entity.IsActive = false;
+		_repository.Update(entity);
+		await _repository.SaveChangesAsync();
 
-        return true;
-    }
+		return true;
+	}
 }

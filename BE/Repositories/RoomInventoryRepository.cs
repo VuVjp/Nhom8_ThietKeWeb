@@ -17,13 +17,30 @@ public class RoomInventoryRepository : IRoomInventoryRepository
 	}
 
 	public async Task<IEnumerable<RoomInventory>> GetAllAsync()
-		=> await _context.RoomInventories.Include(ri => ri.Room).ToListAsync();
+		=> await _context.RoomInventories
+			.Where(ri => ri.IsActive)
+			.Include(ri => ri.Room)
+			.ToListAsync();
 
 	public async Task<IEnumerable<RoomInventory>> GetByRoomIdAsync(int roomId)
-		=> await _context.RoomInventories.Where(ri => ri.RoomId == roomId).ToListAsync();
+		=> await _context.RoomInventories
+			.Where(ri => ri.IsActive && ri.RoomId == roomId)
+			.ToListAsync();
 
 	public async Task<RoomInventory?> GetByIdAsync(int id)
-		=> await _context.RoomInventories.Include(ri => ri.Room).FirstOrDefaultAsync(ri => ri.Id == id);
+		=> await _context.RoomInventories
+			.Include(ri => ri.Room)
+			.FirstOrDefaultAsync(ri => ri.Id == id && ri.IsActive);
+
+	public async Task<RoomInventory?> GetActiveByRoomAndItemNameAsync(int roomId, string itemName, int? excludeId = null)
+	{
+		var normalized = itemName.Trim().ToLower();
+
+		return await _context.RoomInventories
+			.Where(ri => ri.IsActive && ri.RoomId == roomId)
+			.Where(ri => !excludeId.HasValue || ri.Id != excludeId.Value)
+			.FirstOrDefaultAsync(ri => ri.ItemName.Trim().ToLower() == normalized);
+	}
 
 	public async Task AddAsync(RoomInventory inventory)
 		=> await _context.RoomInventories.AddAsync(inventory);
