@@ -20,6 +20,17 @@ public class RoomRepository : IRoomRepository
 			.AsNoTracking()
 			.ToListAsync();
 
+	public async Task<IEnumerable<Room>> GetByStatusAsync(string status)
+	{
+		var normalized = status.Trim().ToLower();
+
+		return await _context.Rooms
+			.Include(r => r.RoomType)
+			.AsNoTracking()
+			.Where(r => r.Status != null && r.Status.Trim().ToLower() == normalized)
+			.ToListAsync();
+	}
+
 	public async Task<Room?> GetByIdAsync(int id)
 		=> await _context.Rooms
 			.Include(r => r.RoomType)

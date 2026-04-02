@@ -43,6 +43,11 @@ export const roomsApi = {
         return data.map(normalizeRoom);
     },
 
+    async getByStatus(status: Room['status']) {
+        const { data } = await httpClient.get<RoomDto[]>(`rooms/status/${status}`);
+        return data.map(normalizeRoom);
+    },
+
     async getById(id: number) {
         const { data } = await httpClient.get<RoomDto>(`rooms/${id}`);
         return normalizeRoom(data);

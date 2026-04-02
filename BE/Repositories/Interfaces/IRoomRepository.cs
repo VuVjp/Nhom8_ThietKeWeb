@@ -8,6 +8,7 @@ namespace HotelManagement.Repositories.Interfaces;
 public interface IRoomRepository
 {
 	Task<IEnumerable<Room>> GetAllAsync();
+	Task<IEnumerable<Room>> GetByStatusAsync(string status);
 	Task<Room?> GetByIdAsync(int id);
 	Task<bool> IsRoomNumberExistsAsync(string roomNumber);
 	Task AddAsync(Room room);

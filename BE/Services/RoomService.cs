@@ -20,23 +20,13 @@ public class RoomService : IRoomService
 	public async Task<IEnumerable<RoomDto>> GetListAsync()
 	{
 		var rooms = await _repository.GetAllAsync();
-		var roomDtos = new List<RoomDto>();
+		return rooms.Select(MapToDto);
+	}
 
-		foreach (var room in rooms)
-		{
-			roomDtos.Add(new RoomDto
-			{
-				Id = room.Id,
-				RoomNumber = room.RoomNumber,
-				Floor = room.Floor,
-				Status = room.Status,
-				CleaningStatus = room.CleaningStatus,
-				RoomTypeId = room.RoomTypeId,
-				RoomTypeName = room.RoomType?.Name
-			});
-		}
-
-		return roomDtos;
+	public async Task<IEnumerable<RoomDto>> GetByStatusAsync(string status)
+	{
+		var rooms = await _repository.GetByStatusAsync(status);
+		return rooms.Select(MapToDto);
 	}
 
 	public async Task<RoomDto?> GetDetailAsync(int id)
@@ -131,5 +121,19 @@ public class RoomService : IRoomService
 
 		_repository.Delete(room);
 		return await _repository.SaveChangesAsync();
+	}
+
+	private static RoomDto MapToDto(Room room)
+	{
+		return new RoomDto
+		{
+			Id = room.Id,
+			RoomNumber = room.RoomNumber,
+			Floor = room.Floor,
+			Status = room.Status,
+			CleaningStatus = room.CleaningStatus,
+			RoomTypeId = room.RoomTypeId,
+			RoomTypeName = room.RoomType?.Name
+		};
 	}
 }

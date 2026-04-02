@@ -19,6 +19,17 @@ public class RoomsController : ControllerBase
 	[HttpGet]
 	public async Task<IActionResult> GetAll() => Ok(await _service.GetListAsync());
 
+	[HttpGet("status/{status}")]
+	public async Task<IActionResult> GetByStatus(string status)
+	{
+		if (string.IsNullOrWhiteSpace(status))
+		{
+			return BadRequest("Status is required.");
+		}
+
+		return Ok(await _service.GetByStatusAsync(status));
+	}
+
 	[HttpGet("{id}")]
 	public async Task<IActionResult> GetById(int id)
 	{

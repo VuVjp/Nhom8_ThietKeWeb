@@ -197,6 +197,7 @@ public class AppDbContext : DbContext
             e.Property(x => x.Quantity).HasColumnName("quantity");
             e.Property(x => x.PenaltyAmount).HasColumnName("penalty_amount").HasColumnType("decimal(18,2)");
             e.Property(x => x.Description).HasColumnName("description");
+            e.Property(x => x.ImageUrl).HasColumnName("image_url");
             e.Property(x => x.CreatedAt).HasColumnName("created_at");
         });
 

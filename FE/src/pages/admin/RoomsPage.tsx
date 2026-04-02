@@ -179,8 +179,8 @@ export function RoomsPage() {
         >
           <option>Available</option>
           <option>Occupied</option>
-          <option>Cleaning</option>
           <option>Inspecting</option>
+          <option>Cleaning</option>
         </Select>
       ),
     },
@@ -208,8 +208,8 @@ export function RoomsPage() {
           }}
         >
           <option>Clean</option>
-          <option>Dirty</option>
           <option>Inspecting</option>
+          <option>Dirty</option>
         </Select>
       ),
     },
