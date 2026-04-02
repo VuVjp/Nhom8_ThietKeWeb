@@ -103,7 +103,18 @@ export function InventoryPage() {
             label: 'Actions',
             render: (row: InventoryItem) => (
                 <div className="flex gap-2">
-
+                    <button
+                        type="button"
+                        className="rounded-lg border border-slate-200 px-2 py-1 text-xs"
+                        onClick={() => {
+                            if (!ensure('update_room_inventory', 'edit inventory item')) {
+                                return;
+                            }
+                            openEditModal(row);
+                        }}
+                    >
+                        Edit
+                    </button>
                     <button
                         type="button"
                         className="rounded-lg border border-rose-200 px-2 py-1 text-xs text-rose-600"

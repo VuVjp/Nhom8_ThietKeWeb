@@ -5,16 +5,22 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using System;
 using HotelManagement.Dtos;
+using HotelManagement.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace HotelManagement.Services.Implementations;
 
 public class RoomService : IRoomService
 {
 	private readonly IRoomRepository _repository;
+	private readonly AppDbContext _context;
+	private readonly INotificationService _notificationService;
 
-	public RoomService(IRoomRepository repository)
+	public RoomService(IRoomRepository repository, AppDbContext context, INotificationService notificationService)
 	{
 		_repository = repository;
+		_context = context;
+		_notificationService = notificationService;
 	}
 
 	public async Task<IEnumerable<RoomDto>> GetListAsync()
@@ -99,7 +105,30 @@ public class RoomService : IRoomService
 		var room = await _repository.GetByIdAsync(id);
 		if (room == null) throw new NotFoundException("Room not found.");
 
-		room.Status = newStatus;
+		var targetStatus = newStatus.Trim();
+		if (string.Equals(targetStatus, "Available", StringComparison.OrdinalIgnoreCase) && string.Equals(room.Status, "Cleaning", StringComparison.OrdinalIgnoreCase))
+		{
+			var validationMessage = await ValidateCleaningCompletionAsync(room.Id);
+			if (validationMessage != null)
+			{
+				room.Status = "Maintenance";
+				room.CleaningStatus = "Dirty";
+				_repository.Update(room);
+				await _repository.SaveChangesAsync();
+
+				await _notificationService.SendByRoleAsync(RoleName.Admin, new CreateNotificationDto
+				{
+					Title = $"Room {room.RoomNumber} moved to Maintenance",
+					Content = $"Room {room.RoomNumber} could not be returned to Available: {validationMessage}",
+					Type = NotificationAction.CheckOut,
+					ReferenceLink = $"admin/rooms/{room.Id}"
+				});
+
+				return;
+			}
+		}
+
+		room.Status = targetStatus;
 		_repository.Update(room);
 		await _repository.SaveChangesAsync();
 	}
@@ -135,5 +164,51 @@ public class RoomService : IRoomService
 			RoomTypeId = room.RoomTypeId,
 			RoomTypeName = room.RoomType?.Name
 		};
+	}
+
+	private async Task<string?> ValidateCleaningCompletionAsync(int roomId)
+	{
+		var inventories = await _context.RoomInventories
+			.Where(item => item.RoomId == roomId && item.IsActive)
+			.Select(item => new
+			{
+				item.Id,
+				item.ItemName,
+				Quantity = item.Quantity ?? 0
+			})
+			.ToListAsync();
+
+		if (inventories.Count == 0)
+		{
+			return "room has no active inventory items";
+		}
+
+		var inventoryIds = inventories.Select(item => item.Id).ToList();
+		var lossTotals = await _context.LossAndDamages
+			.Where(loss => loss.RoomInventoryId.HasValue && inventoryIds.Contains(loss.RoomInventoryId.Value))
+			.GroupBy(loss => loss.RoomInventoryId!.Value)
+			.Select(group => new
+			{
+				RoomInventoryId = group.Key,
+				TotalQuantity = group.Sum(loss => loss.Quantity)
+			})
+			.ToListAsync();
+
+		foreach (var inventory in inventories)
+		{
+			if (inventory.Quantity <= 0)
+			{
+				return $"item '{inventory.ItemName}' has invalid quantity {inventory.Quantity}";
+			}
+
+			var lostQuantity = lossTotals.FirstOrDefault(item => item.RoomInventoryId == inventory.Id)?.TotalQuantity ?? 0;
+			if (lostQuantity > 0)
+			{
+				var remainingQuantity = Math.Max(inventory.Quantity - lostQuantity, 0);
+				return $"item '{inventory.ItemName}' is missing/damaged ({lostQuantity}), remaining {remainingQuantity}/{inventory.Quantity}";
+			}
+		}
+
+		return null;
 	}
 }

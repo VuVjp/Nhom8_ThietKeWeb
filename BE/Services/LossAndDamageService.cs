@@ -11,11 +11,13 @@ public class LossAndDamageService : ILossAndDamageService
 {
     private readonly ILossAndDamageRepository _repository;
     private readonly AppDbContext _context;
+    private readonly INotificationService _notificationService;
 
-    public LossAndDamageService(ILossAndDamageRepository repository, AppDbContext context)
+    public LossAndDamageService(ILossAndDamageRepository repository, AppDbContext context, INotificationService notificationService)
     {
         _repository = repository;
         _context = context;
+        _notificationService = notificationService;
     }
 
     public async Task<IEnumerable<LossAndDamageDto>> GetAllAsync()
@@ -71,7 +73,23 @@ public class LossAndDamageService : ILossAndDamageService
         };
 
         await _repository.AddAsync(entity);
-        return await _repository.SaveChangesAsync();
+        var created = await _repository.SaveChangesAsync();
+
+        if (created)
+        {
+            var roomNumber = inventory.Room?.RoomNumber ?? "Unknown";
+            var itemName = string.IsNullOrWhiteSpace(inventory.ItemName) ? "Unknown item" : inventory.ItemName.Trim();
+
+            await _notificationService.SendByRoleAsync(RoleName.Admin, new CreateNotificationDto
+            {
+                Title = $"New loss/damage report - Room {roomNumber}",
+                Content = $"Item: {itemName}. Reported quantity: {dto.Quantity}. Penalty: {dto.PenaltyAmount}.",
+                Type = NotificationAction.CheckOut,
+                ReferenceLink = "admin/cleaning"
+            });
+        }
+
+        return created;
     }
 
     private static LossAndDamageDto MapToDto(LossAndDamage entity)

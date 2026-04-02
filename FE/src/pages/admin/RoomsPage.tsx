@@ -185,6 +185,7 @@ export function RoomsPage() {
           }}
         >
           <option>Available</option>
+          <option>Maintenance</option>
           <option>Occupied</option>
           <option>Inspecting</option>
           <option>Cleaning</option>
@@ -396,7 +397,7 @@ export function RoomsPage() {
       </div>
 
       <div className="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-5">
-        <Select value={status} onChange={(e) => setStatus(e.target.value)}><option value="all">Room Status</option><option>Available</option><option>Occupied</option></Select>
+        <Select value={status} onChange={(e) => setStatus(e.target.value)}><option value="all">Room Status</option><option>Available</option><option>Occupied</option><option>Inspecting</option><option>Cleaning</option><option>Maintenance</option></Select>
         <Select value={cleaningStatus} onChange={(e) => setCleaningStatus(e.target.value)}><option value="all">Cleaning Status</option><option>Clean</option><option>Dirty</option><option>Inspecting</option></Select>
         <Select value={roomType} onChange={(e) => setRoomType(e.target.value)}><option value="all">Room Type</option>{roomTypeOptions.map((item) => <option key={item}>{item}</option>)}</Select>
         <Select value={floor} onChange={(e) => setFloor(e.target.value)}><option value="all">Floor</option>{floorOptions.map((f) => <option key={f}>{f}</option>)}</Select>

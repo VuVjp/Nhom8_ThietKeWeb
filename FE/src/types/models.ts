@@ -1,4 +1,4 @@
-export type RoomStatus = 'Available' | 'Occupied' | 'Cleaning' | 'Inspecting';
+export type RoomStatus = 'Available' | 'Occupied' | 'Cleaning' | 'Inspecting' | 'Maintenance';
 export type CleaningCondition = 'Normal' | 'Damaged' | 'Missing';
 
 export interface NotificationItem {

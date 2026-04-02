@@ -304,7 +304,12 @@ export function CleaningPage() {
             setIsUpdatingStatus(true);
             try {
                 await roomsApi.changeStatus(selectedCleaningRoom.id, 'Available');
-                toast.success(`Room ${selectedCleaningRoom.roomNumber} marked Available`);
+                const updatedRoom = await roomsApi.getById(selectedCleaningRoom.id);
+                if (updatedRoom.status === 'Maintenance') {
+                    toast.error(`Room ${selectedCleaningRoom.roomNumber} was moved to Maintenance. Admin has been notified.`);
+                } else {
+                    toast.success(`Room ${selectedCleaningRoom.roomNumber} marked Available`);
+                }
                 await loadBoards();
             } catch (error) {
                 const apiError = toApiError(error);
@@ -366,7 +371,7 @@ export function CleaningPage() {
         setLossDraft(emptyLossDraft);
         setLossEvidenceFile(null);
         setIsNoIssueDraft(false);
-        toast.success(isNoIssueDraft ? 'Saved as no-loss check (pending)' : 'Saved loss report (pending)');
+        toast.success(isNoIssueDraft ? 'Saved as no-loss check (pending)' : 'Saved loss report (pending). Click Save & Send Reports to submit and move room.');
     };
 
     const undoLastPendingReport = () => {
@@ -415,6 +420,7 @@ export function CleaningPage() {
             setIsSendingPendingReports(true);
             try {
                 await sendPendingReports(selectedInspectingRoom.id);
+                await roomsApi.changeStatus(selectedInspectingRoom.id, 'Cleaning');
 
                 setPendingLossReportsByRoom((prev) => {
                     const next = { ...prev };
@@ -422,11 +428,11 @@ export function CleaningPage() {
                     return next;
                 });
 
-                await loadInspectingState(selectedInspectingRoom.id);
-                toast.success('Pending reports have been sent to server');
+                await loadBoards();
+                toast.success(`Pending reports sent. Room ${selectedInspectingRoom.roomNumber} moved to Cleaning.`);
             } catch (error) {
                 const apiError = toApiError(error);
-                toast.error(apiError.message || 'Failed to send pending reports');
+                toast.error(apiError.message || 'Failed to send reports and move room to Cleaning');
             } finally {
                 setIsSendingPendingReports(false);
             }
@@ -445,8 +451,8 @@ export function CleaningPage() {
                     <button
                         type="button"
                         className={`rounded-lg px-3 py-2 text-sm font-medium transition ${activeTab === 'inspecting'
-                                ? 'bg-cyan-700 text-white'
-                                : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                            ? 'bg-cyan-700 text-white'
+                            : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
                             }`}
                         onClick={() => setActiveTab('inspecting')}
                     >
@@ -455,8 +461,8 @@ export function CleaningPage() {
                     <button
                         type="button"
                         className={`rounded-lg px-3 py-2 text-sm font-medium transition ${activeTab === 'cleaning'
-                                ? 'bg-cyan-700 text-white'
-                                : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                            ? 'bg-cyan-700 text-white'
+                            : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
                             }`}
                         onClick={() => setActiveTab('cleaning')}
                     >
@@ -466,7 +472,7 @@ export function CleaningPage() {
             </div>
 
             {activeTab === 'inspecting' ? (
-                <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <section className="overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
                     <div className="flex items-start justify-between gap-3">
                         <div>
                             <h3 className="text-lg font-semibold text-slate-900">Inspecting Rooms</h3>
@@ -484,7 +490,7 @@ export function CleaningPage() {
                         </div>
                     </div>
 
-                    <div className="mt-4 grid gap-3 md:grid-cols-[280px_1fr]">
+                    <div className="mt-4 grid items-start gap-3 md:grid-cols-[280px_minmax(0,1fr)]">
                         <div className="space-y-2 max-h-[560px] overflow-y-auto pr-1">
                             {inspectingRooms.map((room) => (
                                 <button
@@ -499,7 +505,7 @@ export function CleaningPage() {
                             {!isLoading && inspectingRooms.length === 0 ? <p className="text-xs text-slate-400">No rooms are currently inspecting.</p> : null}
                         </div>
 
-                        <div className="space-y-4 min-h-[420px]">
+                        <div className="min-w-0 space-y-4 min-h-[420px]">
                             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                                 <h4 className="text-sm font-semibold text-slate-900">Selected Room</h4>
                                 <p className="mt-1 text-sm text-slate-600">Room: {selectedInspectingRoom?.roomNumber ?? '-'}</p>
@@ -507,8 +513,8 @@ export function CleaningPage() {
                                 <p className="mt-1 text-sm text-slate-600">Status: Inspecting</p>
                             </div>
 
-                            <div className="rounded-xl border border-slate-200 bg-white p-4">
-                                <div className="flex items-center justify-between gap-2">
+                            <div className="min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white p-4">
+                                <div className="flex flex-wrap items-center justify-between gap-2">
                                     <div>
                                         <h4 className="text-sm font-semibold text-slate-900">Equipment & Amenities</h4>
                                         <p className="text-xs text-slate-500">Choose an item to record damage or loss.</p>
@@ -532,7 +538,7 @@ export function CleaningPage() {
                                     </button>
                                 </div>
 
-                                <div className="mt-3">
+                                <div className="mt-3 overflow-x-auto">
                                     {isLoadingInspectingState ? (
                                         <p className="text-sm text-slate-500">Loading room items...</p>
                                     ) : inspectingState?.inventories.length ? (
@@ -543,12 +549,12 @@ export function CleaningPage() {
                                 </div>
                             </div>
 
-                            <div className="rounded-xl border border-slate-200 bg-white p-4">
-                                <div className="mb-2 flex items-center justify-between gap-2">
+                            <div className="min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white p-4">
+                                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                                     <h4 className="text-sm font-semibold text-slate-900">Pending Reports (RAM)</h4>
-                                    <span className="text-xs text-slate-500">{pendingLossReports.length} pending, total penalty ${pendingPenaltyTotal}</span>
+                                    <span className="break-words text-xs text-slate-500">{pendingLossReports.length} pending, total penalty ${pendingPenaltyTotal}</span>
                                 </div>
-                                <div className="mb-3 flex items-center gap-2">
+                                <div className="mb-3 flex flex-wrap items-center gap-2">
                                     <button
                                         type="button"
                                         className="rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 disabled:opacity-60"
@@ -567,15 +573,15 @@ export function CleaningPage() {
                                     </button>
                                 </div>
                                 {pendingLossReports.length > 0 ? (
-                                    <div className="space-y-2">
+                                    <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
                                         {pendingLossReports.map((item) => (
                                             <div key={item.tempId} className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
                                                 <div className="flex items-start justify-between gap-2">
-                                                    <div>
+                                                    <div className="min-w-0">
                                                         <p className="font-medium">
                                                             {item.noIssue ? 'No loss/damage reported' : item.itemName}
                                                         </p>
-                                                        <p className="text-xs">
+                                                        <p className="break-words text-xs">
                                                             Qty: {item.quantity} | Penalty: ${item.penaltyAmount}
                                                             {item.evidenceFile ? ` | Evidence: ${item.evidenceFile.name}` : ''}
                                                         </p>
@@ -596,9 +602,9 @@ export function CleaningPage() {
                                 )}
                             </div>
 
-                            <div className="rounded-xl border border-slate-200 bg-white p-4">
+                            <div className="min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white p-4">
                                 <h4 className="text-sm font-semibold text-slate-900">Loss & Damage Records</h4>
-                                <div className="mt-3">
+                                <div className="mt-3 overflow-x-auto">
                                     {reportLossRows.length > 0 ? (
                                         <Table columns={lossColumns} rows={reportLossRows} />
                                     ) : (
@@ -612,7 +618,7 @@ export function CleaningPage() {
             ) : null}
 
             {activeTab === 'cleaning' ? (
-                <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <section className="overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
                     <div className="flex items-start justify-between gap-3">
                         <div>
                             <h3 className="text-lg font-semibold text-slate-900">Cleaning Rooms</h3>
@@ -628,7 +634,7 @@ export function CleaningPage() {
                         </button>
                     </div>
 
-                    <div className="mt-4 grid gap-3 md:grid-cols-[280px_1fr]">
+                    <div className="mt-4 grid items-start gap-3 md:grid-cols-[280px_minmax(0,1fr)]">
                         <div className="space-y-2 max-h-[560px] overflow-y-auto pr-1">
                             {cleaningRooms.map((room) => (
                                 <button
@@ -643,7 +649,7 @@ export function CleaningPage() {
                             {!isLoading && cleaningRooms.length === 0 ? <p className="text-xs text-slate-400">No rooms are currently cleaning.</p> : null}
                         </div>
 
-                        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <div className="min-w-0 rounded-xl border border-slate-200 bg-slate-50 p-4">
                             <h4 className="text-sm font-semibold text-slate-900">Selected Room</h4>
                             <p className="mt-1 text-sm text-slate-600">Room: {selectedCleaningRoom?.roomNumber ?? '-'}</p>
                             <p className="mt-1 text-sm text-slate-600">Room Type: {selectedCleaningRoom?.roomType ?? '-'}</p>
@@ -784,6 +790,7 @@ export function CleaningPage() {
                             type="button"
                             className="rounded-lg bg-cyan-700 px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
                             onClick={submitLoss}
+                            disabled={isUpdatingStatus}
                         >
                             Save Pending Report
                         </button>
