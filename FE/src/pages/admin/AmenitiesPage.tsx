@@ -16,6 +16,7 @@ export function AmenitiesPage() {
     const [createName, setCreateName] = useState('');
     const [createFile, setCreateFile] = useState<File | null>(null);
     const [isCreating, setIsCreating] = useState(false);
+    const [openCreate, setOpenCreate] = useState(false);
 
     const [editing, setEditing] = useState<AmenityItem | null>(null);
     const [editName, setEditName] = useState('');
@@ -41,12 +42,12 @@ export function AmenitiesPage() {
 
     const createAmenity = async () => {
         if (!ensure('create_amenity', 'create amenity')) {
-            return;
+            return false;
         }
 
         if (!createName.trim()) {
             toast.error('Amenity name is required');
-            return;
+            return false;
         }
 
         setIsCreating(true);
@@ -59,9 +60,11 @@ export function AmenitiesPage() {
             setCreateName('');
             setCreateFile(null);
             await loadAmenities();
+            return true;
         } catch (error) {
             const apiError = toApiError(error);
             toast.error(apiError.message || 'Failed to create amenity');
+            return false;
         } finally {
             setIsCreating(false);
         }
@@ -160,29 +163,79 @@ export function AmenitiesPage() {
 
     return (
         <div className="space-y-4">
-            <div>
-                <h2 className="text-2xl font-bold text-slate-900">Amenities</h2>
-                <p className="text-sm text-slate-500">Manage amenity catalog and icon image for room setup.</p>
-            </div>
-
-            <div className="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-3">
-                <Input
-                    placeholder="Amenity name"
-                    value={createName}
-                    onChange={(event) => setCreateName(event.target.value)}
-                />
-                <Input type="file" accept="image/*" onChange={(event) => setCreateFile(event.target.files?.[0] ?? null)} />
+            <div className="flex items-start justify-between gap-3">
+                <div>
+                    <h2 className="text-2xl font-bold text-slate-900">Amenities</h2>
+                    <p className="text-sm text-slate-500">Manage amenity catalog and icon image for room setup.</p>
+                </div>
                 <button
                     type="button"
-                    className="inline-flex items-center justify-center gap-2 rounded-lg bg-cyan-700 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-800 disabled:opacity-60"
-                    onClick={() => void createAmenity()}
-                    disabled={isCreating}
+                    className="inline-flex items-center gap-2 rounded-lg bg-cyan-700 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-800 disabled:opacity-60"
+                    onClick={() => setOpenCreate(true)}
                 >
-                    <PlusIcon className="h-4 w-4" /> {isCreating ? 'Saving...' : 'Add Amenity'}
+                    <PlusIcon className="h-4 w-4" /> Add Amenity
                 </button>
             </div>
 
             <Table columns={columns} rows={isLoading ? [] : rows} />
+
+            <Modal
+                open={openCreate}
+                title="Add Amenity"
+                onClose={() => {
+                    setOpenCreate(false);
+                    setCreateName('');
+                    setCreateFile(null);
+                }}
+            >
+                <div className="space-y-4">
+                    <section className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <div>
+                            <h3 className="text-sm font-semibold text-slate-900">Amenity details</h3>
+                            <p className="text-xs text-slate-500">Enter the display name and optional icon image.</p>
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-slate-700">Amenity name</label>
+                            <Input placeholder="Example: Free Wi-Fi" value={createName} onChange={(event) => setCreateName(event.target.value)} />
+                            <p className="text-xs text-slate-500">Shown in room types and room setup screens.</p>
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-slate-700">Icon image</label>
+                            <Input type="file" accept="image/*" onChange={(event) => setCreateFile(event.target.files?.[0] ?? null)} />
+                            <p className="text-xs text-slate-500">Upload a small image for visual identification.</p>
+                        </div>
+                    </section>
+
+                    <div className="flex justify-end gap-2">
+                        <button
+                            type="button"
+                            className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                            onClick={() => {
+                                setOpenCreate(false);
+                                setCreateName('');
+                                setCreateFile(null);
+                            }}
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="button"
+                            className="rounded-lg bg-cyan-700 px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                            onClick={() =>
+                                void (async () => {
+                                    const created = await createAmenity();
+                                    if (created) {
+                                        setOpenCreate(false);
+                                    }
+                                })()
+                            }
+                            disabled={isCreating}
+                        >
+                            {isCreating ? 'Saving...' : 'Save Amenity'}
+                        </button>
+                    </div>
+                </div>
+            </Modal>
 
             <Modal
                 open={Boolean(editing)}
@@ -193,9 +246,36 @@ export function AmenitiesPage() {
                     setEditFile(null);
                 }}
             >
-                <div className="space-y-3">
-                    <Input value={editName} onChange={(event) => setEditName(event.target.value)} placeholder="Amenity name" />
-                    <Input type="file" accept="image/*" onChange={(event) => setEditFile(event.target.files?.[0] ?? null)} />
+                <div className="space-y-4">
+                    <section className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <div>
+                            <h3 className="text-sm font-semibold text-slate-900">Amenity details</h3>
+                            <p className="text-xs text-slate-500">Update display name and icon image for this amenity.</p>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-slate-700">Amenity name</label>
+                            <Input value={editName} onChange={(event) => setEditName(event.target.value)} placeholder="Example: Free Wi-Fi" />
+                            <p className="text-xs text-slate-500">Shown in room types and booking-related screens.</p>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-slate-700">Current icon</label>
+                            {editing?.iconUrl ? (
+                                <img src={editing.iconUrl} alt={editing.name} className="h-16 w-16 rounded-lg border border-slate-200 object-cover" />
+                            ) : (
+                                <div className="h-16 w-16 rounded-lg border border-dashed border-slate-300 bg-white" />
+                            )}
+                            <p className="text-xs text-slate-500">If no new image is selected, the current icon is kept.</p>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-slate-700">Replace icon image</label>
+                            <Input type="file" accept="image/*" onChange={(event) => setEditFile(event.target.files?.[0] ?? null)} />
+                            <p className="text-xs text-slate-500">Upload only when you want to change the existing icon.</p>
+                        </div>
+                    </section>
+
                     <div className="flex justify-end gap-2">
                         <button
                             type="button"

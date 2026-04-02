@@ -11,7 +11,7 @@ import type { LayoutOutletContext } from '../../types/layout';
 import type { Room } from '../../types/models';
 import { toApiError } from '../../api/httpClient';
 import { roomsApi } from '../../api/roomsApi';
-import { roomTypesApi } from '../../api/roomTypesApi';
+import { roomTypesApi, type RoomTypeItem } from '../../api/roomTypesApi';
 import { amenitiesApi, type AmenityItem } from '../../api/amenitiesApi';
 import { roomInventoriesApi } from '../../api/roomInventoriesApi';
 import { paginate, queryIncludes, sortBy } from '../../utils/table';
@@ -52,6 +52,9 @@ export function RoomsPage() {
   const [createStep, setCreateStep] = useState<1 | 2 | 3>(1);
   const [isSaving, setIsSaving] = useState(false);
   const [createdRoomId, setCreatedRoomId] = useState<number | null>(null);
+  const [amenityMode, setAmenityMode] = useState<'manual' | 'roomType'>('manual');
+  const [inventoryMode, setInventoryMode] = useState<'manual' | 'cloneRoom'>('manual');
+  const [cloneSourceRoomId, setCloneSourceRoomId] = useState<number | null>(null);
   const [draft, setDraft] = useState<CreateRoomDraft>({
     roomNumber: '',
     floor: 1,
@@ -59,7 +62,7 @@ export function RoomsPage() {
     status: 'Available',
     cleaningStatus: 'Clean',
   });
-  const [roomTypes, setRoomTypes] = useState<Array<{ id: number; name: string }>>([]);
+  const [roomTypes, setRoomTypes] = useState<RoomTypeItem[]>([]);
   const [amenities, setAmenities] = useState<AmenityItem[]>([]);
   const [selectedAmenityIds, setSelectedAmenityIds] = useState<number[]>([]);
   const [inventoryOptions, setInventoryOptions] = useState<InventoryOption[]>([]);
@@ -228,6 +231,9 @@ export function RoomsPage() {
     setCreateStep(1);
     setIsSaving(false);
     setCreatedRoomId(null);
+    setAmenityMode('manual');
+    setInventoryMode('manual');
+    setCloneSourceRoomId(null);
     setSelectedAmenityIds([]);
     setSelectedInventories({});
     setDraft((prev) => ({
@@ -294,7 +300,12 @@ export function RoomsPage() {
     void (async () => {
       setIsSaving(true);
       try {
-        const selected = amenities.filter((item) => selectedAmenityIds.includes(item.id));
+        const selectedFromRoomType = roomTypes.find((item) => item.id === draft.roomTypeId)?.amenities ?? [];
+        const selected =
+          amenityMode === 'roomType'
+            ? selectedFromRoomType
+            : amenities.filter((item) => selectedAmenityIds.includes(item.id));
+
         await Promise.all(
           selected.map((item) =>
             roomInventoriesApi.create({
@@ -306,7 +317,7 @@ export function RoomsPage() {
           ),
         );
         setCreateStep(3);
-        toast.success('Amenities added. Continue to room items');
+        toast.success('Amenities added. Continue to equipment setup');
       } catch (error) {
         const apiError = toApiError(error);
         toast.error(apiError.message || 'Failed to add amenities');
@@ -325,16 +336,37 @@ export function RoomsPage() {
     void (async () => {
       setIsSaving(true);
       try {
-        const selectedItems = Object.entries(selectedInventories)
-          .map(([itemName, value]) => ({
-            itemName,
-            quantity: Number(value.quantity || 0),
-            priceIfLost: Number(value.priceIfLost || 0),
-          }))
-          .filter((item) => item.itemName.trim().length > 0 && item.quantity > 0);
+        const selectedItems =
+          inventoryMode === 'cloneRoom'
+            ? (() => {
+              if (!cloneSourceRoomId) {
+                throw new Error('Please select a room to clone equipment from');
+              }
+
+              return roomInventoriesApi.getByRoom(cloneSourceRoomId).then((items) =>
+                items
+                  .map((item) => ({
+                    itemName: item.name,
+                    quantity: Number(item.quantity || 0),
+                    priceIfLost: Number(item.compensationPrice || 0),
+                  }))
+                  .filter((item) => item.itemName.trim().length > 0 && item.quantity > 0),
+              );
+            })()
+            : Promise.resolve(
+              Object.entries(selectedInventories)
+                .map(([itemName, value]) => ({
+                  itemName,
+                  quantity: Number(value.quantity || 0),
+                  priceIfLost: Number(value.priceIfLost || 0),
+                }))
+                .filter((item) => item.itemName.trim().length > 0 && item.quantity > 0),
+            );
+
+        const normalizedItems = await selectedItems;
 
         await Promise.all(
-          selectedItems.map((item) =>
+          normalizedItems.map((item) =>
             roomInventoriesApi.create({
               roomId: createdRoomId,
               itemName: item.itemName.trim(),
@@ -347,7 +379,7 @@ export function RoomsPage() {
         await loadRooms();
         setOpenCreate(false);
         resetCreateFlow();
-        toast.success('Room created with amenities and inventory');
+        toast.success('Room created with amenities and equipment');
       } catch (error) {
         const apiError = toApiError(error);
         toast.error(apiError.message || 'Failed to complete room setup');
@@ -438,25 +470,61 @@ export function RoomsPage() {
 
           {createStep === 2 ? (
             <>
-              <p className="text-sm text-slate-600">Select amenities to attach to this room.</p>
-              <div className="max-h-56 space-y-2 overflow-auto rounded-lg border border-slate-200 p-3">
-                {amenities.map((item) => (
-                  <label key={item.id} className="flex items-center gap-2 text-sm text-slate-700">
-                    <input
-                      type="checkbox"
-                      checked={selectedAmenityIds.includes(item.id)}
-                      onChange={(e) => {
-                        const checked = e.target.checked;
-                        setSelectedAmenityIds((prev) =>
-                          checked ? [...prev, item.id] : prev.filter((id) => id !== item.id),
-                        );
-                      }}
-                    />
-                    {item.name}
-                  </label>
-                ))}
-                {amenities.length === 0 ? <p className="text-xs text-slate-400">No amenities found.</p> : null}
+              <p className="text-sm text-slate-600">Choose how to add amenities for this room.</p>
+              <div className="grid gap-2 rounded-lg border border-slate-200 p-3 sm:grid-cols-2">
+                <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
+                  <input
+                    type="radio"
+                    name="amenity-mode"
+                    checked={amenityMode === 'manual'}
+                    onChange={() => setAmenityMode('manual')}
+                  />
+                  Add manually
+                </label>
+                <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
+                  <input
+                    type="radio"
+                    name="amenity-mode"
+                    checked={amenityMode === 'roomType'}
+                    onChange={() => setAmenityMode('roomType')}
+                  />
+                  Add from room type
+                </label>
               </div>
+
+              {amenityMode === 'manual' ? (
+                <div className="max-h-56 space-y-2 overflow-auto rounded-lg border border-slate-200 p-3">
+                  {amenities.map((item) => (
+                    <label key={item.id} className="flex items-center gap-2 text-sm text-slate-700">
+                      <input
+                        type="checkbox"
+                        checked={selectedAmenityIds.includes(item.id)}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setSelectedAmenityIds((prev) =>
+                            checked ? [...prev, item.id] : prev.filter((id) => id !== item.id),
+                          );
+                        }}
+                      />
+                      {item.name}
+                    </label>
+                  ))}
+                  {amenities.length === 0 ? <p className="text-xs text-slate-400">No amenities found.</p> : null}
+                </div>
+              ) : (
+                <div className="max-h-56 space-y-2 overflow-auto rounded-lg border border-slate-200 p-3">
+                  {(roomTypes.find((item) => item.id === draft.roomTypeId)?.amenities ?? []).map((item) => (
+                    <div key={item.id} className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+                      <span>{item.name}</span>
+                      <span className="text-xs text-cyan-700">from room type</span>
+                    </div>
+                  ))}
+                  {(roomTypes.find((item) => item.id === draft.roomTypeId)?.amenities?.length ?? 0) === 0 ? (
+                    <p className="text-xs text-slate-400">This room type has no preset amenities.</p>
+                  ) : null}
+                </div>
+              )}
+
               <div className="flex justify-end gap-2 pt-2">
                 <button type="button" onClick={() => setCreateStep(1)} className="rounded-lg border border-slate-200 px-3 py-2 text-sm">Back</button>
                 <button type="button" disabled={isSaving} onClick={saveAmenitiesStep} className="inline-flex items-center gap-2 rounded-lg bg-cyan-700 px-3 py-2 text-sm font-semibold text-white disabled:opacity-60">
@@ -468,78 +536,125 @@ export function RoomsPage() {
 
           {createStep === 3 ? (
             <>
-              <p className="text-sm text-slate-600">Select inventory items to add to this room.</p>
-              <div className="max-h-64 space-y-2 overflow-auto rounded-lg border border-slate-200 p-3">
-                {inventoryOptions.map((item) => {
-                  const selected = Boolean(selectedInventories[item.name]);
-                  const quantity = selectedInventories[item.name]?.quantity ?? 1;
-                  const priceIfLost = selectedInventories[item.name]?.priceIfLost ?? item.priceIfLost;
-
-                  return (
-                    <div key={item.name} className="rounded-lg border border-slate-100 p-2">
-                      <label className="flex items-center gap-2 text-sm text-slate-700">
-                        <input
-                          type="checkbox"
-                          checked={selected}
-                          onChange={(e) => {
-                            const checked = e.target.checked;
-                            setSelectedInventories((prev) => {
-                              if (!checked) {
-                                const next = { ...prev };
-                                delete next[item.name];
-                                return next;
-                              }
-
-                              return {
-                                ...prev,
-                                [item.name]: {
-                                  quantity: prev[item.name]?.quantity ?? 1,
-                                  priceIfLost: prev[item.name]?.priceIfLost ?? item.priceIfLost,
-                                },
-                              };
-                            });
-                          }}
-                        />
-                        {item.name}
-                      </label>
-
-                      {selected ? (
-                        <div className="mt-2 grid gap-2 md:grid-cols-2">
-                          <Input
-                            placeholder="Quantity"
-                            type="number"
-                            value={quantity}
-                            onChange={(e) =>
-                              setSelectedInventories((prev) => ({
-                                ...prev,
-                                [item.name]: {
-                                  quantity: Number(e.target.value),
-                                  priceIfLost,
-                                },
-                              }))
-                            }
-                          />
-                          <Input
-                            placeholder="Price if lost"
-                            type="number"
-                            value={priceIfLost}
-                            onChange={(e) =>
-                              setSelectedInventories((prev) => ({
-                                ...prev,
-                                [item.name]: {
-                                  quantity,
-                                  priceIfLost: Number(e.target.value),
-                                },
-                              }))
-                            }
-                          />
-                        </div>
-                      ) : null}
-                    </div>
-                  );
-                })}
-                {inventoryOptions.length === 0 ? <p className="text-xs text-slate-400">No inventory templates found.</p> : null}
+              <p className="text-sm text-slate-600">Choose how to add equipment for this room.</p>
+              <div className="grid gap-2 rounded-lg border border-slate-200 p-3 sm:grid-cols-2">
+                <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
+                  <input
+                    type="radio"
+                    name="inventory-mode"
+                    checked={inventoryMode === 'manual'}
+                    onChange={() => {
+                      setInventoryMode('manual');
+                      setCloneSourceRoomId(null);
+                    }}
+                  />
+                  Add equipment manually
+                </label>
+                <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700">
+                  <input
+                    type="radio"
+                    name="inventory-mode"
+                    checked={inventoryMode === 'cloneRoom'}
+                    onChange={() => {
+                      setInventoryMode('cloneRoom');
+                      setSelectedInventories({});
+                    }}
+                  />
+                  Clone from another room
+                </label>
               </div>
+
+              {inventoryMode === 'manual' ? (
+                <div className="max-h-64 space-y-2 overflow-auto rounded-lg border border-slate-200 p-3">
+                  {inventoryOptions.map((item) => {
+                    const selected = Boolean(selectedInventories[item.name]);
+                    const quantity = selectedInventories[item.name]?.quantity ?? 1;
+                    const priceIfLost = selectedInventories[item.name]?.priceIfLost ?? item.priceIfLost;
+
+                    return (
+                      <div key={item.name} className="rounded-lg border border-slate-100 p-2">
+                        <label className="flex items-center gap-2 text-sm text-slate-700">
+                          <input
+                            type="checkbox"
+                            checked={selected}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              setSelectedInventories((prev) => {
+                                if (!checked) {
+                                  const next = { ...prev };
+                                  delete next[item.name];
+                                  return next;
+                                }
+
+                                return {
+                                  ...prev,
+                                  [item.name]: {
+                                    quantity: prev[item.name]?.quantity ?? 1,
+                                    priceIfLost: prev[item.name]?.priceIfLost ?? item.priceIfLost,
+                                  },
+                                };
+                              });
+                            }}
+                          />
+                          {item.name}
+                        </label>
+
+                        {selected ? (
+                          <div className="mt-2 grid gap-2 md:grid-cols-2">
+                            <Input
+                              placeholder="Quantity"
+                              type="number"
+                              value={quantity}
+                              onChange={(e) =>
+                                setSelectedInventories((prev) => ({
+                                  ...prev,
+                                  [item.name]: {
+                                    quantity: Number(e.target.value),
+                                    priceIfLost,
+                                  },
+                                }))
+                              }
+                            />
+                            <Input
+                              placeholder="Price if lost"
+                              type="number"
+                              value={priceIfLost}
+                              onChange={(e) =>
+                                setSelectedInventories((prev) => ({
+                                  ...prev,
+                                  [item.name]: {
+                                    quantity,
+                                    priceIfLost: Number(e.target.value),
+                                  },
+                                }))
+                              }
+                            />
+                          </div>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                  {inventoryOptions.length === 0 ? <p className="text-xs text-slate-400">No inventory templates found.</p> : null}
+                </div>
+              ) : (
+                <div className="space-y-2 rounded-lg border border-slate-200 p-3">
+                  <p className="text-xs text-slate-500">Choose an existing room. Its equipment list will be copied to the new room.</p>
+                  <Select
+                    value={cloneSourceRoomId ? String(cloneSourceRoomId) : ''}
+                    onChange={(e) => setCloneSourceRoomId(e.target.value ? Number(e.target.value) : null)}
+                  >
+                    <option value="">Select source room</option>
+                    {rooms
+                      .filter((room) => room.id !== createdRoomId)
+                      .map((room) => (
+                        <option key={room.id} value={room.id}>
+                          {room.roomNumber} - {room.roomType}
+                        </option>
+                      ))}
+                  </Select>
+                </div>
+              )}
+
               <div className="flex justify-end gap-2 pt-2">
                 <button type="button" onClick={() => setCreateStep(2)} className="rounded-lg border border-slate-200 px-3 py-2 text-sm">Back</button>
                 <button type="button" disabled={isSaving} onClick={finishCreateFlow} className="inline-flex items-center gap-2 rounded-lg bg-cyan-700 px-3 py-2 text-sm font-semibold text-white disabled:opacity-60">

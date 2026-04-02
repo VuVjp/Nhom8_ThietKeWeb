@@ -10,5 +10,8 @@ public interface IRoomTypeService
     Task<bool> AddImageAsync(int id, AddRoomImageDto dto);
     Task<bool> DeleteImageAsync(int id);
     Task<bool> SetPrimaryImageAsync(int roomTypeId, int imageId);
+    Task<IEnumerable<AmenityDto>> GetAmenitiesAsync(int roomTypeId);
+    Task<bool> AddAmenityAsync(int roomTypeId, AddRoomTypeAmenityDto dto);
+    Task<bool> AddAmenitiesAsync(int roomTypeId, AddRoomTypeAmenitiesDto dto);
+    Task<bool> RemoveAmenityAsync(int roomTypeId, int amenityId);
 }
-    

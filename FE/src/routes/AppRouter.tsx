@@ -12,6 +12,7 @@ import { RolesPage } from '../pages/admin/RolesPage';
 import { UsersPage } from '../pages/admin/UsersPage';
 import { EquipmentPage } from '../pages/admin/EquipmentPage';
 import { AmenitiesPage } from '../pages/admin/AmenitiesPage';
+import { RoomTypesPage } from '../pages/admin/RoomTypesPage';
 import { ForbiddenPage } from '../pages/ForbiddenPage';
 import { RequireAuth, RequireAnyPermission, RequirePermission } from './RouteGuards';
 import { useAppAuth } from '../auth/useAppAuth';
@@ -27,6 +28,7 @@ function AdminEntryRedirect() {
     const nextPath =
         (permissions.includes('manage_role') && '/admin/roles') ||
         (permissions.includes('manage_user') && '/admin/users') ||
+        (permissions.includes('manage_room_type') && '/admin/room-types') ||
         (permissions.includes('create_amenity') && '/admin/amenities') ||
         (permissions.includes('create_amenity') && '/admin/equipments') ||
         (permissions.includes('get_all_room_inventory') && '/admin/inventory') ||
@@ -69,6 +71,10 @@ export const AppRouter = () => {
 
                     <Route element={<RequirePermission permission="manage_role" />}>
                         <Route path="admin/roles" element={<RolesPage />} />
+                    </Route>
+
+                    <Route element={<RequirePermission permission="manage_room_type" />}>
+                        <Route path="admin/room-types" element={<RoomTypesPage />} />
                     </Route>
 
                     <Route element={<RequireAnyPermission permissions={['create_amenity', 'update_amenity', 'delete_amenity']} />}>

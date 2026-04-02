@@ -98,5 +98,46 @@ namespace HotelManagement.Controllers
 
             return NoContent();
         }
+
+        [Permission(PermissionNames.ManageRoomType)]
+        [HttpGet("{id}/amenities")]
+        public async Task<IActionResult> GetAmenities(int id)
+        {
+            var amenities = await _roomTypeService.GetAmenitiesAsync(id);
+            return Ok(amenities);
+        }
+
+        [Permission(PermissionNames.ManageRoomType)]
+        [HttpPost("{id}/amenities")]
+        public async Task<IActionResult> AddAmenity(int id, [FromBody] AddRoomTypeAmenityDto dto)
+        {
+            var result = await _roomTypeService.AddAmenityAsync(id, dto);
+            if (!result)
+                return NotFound(new { message = "Room type not found." });
+
+            return Ok(new { message = "Amenity added successfully." });
+        }
+
+        [Permission(PermissionNames.ManageRoomType)]
+        [HttpPost("{id}/amenities/bulk")]
+        public async Task<IActionResult> AddAmenities(int id, [FromBody] AddRoomTypeAmenitiesDto dto)
+        {
+            var result = await _roomTypeService.AddAmenitiesAsync(id, dto);
+            if (!result)
+                return NotFound(new { message = "Room type or amenities not found." });
+
+            return Ok(new { message = "Amenities added successfully." });
+        }
+
+        [Permission(PermissionNames.ManageRoomType)]
+        [HttpDelete("{id}/amenities/{amenityId}")]
+        public async Task<IActionResult> RemoveAmenity(int id, int amenityId)
+        {
+            var result = await _roomTypeService.RemoveAmenityAsync(id, amenityId);
+            if (!result)
+                return NotFound(new { message = "Room type amenity relation not found." });
+
+            return NoContent();
+        }
     }
 }

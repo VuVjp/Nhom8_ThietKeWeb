@@ -7,58 +7,32 @@ public class RoomTypeService : IRoomTypeService
 {
     private readonly IRoomTypeRepository _roomTypeRepository;
     private readonly IRoomImageRepository _roomImageRepository;
+    private readonly IAmenityRepository _amenityRepository;
     private readonly ICloudinaryService _cloudinaryService;
 
     public RoomTypeService(
         IRoomTypeRepository roomTypeRepository,
         IRoomImageRepository roomImageRepository,
+        IAmenityRepository amenityRepository,
         ICloudinaryService cloudinaryService)
     {
         _roomTypeRepository = roomTypeRepository;
         _roomImageRepository = roomImageRepository;
+        _amenityRepository = amenityRepository;
         _cloudinaryService = cloudinaryService;
     }
 
     public async Task<IEnumerable<RoomTypeDto>> GetAllRoomTypesAsync()
     {
-        var roomTypes = await _roomTypeRepository.GetAllActiveWithImagesAsync();
-
-        return roomTypes.Select(rt => new RoomTypeDto
-        {
-            Id = rt.Id,
-            Name = rt.Name,
-            BasePrice = rt.BasePrice,
-            CapacityAdults = rt.CapacityAdults,
-            CapacityChildren = rt.CapacityChildren,
-            Description = rt.Description,
-            RoomImages = rt.RoomImages.Select(i => new RoomImageDto
-            {
-                Id = i.Id,
-                ImageUrl = i.ImageUrl,
-                IsPrimary = i.IsPrimary ?? false
-            }).ToList()
-        });
+        var roomTypes = await _roomTypeRepository.GetAllActiveWithImagesAndAmenitiesAsync();
+        return roomTypes.Select(ToDto);
     }
     public async Task<RoomTypeDto?> GetRoomTypeByIdAsync(int id)
     {
-        var roomType = await _roomTypeRepository.GetByIdAsync(id);
+        var roomType = await _roomTypeRepository.GetByIdWithImagesAndAmenitiesAsync(id);
         if (roomType == null) return null;
 
-        return new RoomTypeDto
-        {
-            Id = roomType.Id,
-            Name = roomType.Name,
-            BasePrice = roomType.BasePrice,
-            CapacityAdults = roomType.CapacityAdults,
-            CapacityChildren = roomType.CapacityChildren,
-            Description = roomType.Description,
-            RoomImages = roomType.RoomImages.Select(i => new RoomImageDto
-            {
-                Id = i.Id,
-                ImageUrl = i.ImageUrl,
-                IsPrimary = i.IsPrimary ?? false
-            }).ToList()
-        };
+        return ToDto(roomType);
     }
     public async Task<bool> CreateRoomTypeAsync(CreateRoomTypeDto dto)
     {
@@ -183,5 +157,100 @@ public class RoomTypeService : IRoomTypeService
 
         await _roomImageRepository.SaveChangesAsync();
         return true;
+    }
+
+    public async Task<IEnumerable<AmenityDto>> GetAmenitiesAsync(int roomTypeId)
+    {
+        var roomType = await _roomTypeRepository.GetByIdWithImagesAndAmenitiesAsync(roomTypeId);
+        if (roomType == null)
+        {
+            throw new NotFoundException($"Room type with ID {roomTypeId} not found.");
+        }
+
+        return roomType.RoomTypeAmenities
+            .Where(x => x.Amenity != null && x.Amenity.IsActive)
+            .Select(x => new AmenityDto
+            {
+                Id = x.Amenity.Id,
+                Name = x.Amenity.Name,
+                IconUrl = x.Amenity.IconUrl
+            });
+    }
+
+    public async Task<bool> AddAmenityAsync(int roomTypeId, AddRoomTypeAmenityDto dto)
+    {
+        if (dto.AmenityId <= 0)
+        {
+            throw new ArgumentException("AmenityId is required.");
+        }
+
+        var amenity = await _amenityRepository.GetByIdAsync(dto.AmenityId);
+        if (amenity == null || !amenity.IsActive)
+        {
+            throw new NotFoundException($"Amenity with ID {dto.AmenityId} not found.");
+        }
+
+        var result = await _roomTypeRepository.AddAmenityAsync(roomTypeId, dto.AmenityId);
+        if (!result)
+        {
+            throw new NotFoundException($"Room type with ID {roomTypeId} not found.");
+        }
+
+        return true;
+    }
+
+    public async Task<bool> AddAmenitiesAsync(int roomTypeId, AddRoomTypeAmenitiesDto dto)
+    {
+        if (dto.AmenityIds == null || dto.AmenityIds.Count == 0)
+        {
+            throw new ArgumentException("AmenityIds is required.");
+        }
+
+        var result = await _roomTypeRepository.AddAmenitiesAsync(roomTypeId, dto.AmenityIds);
+        if (!result)
+        {
+            throw new NotFoundException("Room type or one of the amenities was not found.");
+        }
+
+        return true;
+    }
+
+    public async Task<bool> RemoveAmenityAsync(int roomTypeId, int amenityId)
+    {
+        var result = await _roomTypeRepository.RemoveAmenityAsync(roomTypeId, amenityId);
+        if (!result)
+        {
+            throw new NotFoundException("Room type amenity relation not found.");
+        }
+
+        return true;
+    }
+
+    private static RoomTypeDto ToDto(RoomType roomType)
+    {
+        return new RoomTypeDto
+        {
+            Id = roomType.Id,
+            Name = roomType.Name,
+            BasePrice = roomType.BasePrice,
+            CapacityAdults = roomType.CapacityAdults,
+            CapacityChildren = roomType.CapacityChildren,
+            Description = roomType.Description,
+            Amenities = roomType.RoomTypeAmenities
+                .Where(x => x.Amenity != null && x.Amenity.IsActive)
+                .Select(x => new AmenityDto
+                {
+                    Id = x.Amenity.Id,
+                    Name = x.Amenity.Name,
+                    IconUrl = x.Amenity.IconUrl
+                })
+                .ToList(),
+            RoomImages = roomType.RoomImages.Select(i => new RoomImageDto
+            {
+                Id = i.Id,
+                ImageUrl = i.ImageUrl,
+                IsPrimary = i.IsPrimary ?? false
+            }).ToList()
+        };
     }
 }
