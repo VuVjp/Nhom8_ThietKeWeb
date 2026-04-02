@@ -11,7 +11,27 @@ import { NotFoundPage } from '../pages/NotFoundPage';
 import { RolesPage } from '../pages/admin/RolesPage';
 import { UsersPage } from '../pages/admin/UsersPage';
 import { ForbiddenPage } from '../pages/ForbiddenPage';
-import { RequireAuth, RequirePermission } from './RouteGuards';
+import { RequireAuth, RequireAnyPermission, RequirePermission } from './RouteGuards';
+import { useAppAuth } from '../auth/useAppAuth';
+
+function AdminEntryRedirect() {
+    const { user, isAuthReady } = useAppAuth();
+
+    if (!isAuthReady) {
+        return null;
+    }
+
+    const permissions = user?.permissions ?? [];
+    const nextPath =
+        (permissions.includes('manage_role') && '/admin/roles') ||
+        (permissions.includes('manage_user') && '/admin/users') ||
+        (permissions.includes('get_all_room_inventory') && '/admin/inventory') ||
+        (permissions.includes('get_all_rooms') && '/admin/rooms') ||
+        (permissions.includes('change_room_cleaning_status') && '/admin/cleaning') ||
+        '/admin/dashboard';
+
+    return <Navigate to={nextPath} replace />;
+}
 
 export const AppRouter = () => {
     return (
@@ -20,39 +40,36 @@ export const AppRouter = () => {
             <Route path="/403" element={<ForbiddenPage />} />
 
             <Route element={<RequireAuth />}>
+                <Route path="admin" element={<AdminEntryRedirect />} />
                 <Route element={<AdminLayout />}>
-                    <Route element={<RequirePermission permission="view_dashboard" />}>
-                        <Route path="admin/dashboard" element={<DashboardPage />} />
-                    </Route>
+                    <Route path="admin/dashboard" element={<DashboardPage />} />
 
-                    <Route element={<RequirePermission permission="view_rooms" />}>
+                    <Route element={<RequireAnyPermission permissions={['get_all_rooms', 'create_room', 'update_room', 'change_room_status', 'change_room_cleaning_status', 'delete_room']} />}>
                         <Route path="admin/rooms" element={<RoomsPage />} />
                         <Route path="admin/rooms/:roomId" element={<RoomDetailPage />} />
                     </Route>
 
-                    <Route element={<RequirePermission permission="manage_inventory" />}>
+                    <Route element={<RequireAnyPermission permissions={['get_all_room_inventory', 'create_room_inventory', 'update_room_inventory', 'delete_room_inventory']} />}>
                         <Route path="admin/inventory" element={<InventoryPage />} />
                     </Route>
 
-                    <Route element={<RequirePermission permission="approve_loss" />}>
-                        <Route path="admin/loss" element={<LossPage />} />
-                    </Route>
+                    <Route path="admin/loss" element={<LossPage />} />
 
-                    <Route element={<RequirePermission permission="update_cleaning" />}>
+                    <Route element={<RequirePermission permission="change_room_cleaning_status" />}>
                         <Route path="admin/cleaning" element={<CleaningPage />} />
                     </Route>
 
-                    <Route element={<RequirePermission permission="manage_users" />}>
+                    <Route element={<RequirePermission permission="manage_user" />}>
                         <Route path="admin/users" element={<UsersPage />} />
                     </Route>
 
-                    <Route element={<RequirePermission permission="manage_roles" />}>
+                    <Route element={<RequirePermission permission="manage_role" />}>
                         <Route path="admin/roles" element={<RolesPage />} />
                     </Route>
                 </Route>
             </Route>
 
-            <Route path="/" element={<Navigate to="/admin/dashboard" replace />} />
+            <Route path="/" element={<Navigate to="/admin" replace />} />
             <Route path="*" element={<NotFoundPage />} />
         </Routes>
     );

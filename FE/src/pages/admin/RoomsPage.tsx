@@ -159,7 +159,7 @@ export function RoomsPage() {
         <Select
           value={row.status}
           onChange={(event) => {
-            if (!ensure('manage_rooms', 'update room status')) {
+            if (!ensure('change_room_status', 'update room status')) {
               return;
             }
             const value = event.target.value as Room['status'];
@@ -189,7 +189,7 @@ export function RoomsPage() {
         <Select
           value={row.cleaningStatus}
           onChange={(event) => {
-            if (!ensure('manage_rooms', 'update room condition')) {
+            if (!ensure('change_room_cleaning_status', 'update room condition')) {
               return;
             }
             const value = event.target.value as Room['cleaningStatus'];
@@ -240,7 +240,7 @@ export function RoomsPage() {
   };
 
   const createRoomStep = () => {
-    if (!ensure('manage_rooms', 'create room')) {
+    if (!ensure('create_room', 'create room')) {
       return;
     }
 
@@ -367,7 +367,7 @@ export function RoomsPage() {
         <button
           type="button"
           onClick={() => {
-            if (!ensure('manage_rooms', 'create room')) {
+            if (!ensure('create_room', 'create room')) {
               return;
             }
             setOpenCreate(true);

@@ -1,12 +1,29 @@
 export const appPermissions = [
-    'view_dashboard',
-    'view_rooms',
-    'manage_rooms',
-    'manage_inventory',
-    'update_cleaning',
-    'approve_loss',
-    'manage_users',
-    'manage_roles',
+    'create_article',
+    'update_article',
+    'delete_article',
+    'get_all_room_inventory',
+    'create_room_inventory',
+    'update_room_inventory',
+    'delete_room_inventory',
+    'get_all_rooms',
+    'create_room',
+    'update_room',
+    'change_room_status',
+    'change_room_cleaning_status',
+    'delete_room',
+    'manage_role',
+    'manage_user',
+    'manage_room_type',
+    'manage_attraction',
+    'create_article_category',
+    'delete_article_category',
+    'update_article_category',
+    'create_amenity',
+    'update_amenity',
+    'delete_amenity',
+    'update_thumbnail',
+    'assign_role',
 ] as const;
 
 export type AppPermission = (typeof appPermissions)[number];
@@ -19,9 +36,3 @@ export interface AppUser {
     role: AppRole;
     permissions: AppPermission[];
 }
-
-export const permissionsByRole: Record<AppRole, AppPermission[]> = {
-    Admin: [...appPermissions],
-    Manager: ['view_dashboard', 'view_rooms', 'manage_rooms', 'manage_inventory', 'update_cleaning', 'approve_loss'],
-    Staff: ['view_dashboard', 'view_rooms', 'update_cleaning'],
-};

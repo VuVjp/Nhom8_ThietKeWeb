@@ -34,10 +34,24 @@ public class PermissionHandler : AuthorizationHandler<PermissionRequirement>
             return;
         }
 
-        var hasPermission = await _context.Users
+        var rawPermissionNames = await _context.Users
             .Where(u => u.Id == userId)
             .SelectMany(u => u.Role!.RolePermissions)
-            .AnyAsync(rp => rp.Permission.Name == requirement.Permission);
+            .Select(rp => rp.Permission.Name)
+            .ToListAsync();
+
+        var normalizedUserPermissions = PermissionNameMapper
+            .NormalizeMany(rawPermissionNames)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        var normalizedRequiredPermissions = PermissionNameMapper.NormalizeMany([requirement.Permission]);
+        if (normalizedRequiredPermissions.Count == 0 && !string.IsNullOrWhiteSpace(requirement.Permission))
+        {
+            normalizedRequiredPermissions = [requirement.Permission.Trim()];
+        }
+
+        var hasPermission = normalizedRequiredPermissions.Any(requiredPermission =>
+            normalizedUserPermissions.Contains(requiredPermission));
 
         if (hasPermission)
         {

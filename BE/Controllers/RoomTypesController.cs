@@ -31,7 +31,7 @@ namespace HotelManagement.Controllers
             return Ok(roomType);
         }
 
-        [Permission("manage_room_type")]
+        [Permission(PermissionNames.ManageRoomType)]
         [HttpPost]
         public async Task<ActionResult<RoomTypeDto>> CreateRoomType(CreateRoomTypeDto dto)
         {
@@ -42,7 +42,7 @@ namespace HotelManagement.Controllers
             return Ok(new { message = "Room type created successfully." });
         }
 
-        [Permission("manage_room_type")]
+        [Permission(PermissionNames.ManageRoomType)]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateRoomType(int id, UpdateRoomTypeDto dto)
         {
@@ -53,7 +53,7 @@ namespace HotelManagement.Controllers
             return NoContent();
         }
 
-        [Permission("manage_room_type")]
+        [Permission(PermissionNames.ManageRoomType)]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteRoomType(int id)
         {
@@ -64,7 +64,7 @@ namespace HotelManagement.Controllers
             return NoContent();
         }
 
-        [Permission("manage_room_type")]
+        [Permission(PermissionNames.ManageRoomType)]
         [HttpPost("{id}/images")]
         public async Task<ActionResult<RoomImageDto>> AddImage(int id, [FromForm] AddRoomImageDto dto)
         {
@@ -75,7 +75,7 @@ namespace HotelManagement.Controllers
             return Ok(new { message = "Image added successfully." });
         }
 
-        [Permission("manage_room_type")]
+        [Permission(PermissionNames.ManageRoomType)]
         [HttpDelete("images/{imageId}")]
         public async Task<IActionResult> DeleteImage(int imageId)
         {
@@ -87,7 +87,7 @@ namespace HotelManagement.Controllers
             return NoContent();
         }
 
-        [Permission("manage_room_type")]
+        [Permission(PermissionNames.ManageRoomType)]
         [HttpPatch("{roomTypeId}/images/{imageId}/set-primary")]
         public async Task<IActionResult> SetPrimaryImage(int roomTypeId, int imageId)
         {

@@ -69,7 +69,7 @@ export function UsersPage() {
           style={{ cursor: 'pointer' }}
           type="button"
           onClick={() => {
-            if (!ensure('manage_users', 'update user status')) {
+            if (!ensure('manage_user', 'update user status')) {
               return;
             }
             void (async () => {
@@ -97,7 +97,7 @@ export function UsersPage() {
             type="button"
             className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-xs"
             onClick={() => {
-              if (!ensure('manage_users', 'reset user password')) {
+              if (!ensure('manage_user', 'reset user password')) {
                 return;
               }
               void (async () => {
@@ -117,7 +117,7 @@ export function UsersPage() {
             type="button"
             className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-xs"
             onClick={() => {
-              if (!ensure('manage_users', 'change user role')) {
+              if (!ensure('manage_user', 'change user role')) {
                 return;
               }
               setTargetUser(row);
@@ -134,7 +134,7 @@ export function UsersPage() {
   const roles = ['Admin', 'Manager', 'Receptionist', 'Accountant', 'Housekeeping', 'Guest', 'Maintenance', 'Security'] as const;
 
   const addUser = () => {
-    if (!ensure('manage_users', 'add new user')) {
+    if (!ensure('manage_user', 'add new user')) {
       return;
     }
 
@@ -175,7 +175,7 @@ export function UsersPage() {
           type="button"
           className="inline-flex items-center gap-2 rounded-xl bg-cyan-700 px-4 py-2 text-sm font-semibold text-white"
           onClick={() => {
-            if (!ensure('manage_users', 'open create user form')) {
+            if (!ensure('manage_user', 'open create user form')) {
               return;
             }
             setOpenAdd(true);
@@ -236,7 +236,7 @@ export function UsersPage() {
                 if (!targetUser) {
                   return;
                 }
-                if (!ensure('manage_users', 'change user role')) {
+                if (!ensure('manage_user', 'change user role')) {
                   return;
                 }
                 void (async () => {

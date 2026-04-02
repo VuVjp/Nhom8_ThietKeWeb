@@ -6,9 +6,17 @@ interface RequirePermissionProps {
     permission: AppPermission;
 }
 
+interface RequireAnyPermissionProps {
+    permissions: AppPermission[];
+}
+
 export function RequireAuth() {
-    const { isAuthenticated } = useAppAuth();
+    const { isAuthenticated, isAuthReady } = useAppAuth();
     const location = useLocation();
+
+    if (!isAuthReady) {
+        return null;
+    }
 
     if (!isAuthenticated) {
         return <Navigate to="/admin/login" replace state={{ from: location }} />;
@@ -18,9 +26,27 @@ export function RequireAuth() {
 }
 
 export function RequirePermission({ permission }: RequirePermissionProps) {
-    const { hasPermission } = useAppAuth();
+    const { hasPermission, isAuthReady } = useAppAuth();
+
+    if (!isAuthReady) {
+        return null;
+    }
 
     if (!hasPermission(permission)) {
+        return <Navigate to="/403" replace />;
+    }
+
+    return <Outlet />;
+}
+
+export function RequireAnyPermission({ permissions }: RequireAnyPermissionProps) {
+    const { hasAnyPermission, isAuthReady } = useAppAuth();
+
+    if (!isAuthReady) {
+        return null;
+    }
+
+    if (!hasAnyPermission(permissions)) {
         return <Navigate to="/403" replace />;
     }
 

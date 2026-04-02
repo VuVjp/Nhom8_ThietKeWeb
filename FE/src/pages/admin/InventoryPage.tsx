@@ -66,7 +66,7 @@ export function InventoryPage() {
                         type="button"
                         className="rounded-lg border border-slate-200 px-2 py-1 text-xs"
                         onClick={() => {
-                            if (!ensure('manage_inventory', 'edit inventory item')) {
+                            if (!ensure('update_room_inventory', 'edit inventory item')) {
                                 return;
                             }
                             toast.success(`Edited ${row.code}`);
@@ -78,7 +78,7 @@ export function InventoryPage() {
                         type="button"
                         className="rounded-lg border border-rose-200 px-2 py-1 text-xs text-rose-600"
                         onClick={() => {
-                            if (!ensure('manage_inventory', 'delete inventory item')) {
+                            if (!ensure('delete_room_inventory', 'delete inventory item')) {
                                 return;
                             }
                             void (async () => {
@@ -116,7 +116,7 @@ export function InventoryPage() {
                         type="button"
                         className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-cyan-700 px-3 py-2 text-sm font-semibold text-white hover:bg-cyan-800"
                         onClick={() => {
-                            if (!ensure('manage_inventory', 'add inventory item')) {
+                            if (!ensure('create_room_inventory', 'add inventory item')) {
                                 return;
                             }
                             toast('Create inventory API requires room context; use room detail page.', { icon: 'ℹ️' });

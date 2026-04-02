@@ -98,6 +98,19 @@ interface RefreshEnvelope {
 
 let isRefreshing = false;
 let pendingQueue: QueueCallback[] = [];
+type AuthRefreshListener = (token: string) => void;
+const authRefreshListeners = new Set<AuthRefreshListener>();
+
+export function subscribeAuthRefresh(listener: AuthRefreshListener) {
+    authRefreshListeners.add(listener);
+    return () => {
+        authRefreshListeners.delete(listener);
+    };
+}
+
+function notifyAuthRefresh(token: string) {
+    authRefreshListeners.forEach((listener) => listener(token));
+}
 
 function flushQueue(token: string | null) {
     pendingQueue.forEach((cb) => cb(token));
@@ -135,6 +148,7 @@ async function refreshAccessToken() {
 
     setAccessToken(nextAccessToken);
     setRefreshToken(nextRefreshToken);
+    notifyAuthRefresh(nextAccessToken);
 
     return nextAccessToken;
 }

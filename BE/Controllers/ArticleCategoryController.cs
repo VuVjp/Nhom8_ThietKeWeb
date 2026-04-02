@@ -25,7 +25,7 @@ public class ArticleCategoriesController : ControllerBase
         return Ok(data);
     }
 
-    [Permission("create_article_category")]
+    [Permission(PermissionNames.CreateArticleCategory)]
     [HttpPost]
     public async Task<IActionResult> Create(CreateArticleCategoryDto dto)
     {
@@ -34,7 +34,7 @@ public class ArticleCategoriesController : ControllerBase
         return Ok();
     }
 
-    [Permission("update_article_category")]
+    [Permission(PermissionNames.UpdateArticleCategory)]
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(int id, UpdateArticleCategoryDto dto)
     {
@@ -43,7 +43,7 @@ public class ArticleCategoriesController : ControllerBase
         return NoContent();
     }
 
-    [Permission("delete_article_category")]
+    [Permission(PermissionNames.DeleteArticleCategory)]
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {

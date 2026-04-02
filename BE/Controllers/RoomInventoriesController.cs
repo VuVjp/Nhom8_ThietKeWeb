@@ -17,7 +17,7 @@ public class RoomInventoriesController : ControllerBase
 		_service = service;
 	}
 
-	[Permission("get_all_room_inventory")]
+	[Permission(PermissionNames.GetAllRoomInventory)]
 	[HttpGet]
 	public async Task<IActionResult> GetAll() => Ok(await _service.GetInventoriesAsync());
 
@@ -32,7 +32,7 @@ public class RoomInventoriesController : ControllerBase
 		return item == null ? NotFound() : Ok(item);
 	}
 
-	[Permission("create_room_inventory")]
+	[Permission(PermissionNames.CreateRoomInventory)]
 	[HttpPost]
 	public async Task<IActionResult> Create(CreateRoomInventoryDto inventory)
 	{
@@ -40,7 +40,7 @@ public class RoomInventoriesController : ControllerBase
 		return result ? Ok("Created item successfully.") : BadRequest("Failed to create item.");
 	}
 
-	[Permission("update_room_inventory")]
+	[Permission(PermissionNames.UpdateRoomInventory)]
 	[HttpPut("{id}")]
 	public async Task<IActionResult> Update(int id, UpdateRoomInventoryDto inventory)
 	{
@@ -48,7 +48,7 @@ public class RoomInventoriesController : ControllerBase
 		return result ? NoContent() : NotFound();
 	}
 
-	[Permission("delete_room_inventory")]
+	[Permission(PermissionNames.DeleteRoomInventory)]
 	[HttpDelete("{id}")]
 	public async Task<IActionResult> Delete(int id)
 	{
@@ -56,7 +56,7 @@ public class RoomInventoriesController : ControllerBase
 		return result ? Ok("Deleted item successfully.") : NotFound();
 	}
 
-	[Permission("create_room_inventory")]
+	[Permission(PermissionNames.CreateRoomInventory)]
 	[HttpPost("clone/{idClone}/to/{newRoomId}")]
 	public async Task<IActionResult> Clone(int idClone, int newRoomId)
 	{

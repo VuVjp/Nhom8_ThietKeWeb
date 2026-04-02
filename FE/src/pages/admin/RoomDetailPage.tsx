@@ -75,7 +75,7 @@ export function RoomDetailPage() {
               type="button"
               className="rounded-lg border border-slate-200 p-1.5"
               onClick={() => {
-                if (!ensure('manage_inventory', 'edit room inventory item')) {
+                if (!ensure('update_room_inventory', 'edit room inventory item')) {
                   return;
                 }
                 toast.success(`Edit ${row.code}`);
@@ -87,7 +87,7 @@ export function RoomDetailPage() {
               type="button"
               className="rounded-lg border border-rose-200 p-1.5 text-rose-600"
               onClick={() => {
-                if (!ensure('manage_inventory', 'delete room inventory item')) {
+                if (!ensure('delete_room_inventory', 'delete room inventory item')) {
                   return;
                 }
                 void (async () => {
@@ -112,7 +112,7 @@ export function RoomDetailPage() {
   );
 
   const addItem = () => {
-    if (!ensure('manage_inventory', 'add room inventory item')) {
+    if (!ensure('create_room_inventory', 'add room inventory item')) {
       return;
     }
 
@@ -177,7 +177,7 @@ export function RoomDetailPage() {
                     type="button"
                     className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm"
                     onClick={() => {
-                      if (!ensure('manage_inventory', 'open add inventory form')) {
+                      if (!ensure('create_room_inventory', 'open add inventory form')) {
                         return;
                       }
                       setOpenAdd(true);
@@ -189,7 +189,7 @@ export function RoomDetailPage() {
                     type="button"
                     className="inline-flex items-center gap-2 rounded-lg bg-cyan-700 px-3 py-2 text-sm text-white"
                     onClick={() => {
-                      if (!ensure('manage_inventory', 'clone template inventory')) {
+                      if (!ensure('create_room_inventory', 'clone template inventory')) {
                         return;
                       }
                       toast.error('Clone template is not available');

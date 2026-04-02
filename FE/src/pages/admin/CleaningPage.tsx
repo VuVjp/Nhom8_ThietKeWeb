@@ -69,7 +69,7 @@ export function CleaningPage() {
             type="button"
             className="rounded-lg bg-cyan-700 px-3 py-2 text-sm font-semibold text-white"
             onClick={() => {
-              if (!ensure('update_cleaning', 'complete room checklist')) {
+              if (!ensure('change_room_cleaning_status', 'complete room checklist')) {
                 return;
               }
               if (!active) {
@@ -109,7 +109,7 @@ export function CleaningPage() {
               <Select
                 value={item.status}
                 onChange={(e) => {
-                  if (!ensure('update_cleaning', 'update checklist item')) {
+                  if (!ensure('change_room_cleaning_status', 'update checklist item')) {
                     return;
                   }
                   if (!active) {

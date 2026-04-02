@@ -1,19 +1,21 @@
-import { createContext, useMemo, useState, type PropsWithChildren } from 'react';
+import { createContext, useEffect, useMemo, useState, type PropsWithChildren } from 'react';
 import { authApi } from '../api/authApi';
 import { rolesApi } from '../api/rolesApi';
 import { getAccessToken } from '../api/httpClient';
-import { appPermissions, permissionsByRole, type AppPermission, type AppRole, type AppUser } from './auth.types';
+import { appPermissions, type AppPermission, type AppRole, type AppUser } from './auth.types';
+import { subscribeAuthRefresh } from '../api/httpClient';
+
+const PERMISSIONS_STORAGE_KEY = 'permissions';
 
 interface AuthContextValue {
     user: AppUser | null;
     isAuthenticated: boolean;
+    isAuthReady: boolean;
     login: (email: string, password: string) => Promise<boolean>;
     logout: () => Promise<void>;
     hasPermission: (permission: AppPermission) => boolean;
     hasAnyPermission: (permissions: AppPermission[]) => boolean;
 }
-
-const storageKeys = ['cg-admin-auth-user', 'auth-user'] as const;
 
 export const AppAuthContext = createContext<AuthContextValue | undefined>(undefined);
 
@@ -43,29 +45,57 @@ function normalizeRole(rawRole: unknown): AppRole {
     return 'Admin';
 }
 
+const legacyPermissionMap: Record<string, AppPermission[]> = {
+    MANAGE_USERS: ['manage_user'],
+    CREATE_USERS: ['manage_user'],
+    UPDATE_USERS: ['manage_user'],
+    DELETE_USERS: ['manage_user'],
+    MANAGE_ROLES: ['manage_role'],
+    MANAGE_ROOMS: [
+        'get_all_rooms',
+        'create_room',
+        'update_room',
+        'delete_room',
+        'change_room_status',
+        'change_room_cleaning_status',
+        'manage_room_type',
+        'get_all_room_inventory',
+        'create_room_inventory',
+        'update_room_inventory',
+        'delete_room_inventory',
+    ],
+    MANAGE_EQUIPMENTS: ['create_amenity', 'update_amenity', 'delete_amenity'],
+};
+
 function toKnownPermissions(items: string[] | null | undefined): AppPermission[] {
     if (!items?.length) {
         return [];
     }
 
     const allowed = new Set(appPermissions);
-    return items.filter((item): item is AppPermission => allowed.has(item as AppPermission));
-}
+    const normalized = new Set<AppPermission>();
 
-function getInitialUser(): AppUser | null {
-    for (const key of storageKeys) {
-        const raw = localStorage.getItem(key);
-        if (!raw) {
+    for (const item of items) {
+        const trimmed = item.trim();
+        if (!trimmed) {
             continue;
         }
 
-        try {
-            return JSON.parse(raw) as AppUser;
-        } catch {
-            localStorage.removeItem(key);
+        if (allowed.has(trimmed as AppPermission)) {
+            normalized.add(trimmed as AppPermission);
+            continue;
+        }
+
+        const mapped = legacyPermissionMap[trimmed.toUpperCase()];
+        if (mapped) {
+            mapped.forEach((permission) => normalized.add(permission));
         }
     }
 
+    return Array.from(normalized);
+}
+
+function getUserBaseFromToken(): Omit<AppUser, 'permissions'> | null {
     const token = getAccessToken();
     if (!token) {
         return null;
@@ -95,72 +125,77 @@ function getInitialUser(): AppUser | null {
         name: String(nameClaim),
         email: String(emailClaim ?? ''),
         role,
-        permissions: permissionsByRole[role],
     };
 }
 
-function persistUser(user: AppUser) {
-    for (const key of storageKeys) {
-        localStorage.setItem(key, JSON.stringify(user));
+async function resolveCurrentUser(emailOverride?: string): Promise<AppUser | null> {
+    const baseUser = getUserBaseFromToken();
+    if (!baseUser) {
+        return null;
     }
-}
 
-function clearPersistedUser() {
-    for (const key of storageKeys) {
-        localStorage.removeItem(key);
+    try {
+        const apiPermissions = await rolesApi.getMyPermissions();
+        const normalizedPermissions = toKnownPermissions(apiPermissions);
+        localStorage.setItem(PERMISSIONS_STORAGE_KEY, JSON.stringify(normalizedPermissions));
+
+        return {
+            ...baseUser,
+            email: emailOverride?.trim().toLowerCase() || baseUser.email,
+            permissions: normalizedPermissions,
+        };
+    } catch {
+        return null;
     }
 }
 
 export function AppAuthProvider({ children }: PropsWithChildren) {
-    const [user, setUser] = useState<AppUser | null>(getInitialUser);
+    const [user, setUser] = useState<AppUser | null>(null);
+    const [isAuthReady, setIsAuthReady] = useState(false);
+
+    useEffect(() => {
+        let active = true;
+
+        void resolveCurrentUser().then((nextUser) => {
+            if (active) {
+                setUser(nextUser);
+                setIsAuthReady(true);
+            }
+        });
+
+        const unsubscribe = subscribeAuthRefresh(() => {
+            void resolveCurrentUser().then((nextUser) => {
+                if (active) {
+                    setUser(nextUser);
+                }
+            });
+        });
+
+        return () => {
+            active = false;
+            unsubscribe();
+        };
+    }, []);
 
     const value = useMemo<AuthContextValue>(
         () => ({
             user,
             isAuthenticated: Boolean(user),
+            isAuthReady,
             login: async (email: string, password: string) => {
                 const normalizedEmail = email.trim().toLowerCase();
 
                 try {
-                    const { token } = await authApi.login({ email: normalizedEmail, password });
-                    const payload = parseJwtPayload(token);
+                    await authApi.login({ email: normalizedEmail, password });
 
-                    const roleClaim =
-                        payload?.role ??
-                        payload?.['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
+                    const nextUser = await resolveCurrentUser(normalizedEmail);
 
-                    const role = normalizeRole(roleClaim);
-
-                    const idClaim =
-                        payload?.nameid ??
-                        payload?.['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'];
-
-                    const nameClaim =
-                        payload?.name ??
-                        payload?.['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'] ??
-                        normalizedEmail.split('@')[0];
-
-                    let permissions = permissionsByRole[role];
-                    try {
-                        const apiPermissions = await rolesApi.getMyPermissions();
-                        const normalizedPermissions = toKnownPermissions(apiPermissions);
-                        if (normalizedPermissions.length > 0) {
-                            permissions = normalizedPermissions;
-                        }
-                    } catch {
-                        // Keep role-based fallback permissions when my-permissions endpoint is unavailable.
+                    if (!nextUser) {
+                        return false;
                     }
 
-                    const nextUser: AppUser = {
-                        id: Number(idClaim ?? Date.now()),
-                        name: String(nameClaim),
-                        email: normalizedEmail,
-                        role,
-                        permissions,
-                    };
-
                     setUser(nextUser);
-                    persistUser(nextUser);
+                    setIsAuthReady(true);
                     return true;
                 } catch {
                     return false;
@@ -171,12 +206,16 @@ export function AppAuthProvider({ children }: PropsWithChildren) {
                     await authApi.logout();
                 } finally {
                     setUser(null);
-                    clearPersistedUser();
+                    localStorage.removeItem(PERMISSIONS_STORAGE_KEY);
+                    setIsAuthReady(true);
                 }
             },
             hasPermission: (permission: AppPermission) => {
                 if (!user) {
                     return false;
+                }
+                if (user.role === 'Admin') {
+                    return true;
                 }
                 return user.permissions.includes(permission);
             },
@@ -184,10 +223,13 @@ export function AppAuthProvider({ children }: PropsWithChildren) {
                 if (!user) {
                     return false;
                 }
+                if (user.role === 'Admin') {
+                    return true;
+                }
                 return permissions.some((permission) => user.permissions.includes(permission));
             },
         }),
-        [user],
+        [user, isAuthReady],
     );
 
     return <AppAuthContext.Provider value={value}>{children}</AppAuthContext.Provider>;

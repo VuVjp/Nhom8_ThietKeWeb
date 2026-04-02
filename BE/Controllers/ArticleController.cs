@@ -25,7 +25,7 @@ public class ArticlesController : ControllerBase
         return Ok(data);
     }
 
-    [Permission("create_article")]
+    [Permission(PermissionNames.CreateArticle)]
     [HttpPost]
     public async Task<IActionResult> Create([FromForm] CreateArticleDto dto)
     {
@@ -34,7 +34,7 @@ public class ArticlesController : ControllerBase
         return Ok();
     }
 
-    [Permission("update_article")]
+    [Permission(PermissionNames.UpdateArticle)]
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(int id, [FromForm] UpdateArticleDto dto)
     {
@@ -43,7 +43,7 @@ public class ArticlesController : ControllerBase
         return NoContent();
     }
 
-    [Permission("delete_article")]
+    [Permission(PermissionNames.DeleteArticle)]
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {
@@ -52,7 +52,7 @@ public class ArticlesController : ControllerBase
         return NoContent();
     }
 
-    [Permission("update_thumbnail")]
+    [Permission(PermissionNames.UpdateThumbnail)]
     [HttpPost("{id}/thumbnail")]
     public async Task<IActionResult> UpdateThumbnail(int id, [FromForm] UpdateArticleThumbnailDto dto)
     {

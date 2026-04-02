@@ -11,19 +11,27 @@ interface LoginLocationState {
 }
 
 export function AdminLoginPage() {
-    const { login, isAuthenticated } = useAppAuth();
+    const { login, isAuthenticated, isAuthReady } = useAppAuth();
     const navigate = useNavigate();
     const location = useLocation();
     const state = location.state as LoginLocationState | null;
-    const rawRedirectPath = state?.from?.pathname ?? '/admin/dashboard';
-    const redirectPath = rawRedirectPath.startsWith('/admin/') ? rawRedirectPath : '/admin/dashboard';
+    const rawRedirectPath = state?.from?.pathname ?? '/admin';
+    const redirectPath = rawRedirectPath.startsWith('/admin') ? rawRedirectPath : '/admin';
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    if (!isAuthReady) {
+        return (
+            <div className="flex min-h-screen items-center justify-center bg-slate-950 text-sm text-slate-300">
+                Loading authentication...
+            </div>
+        );
+    }
+
     if (isAuthenticated) {
-        return <Navigate to="/admin/dashboard" replace />;
+        return <Navigate to="/admin" replace />;
     }
 
     const onSubmit = async (event: React.FormEvent<HTMLFormElement>) => {

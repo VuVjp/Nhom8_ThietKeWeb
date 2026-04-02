@@ -39,7 +39,7 @@ public class UserManagementController : ControllerBase
         }
     }
 
-    [Permission("manage_user")]
+    [Permission(PermissionNames.ManageUser)]
     [HttpGet]
     public async Task<IActionResult> GetAllUsers()
     {
@@ -47,7 +47,7 @@ public class UserManagementController : ControllerBase
         return Ok(users);
     }
 
-    [Permission("manage_user")]
+    [Permission(PermissionNames.ManageUser)]
     [HttpPost]
     public async Task<IActionResult> CreateUser([FromBody] CreateUserDto dto)
     {
@@ -73,7 +73,7 @@ public class UserManagementController : ControllerBase
         return NoContent();
     }
 
-    [Permission("manage_user")]
+    [Permission(PermissionNames.ManageUser)]
     [HttpPut("{userId}")]
     public async Task<IActionResult> EditUser(int userId, [FromBody] EditUserDto dto)
     {
@@ -81,7 +81,7 @@ public class UserManagementController : ControllerBase
         return NoContent();
     }
 
-    [Permission("manage_user")]
+    [Permission(PermissionNames.ManageUser)]
     [HttpPut("{userId}/change-role")]
     public async Task<IActionResult> ChangeUserRole(int userId, [FromBody] ChangeRoleDto dto)
     {
@@ -107,7 +107,7 @@ public class UserManagementController : ControllerBase
         return NoContent();
     }
 
-    [Permission("manage_user")]
+    [Permission(PermissionNames.ManageUser)]
     [HttpPatch("{userId}/toggle-active")]
     public async Task<IActionResult> ToggleUserActive(int userId)
     {
@@ -128,7 +128,7 @@ public class UserManagementController : ControllerBase
         return NoContent();
     }
 
-    [Permission("manage_user")]
+    [Permission(PermissionNames.ManageUser)]
     [HttpPost("{userId}/reset-password")]
     public async Task<IActionResult> ResetPassword(int userId)
     {
