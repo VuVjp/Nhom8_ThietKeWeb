@@ -13,18 +13,27 @@ import { roomInventoriesApi } from '../../api/roomInventoriesApi';
 import { roomsApi } from '../../api/roomsApi';
 import { equipmentsApi, type EquipmentItem } from '../../api/equipmentsApi';
 import { amenitiesApi, type AmenityItem } from '../../api/amenitiesApi';
+import { roomTypesApi, type RoomTypeItem } from '../../api/roomTypesApi';
+
+const getEquipmentAvailableQuantity = (item: EquipmentItem) =>
+  Math.max(0, item.totalQuantity - item.inUseQuantity - item.damagedQuantity - item.liquidatedQuantity);
 
 export function RoomDetailPage() {
   const { ensure } = usePermissionCheck();
   const navigate = useNavigate();
   const { roomId } = useParams();
   const [room, setRoom] = useState<Room | null>(null);
+  const [roomTypes, setRoomTypes] = useState<RoomTypeItem[]>([]);
+  const [allRooms, setAllRooms] = useState<Room[]>([]);
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [openAdd, setOpenAdd] = useState(false);
   const [addMode, setAddMode] = useState<'equipment' | 'amenity'>('equipment');
   const [draft, setDraft] = useState<Partial<InventoryItem>>({ quantity: 1, compensationPrice: 0 });
   const [equipmentOptions, setEquipmentOptions] = useState<EquipmentItem[]>([]);
   const [amenityOptions, setAmenityOptions] = useState<AmenityItem[]>([]);
+  const [cloneSourceRoomId, setCloneSourceRoomId] = useState<number | ''>('');
+  const [clonePreviewItems, setClonePreviewItems] = useState<InventoryItem[]>([]);
+  const [isQuickAdding, setIsQuickAdding] = useState(false);
   const [selectedEquipmentId, setSelectedEquipmentId] = useState<number | ''>('');
   const [selectedAmenityId, setSelectedAmenityId] = useState<number | ''>('');
   const [isAdding, setIsAdding] = useState(false);
@@ -76,13 +85,17 @@ export function RoomDetailPage() {
   useEffect(() => {
     void (async () => {
       try {
-        const [equipmentData, amenityData] = await Promise.all([
+        const [equipmentData, amenityData, roomTypeData, roomData] = await Promise.all([
           equipmentsApi.getAll(),
           amenitiesApi.getAll(),
+          roomTypesApi.getAll(),
+          roomsApi.getAll(),
         ]);
 
         setEquipmentOptions(equipmentData);
         setAmenityOptions(amenityData);
+        setRoomTypes(roomTypeData);
+        setAllRooms(roomData);
       } catch (error) {
         const apiError = toApiError(error);
         toast.error(apiError.message || 'Failed to load existing equipment/amenity options');
@@ -90,11 +103,31 @@ export function RoomDetailPage() {
     })();
   }, []);
 
+  useEffect(() => {
+    if (!cloneSourceRoomId) {
+      setClonePreviewItems([]);
+      return;
+    }
+
+    void (async () => {
+      try {
+        const data = await roomInventoriesApi.getByRoom(Number(cloneSourceRoomId));
+        setClonePreviewItems(data.filter((item) => !isAmenityInventoryName(item.name)));
+      } catch (error) {
+        const apiError = toApiError(error);
+        toast.error(apiError.message || 'Failed to load source room inventory');
+        setClonePreviewItems([]);
+      }
+    })();
+  }, [cloneSourceRoomId]);
+
   const resetAddForm = () => {
     setOpenAdd(false);
     setAddMode('equipment');
     setSelectedEquipmentId('');
     setSelectedAmenityId('');
+    setCloneSourceRoomId('');
+    setClonePreviewItems([]);
     setDraft({ quantity: 1, compensationPrice: 0 });
   };
 
@@ -109,6 +142,18 @@ export function RoomDetailPage() {
   const isAmenityInventoryName = (name: string) => name.trim().toLowerCase().startsWith('[amenity]');
   const removeAmenityPrefix = (name: string) => name.replace(/^\[amenity\]\s*/i, '').trim();
   const normalizeName = (name: string) => name.trim().toLowerCase();
+
+  const currentRoomType = useMemo(
+    () => roomTypes.find((item) => normalizeName(item.name) === normalizeName(room?.roomType ?? '')),
+    [roomTypes, room?.roomType],
+  );
+
+  const roomTypeAmenities = useMemo(() => currentRoomType?.amenities ?? [], [currentRoomType]);
+
+  const availableCloneRooms = useMemo(
+    () => allRooms.filter((item) => item.id !== roomIdNumber),
+    [allRooms, roomIdNumber],
+  );
 
   const amenityItems = useMemo(
     () => items.filter((item) => item.name.trim().toLowerCase().startsWith('[amenity]')),
@@ -125,6 +170,11 @@ export function RoomDetailPage() {
     [equipmentOptions, selectedEquipmentId],
   );
 
+  const selectedEquipmentAvailableQuantity = useMemo(
+    () => (selectedEquipment ? getEquipmentAvailableQuantity(selectedEquipment) : 0),
+    [selectedEquipment],
+  );
+
   const selectedAmenity = useMemo(
     () => amenityOptions.find((item) => item.id === selectedAmenityId),
     [amenityOptions, selectedAmenityId],
@@ -132,11 +182,11 @@ export function RoomDetailPage() {
 
   const canSubmitAdd = useMemo(() => {
     if (addMode === 'equipment') {
-      return Boolean(selectedEquipment) && Number(draft.quantity ?? 0) > 0;
+      return Boolean(selectedEquipment) && Number(draft.quantity ?? 0) > 0 && Number(draft.quantity ?? 0) <= selectedEquipmentAvailableQuantity;
     }
 
-    return Boolean(selectedAmenity);
-  }, [addMode, selectedEquipment, selectedAmenity, draft.quantity]);
+    return Boolean(selectedAmenity) && Number(draft.quantity ?? 0) > 0;
+  }, [addMode, selectedEquipment, selectedAmenity, draft.quantity, selectedEquipmentAvailableQuantity]);
 
   const selectedEditEquipment = useMemo(
     () => equipmentOptions.find((item) => item.id === selectedEditEquipmentId),
@@ -157,7 +207,7 @@ export function RoomDetailPage() {
       return Boolean(selectedEditEquipment) && Number(editDraft.quantity ?? 0) > 0;
     }
 
-    return Boolean(selectedEditAmenity);
+    return Boolean(selectedEditAmenity) && Number(editDraft.quantity ?? 0) > 0;
   }, [editingItem, editMode, selectedEditEquipment, selectedEditAmenity, editDraft.quantity]);
 
   const columns = useMemo(
@@ -260,7 +310,7 @@ export function RoomDetailPage() {
       setIsAdding(true);
       try {
         const itemName = addMode === 'amenity' ? `[Amenity] ${selectedAmenity?.name ?? ''}` : selectedEquipment?.name ?? '';
-        const quantity = addMode === 'amenity' ? 1 : Number(draft.quantity ?? 1);
+        const quantity = Number(draft.quantity ?? 1);
         const priceIfLost =
           addMode === 'amenity'
             ? 0
@@ -274,6 +324,7 @@ export function RoomDetailPage() {
           if (existingEquipmentRow) {
             await roomInventoriesApi.update(existingEquipmentRow.id, {
               roomId: roomIdNumber,
+              equipmentId: Number(selectedEquipmentId),
               itemName,
               quantity: Number(existingEquipmentRow.quantity ?? 0) + quantity,
               priceIfLost,
@@ -300,6 +351,7 @@ export function RoomDetailPage() {
 
         await roomInventoriesApi.create({
           roomId: roomIdNumber,
+          equipmentId: addMode === 'equipment' ? Number(selectedEquipmentId) : undefined,
           itemName,
           quantity,
           priceIfLost,
@@ -312,6 +364,116 @@ export function RoomDetailPage() {
         toast.error(apiError.message || `Failed to add ${addMode}`);
       } finally {
         setIsAdding(false);
+      }
+    })();
+  };
+
+  const handleQuickAddAmenitiesFromRoomType = () => {
+    if (!ensure('create_room_inventory', 'add room type amenities')) {
+      return;
+    }
+
+    if (!roomTypeAmenities.length) {
+      toast.error('This room type has no amenities');
+      return;
+    }
+
+    void (async () => {
+      setIsQuickAdding(true);
+      try {
+        for (const amenity of roomTypeAmenities) {
+          const itemName = `[Amenity] ${amenity.name}`;
+          const existingAmenityRow = amenityItems.find(
+            (item) => normalizeName(removeAmenityPrefix(item.name)) === normalizeName(amenity.name),
+          );
+
+          if (existingAmenityRow) {
+            await roomInventoriesApi.update(existingAmenityRow.id, {
+              roomId: roomIdNumber,
+              itemName,
+              quantity: Number(existingAmenityRow.quantity ?? 0) + 1,
+              priceIfLost: 0,
+            });
+            continue;
+          }
+
+          await roomInventoriesApi.create({
+            roomId: roomIdNumber,
+            itemName,
+            quantity: 1,
+            priceIfLost: 0,
+          });
+        }
+
+        await loadInventory();
+        toast.success('Amenities from room type added');
+      } catch (error) {
+        const apiError = toApiError(error);
+        toast.error(apiError.message || 'Failed to add amenities from room type');
+      } finally {
+        setIsQuickAdding(false);
+      }
+    })();
+  };
+
+  const handleCloneEquipmentFromRoom = () => {
+    if (!ensure('create_room_inventory', 'clone equipment from room')) {
+      return;
+    }
+
+    if (!cloneSourceRoomId) {
+      toast.error('Please select a source room');
+      return;
+    }
+
+    void (async () => {
+      setIsQuickAdding(true);
+      try {
+        const sourceItems = clonePreviewItems.length > 0 ? clonePreviewItems : await roomInventoriesApi.getByRoom(Number(cloneSourceRoomId));
+        const equipmentRows = sourceItems.filter((item) => !isAmenityInventoryName(item.name));
+
+        for (const sourceItem of equipmentRows) {
+          const itemName = sourceItem.name.trim();
+          const quantity = Number(sourceItem.quantity ?? 0);
+          if (quantity <= 0) {
+            continue;
+          }
+
+          const matchedEquipment = equipmentOptions.find(
+            (item) => normalizeName(item.name) === normalizeName(itemName),
+          );
+
+          const existingEquipmentRow = equipmentItems.find(
+            (item) => normalizeName(item.name) === normalizeName(itemName),
+          );
+
+          if (existingEquipmentRow) {
+            await roomInventoriesApi.update(existingEquipmentRow.id, {
+              roomId: roomIdNumber,
+              equipmentId: matchedEquipment?.id,
+              itemName,
+              quantity: Number(existingEquipmentRow.quantity ?? 0) + quantity,
+              priceIfLost: Number(sourceItem.compensationPrice ?? 0),
+            });
+            continue;
+          }
+
+          await roomInventoriesApi.create({
+            roomId: roomIdNumber,
+            equipmentId: matchedEquipment?.id,
+            itemName,
+            quantity,
+            priceIfLost: Number(sourceItem.compensationPrice ?? 0),
+          });
+        }
+
+        await loadInventory();
+        toast.success('Equipment cloned from source room');
+      } catch (error) {
+        const apiError = toApiError(error);
+        toast.error(apiError.message || 'Failed to clone equipment from room');
+      } finally {
+        setIsQuickAdding(false);
       }
     })();
   };
@@ -344,7 +506,7 @@ export function RoomDetailPage() {
       setIsSavingEdit(true);
       try {
         const itemName = editMode === 'amenity' ? `[Amenity] ${selectedEditAmenity?.name ?? ''}` : selectedEditEquipment?.name ?? '';
-        const quantity = editMode === 'amenity' ? 1 : Number(editDraft.quantity ?? 1);
+        const quantity = Number(editDraft.quantity ?? 1);
         const priceIfLost =
           editMode === 'amenity'
             ? 0
@@ -508,6 +670,43 @@ export function RoomDetailPage() {
                 <h3 className="text-sm font-semibold text-slate-900">Equipment setup</h3>
                 <p className="text-xs text-slate-500">Select existing equipment, then adjust quantity and compensation price for this room.</p>
               </div>
+              <div className="space-y-2 rounded-lg border border-slate-200 bg-white p-3 text-sm">
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <p className="font-medium text-slate-800">Quick clone from another room</p>
+                    <p className="text-xs text-slate-500">Copy all equipment from a source room into this room.</p>
+                  </div>
+                  <button
+                    type="button"
+                    className="rounded-lg bg-cyan-700 px-3 py-2 text-xs font-semibold text-white disabled:opacity-60"
+                    onClick={handleCloneEquipmentFromRoom}
+                    disabled={!cloneSourceRoomId || isQuickAdding}
+                  >
+                    {isQuickAdding ? 'Cloning...' : 'Clone Now'}
+                  </button>
+                </div>
+                <Select
+                  value={cloneSourceRoomId ? String(cloneSourceRoomId) : ''}
+                  onChange={(e) => setCloneSourceRoomId(e.target.value ? Number(e.target.value) : '')}
+                >
+                  <option value="">Select source room</option>
+                  {availableCloneRooms.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.roomNumber} - {item.roomType}
+                    </option>
+                  ))}
+                </Select>
+                {clonePreviewItems.length > 0 ? (
+                  <div className="max-h-32 overflow-auto rounded-lg bg-slate-50 p-2 text-xs text-slate-600">
+                    {clonePreviewItems.map((item) => (
+                      <div key={item.id} className="flex items-center justify-between py-1">
+                        <span>{item.name}</span>
+                        <span>{item.quantity}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-700">Existing equipment</label>
                 <Select
@@ -529,7 +728,7 @@ export function RoomDetailPage() {
                   <option value="">Select equipment</option>
                   {equipmentOptions.map((item) => (
                     <option key={item.id} value={item.id}>
-                      {item.itemCode} - {item.name}
+                      {item.itemCode} - {item.name} (Available: {getEquipmentAvailableQuantity(item)} {item.unit})
                     </option>
                   ))}
                 </Select>
@@ -541,6 +740,7 @@ export function RoomDetailPage() {
                   <p><span className="font-medium text-slate-800">Code:</span> {selectedEquipment.itemCode}</p>
                   <p><span className="font-medium text-slate-800">Unit:</span> {selectedEquipment.unit}</p>
                   <p><span className="font-medium text-slate-800">Default loss price:</span> ${selectedEquipment.defaultPriceIfLost}</p>
+                  <p><span className="font-medium text-slate-800">Available:</span> {selectedEquipmentAvailableQuantity} {selectedEquipment.unit}</p>
                 </div>
               ) : null}
 
@@ -548,6 +748,7 @@ export function RoomDetailPage() {
                 placeholder="Quantity"
                 type="number"
                 min={1}
+                max={selectedEquipmentAvailableQuantity || undefined}
                 value={draft.quantity ?? 1}
                 onChange={(e) => setDraft((prev) => ({ ...prev, quantity: Number(e.target.value) }))}
               />
@@ -564,6 +765,34 @@ export function RoomDetailPage() {
               <div>
                 <h3 className="text-sm font-semibold text-slate-900">Amenity setup</h3>
                 <p className="text-xs text-slate-500">Choose an existing amenity to attach. Quantity and compensation are applied automatically.</p>
+              </div>
+              <div className="space-y-2 rounded-lg border border-slate-200 bg-white p-3 text-sm">
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <p className="font-medium text-slate-800">Quick add from room type</p>
+                    <p className="text-xs text-slate-500">Use amenities configured for this room type.</p>
+                  </div>
+                  <button
+                    type="button"
+                    className="rounded-lg bg-cyan-700 px-3 py-2 text-xs font-semibold text-white disabled:opacity-60"
+                    onClick={handleQuickAddAmenitiesFromRoomType}
+                    disabled={!roomTypeAmenities.length || isQuickAdding}
+                  >
+                    {isQuickAdding ? 'Adding...' : 'Add Room Type Amenities'}
+                  </button>
+                </div>
+                {roomTypeAmenities.length > 0 ? (
+                  <div className="max-h-32 overflow-auto rounded-lg bg-slate-50 p-2 text-xs text-slate-600">
+                    {roomTypeAmenities.map((item) => (
+                      <div key={item.id} className="flex items-center justify-between py-1">
+                        <span>{item.name}</span>
+                        <span>qty 1</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-500">This room type has no linked amenities.</p>
+                )}
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-700">Existing amenity</label>
@@ -583,9 +812,17 @@ export function RoomDetailPage() {
               {selectedAmenity ? (
                 <div className="rounded-lg border border-slate-200 bg-white p-3 text-xs text-slate-600">
                   <p><span className="font-medium text-slate-800">Selected amenity:</span> {selectedAmenity.name}</p>
-                  <p className="mt-1">Attachment rule: quantity = 1, compensation price = 0.</p>
+                  <p className="mt-1">Attachment rule: compensation price = 0.</p>
                 </div>
               ) : null}
+
+              <Input
+                placeholder="Quantity"
+                type="number"
+                min={1}
+                value={draft.quantity ?? 1}
+                onChange={(e) => setDraft((prev) => ({ ...prev, quantity: Number(e.target.value) }))}
+              />
             </section>
           )}
 
@@ -709,7 +946,14 @@ export function RoomDetailPage() {
                   ))}
                 </Select>
               </div>
-              <p className="text-xs text-slate-500">Applied values: quantity = 1, compensation price = 0.</p>
+              <Input
+                placeholder="Quantity"
+                type="number"
+                min={1}
+                value={editDraft.quantity}
+                onChange={(e) => setEditDraft((prev) => ({ ...prev, quantity: Number(e.target.value) }))}
+              />
+              <p className="text-xs text-slate-500">Applied values: compensation price = 0.</p>
             </section>
           )}
 

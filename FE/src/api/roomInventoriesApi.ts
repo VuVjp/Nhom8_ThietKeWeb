@@ -6,6 +6,8 @@ interface RoomInventoryDto {
     Id?: number;
     roomId?: number;
     RoomId?: number;
+    equipmentId?: number;
+    EquipmentId?: number;
     itemName?: string;
     ItemName?: string;
     quantity?: number;
@@ -16,6 +18,7 @@ interface RoomInventoryDto {
 
 export interface CreateRoomInventoryPayload {
     roomId: number;
+    equipmentId?: number;
     itemName: string;
     quantity: number;
     priceIfLost: number;
@@ -23,6 +26,7 @@ export interface CreateRoomInventoryPayload {
 
 export interface UpdateRoomInventoryPayload {
     roomId?: number;
+    equipmentId?: number;
     itemName?: string;
     quantity?: number;
     priceIfLost?: number;

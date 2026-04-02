@@ -13,6 +13,7 @@ import { toApiError } from '../../api/httpClient';
 import { roomsApi } from '../../api/roomsApi';
 import { roomTypesApi, type RoomTypeItem } from '../../api/roomTypesApi';
 import { amenitiesApi, type AmenityItem } from '../../api/amenitiesApi';
+import { equipmentsApi, type EquipmentItem } from '../../api/equipmentsApi';
 import { roomInventoriesApi } from '../../api/roomInventoriesApi';
 import { paginate, queryIncludes, sortBy } from '../../utils/table';
 import { usePermissionCheck } from '../../hooks/usePermissionCheck';
@@ -26,8 +27,11 @@ interface CreateRoomDraft {
 }
 
 interface InventoryOption {
+  id: number;
   name: string;
+  unit: string;
   priceIfLost: number;
+  availableQuantity: number;
 }
 
 interface SelectedInventoryValue {
@@ -67,6 +71,16 @@ export function RoomsPage() {
   const [inventoryOptions, setInventoryOptions] = useState<InventoryOption[]>([]);
   const [selectedInventories, setSelectedInventories] = useState<Record<string, SelectedInventoryValue>>({});
 
+  const getEquipmentAvailableQuantity = useCallback(
+    (item: EquipmentItem) => Math.max(0, item.totalQuantity - item.inUseQuantity - item.damagedQuantity - item.liquidatedQuantity),
+    [],
+  );
+
+  const getInventoryAvailability = useCallback(
+    (name: string) => inventoryOptions.find((item) => item.name === name)?.availableQuantity ?? 0,
+    [inventoryOptions],
+  );
+
   const loadRooms = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -88,30 +102,23 @@ export function RoomsPage() {
   useEffect(() => {
     void (async () => {
       try {
-        const [types, amenityData, inventoryData] = await Promise.all([
+        const [types, amenityData, equipmentData] = await Promise.all([
           roomTypesApi.getAll(),
           amenitiesApi.getAll(),
-          roomInventoriesApi.getAll(),
+          equipmentsApi.getAll(),
         ]);
 
-        const uniqueInventoryMap = new Map<string, InventoryOption>();
-        inventoryData.forEach((item) => {
-          if (!item.name) {
-            return;
-          }
-
-          const key = item.name.trim();
-          if (!uniqueInventoryMap.has(key)) {
-            uniqueInventoryMap.set(key, {
-              name: key,
-              priceIfLost: Number(item.compensationPrice ?? item.price ?? 0),
-            });
-          }
-        });
+        const equipmentOptions = equipmentData.map((item) => ({
+          id: item.id,
+          name: item.name.trim(),
+          unit: item.unit,
+          priceIfLost: Number(item.defaultPriceIfLost ?? 0),
+          availableQuantity: getEquipmentAvailableQuantity(item),
+        }));
 
         setRoomTypes(types);
         setAmenities(amenityData);
-        setInventoryOptions(Array.from(uniqueInventoryMap.values()));
+        setInventoryOptions(equipmentOptions);
         if (types.length > 0) {
           setDraft((prev) => ({ ...prev, roomTypeId: prev.roomTypeId || types[0].id }));
         }
@@ -333,6 +340,16 @@ export function RoomsPage() {
             );
 
         const normalizedItems = await selectedEquipmentItems;
+
+        if (inventoryMode === 'manual') {
+          for (const item of normalizedItems) {
+            const availableQuantity = getInventoryAvailability(item.itemName);
+            if (item.quantity > availableQuantity) {
+              throw new Error(`Not enough quantity for ${item.itemName}. Available: ${availableQuantity}, Requested: ${item.quantity}`);
+            }
+          }
+        }
+
         await Promise.all(
           normalizedItems.map((item) =>
             roomInventoriesApi.create({
@@ -538,6 +555,7 @@ export function RoomsPage() {
                     const selected = Boolean(selectedInventories[item.name]);
                     const quantity = selectedInventories[item.name]?.quantity ?? 1;
                     const priceIfLost = selectedInventories[item.name]?.priceIfLost ?? item.priceIfLost;
+                    const isOutOfStock = item.availableQuantity <= 0;
 
                     return (
                       <div key={item.name} className="rounded-lg border border-slate-100 p-2">
@@ -545,6 +563,7 @@ export function RoomsPage() {
                           <input
                             type="checkbox"
                             checked={selected}
+                            disabled={isOutOfStock}
                             onChange={(e) => {
                               const checked = e.target.checked;
                               setSelectedInventories((prev) => {
@@ -564,7 +583,10 @@ export function RoomsPage() {
                               });
                             }}
                           />
-                          {item.name}
+                          <span>{item.name}</span>
+                          <span className="ml-auto text-xs text-cyan-700">
+                            {isOutOfStock ? 'Out of stock' : `Available: ${item.availableQuantity} ${item.unit}`}
+                          </span>
                         </label>
 
                         {selected ? (
@@ -572,6 +594,8 @@ export function RoomsPage() {
                             <Input
                               placeholder="Quantity"
                               type="number"
+                              min={1}
+                              max={item.availableQuantity || undefined}
                               value={quantity}
                               onChange={(e) =>
                                 setSelectedInventories((prev) => ({

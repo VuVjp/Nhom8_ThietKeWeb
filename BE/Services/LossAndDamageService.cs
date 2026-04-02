@@ -48,6 +48,18 @@ public class LossAndDamageService : ILossAndDamageService
         if (inventory == null)
             throw new NotFoundException("Room inventory item not found.");
 
+        Equipment? equipment = null;
+        if (inventory.EquipmentId.HasValue)
+        {
+            equipment = await _context.Equipments.FirstOrDefaultAsync(x => x.Id == inventory.EquipmentId.Value && x.IsActive);
+            if (equipment != null)
+            {
+                equipment.DamagedQuantity += dto.Quantity;
+                equipment.UpdatedAt = DateTime.UtcNow;
+                _context.Equipments.Update(equipment);
+            }
+        }
+
         var entity = new LossAndDamage
         {
             RoomInventoryId = inventory.Id,
@@ -59,8 +71,7 @@ public class LossAndDamageService : ILossAndDamageService
         };
 
         await _repository.AddAsync(entity);
-        await _repository.SaveChangesAsync();
-        return true;
+        return await _repository.SaveChangesAsync();
     }
 
     private static LossAndDamageDto MapToDto(LossAndDamage entity)

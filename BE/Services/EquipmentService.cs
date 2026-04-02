@@ -141,26 +141,28 @@ public class EquipmentService : IEquipmentService
 
         ValidateUpdateDto(dto);
 
-        entity.Name = dto.Name!.Trim();
-        entity.Category = dto.Category!.Trim();
-        entity.Unit = dto.Unit!.Trim();
-        entity.TotalQuantity = dto.TotalQuantity;
-        entity.InUseQuantity = dto.InUseQuantity;
-        entity.DamagedQuantity = dto.DamagedQuantity;
-        entity.LiquidatedQuantity = dto.LiquidatedQuantity;
-        entity.BasePrice = dto.BasePrice;
-        entity.DefaultPriceIfLost = dto.DefaultPriceIfLost;
-        entity.Supplier = dto.Supplier?.Trim() ?? string.Empty;
-        entity.IsActive = dto.IsActive;
-
-        if (dto.File != null)
-        {
-            entity.ImageUrl = await _cloudinary.UploadImageAsync(dto.File, "equipments", entity.ItemCode);
-        }
-        else if (!string.IsNullOrWhiteSpace(dto.ImageUrl))
-        {
-            entity.ImageUrl = dto.ImageUrl.Trim();
-        }
+        if (!string.IsNullOrWhiteSpace(dto.Name))
+            entity.Name = dto.Name.Trim();
+        if (!string.IsNullOrWhiteSpace(dto.Category))
+            entity.Category = dto.Category.Trim();
+        if (!string.IsNullOrWhiteSpace(dto.Unit))
+            entity.Unit = dto.Unit.Trim();
+        if (dto.TotalQuantity.HasValue)
+            entity.TotalQuantity = dto.TotalQuantity.Value;
+        if (dto.InUseQuantity.HasValue)
+            entity.InUseQuantity = dto.InUseQuantity.Value;
+        if (dto.DamagedQuantity.HasValue)
+            entity.DamagedQuantity = dto.DamagedQuantity.Value;
+        if (dto.LiquidatedQuantity.HasValue)
+            entity.LiquidatedQuantity = dto.LiquidatedQuantity.Value;
+        if (dto.BasePrice.HasValue)
+            entity.BasePrice = dto.BasePrice.Value;
+        if (dto.DefaultPriceIfLost.HasValue)
+            entity.DefaultPriceIfLost = dto.DefaultPriceIfLost.Value;
+        if (!string.IsNullOrWhiteSpace(dto.Supplier))
+            entity.Supplier = dto.Supplier.Trim();
+        if (dto.IsActive.HasValue)
+            entity.IsActive = dto.IsActive.Value;
 
         entity.UpdatedAt = DateTime.UtcNow;
 

@@ -32,6 +32,10 @@ export function EquipmentPage() {
     const [page, setPage] = useState(1);
     const [form, setForm] = useState(initialForm);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [openAddQuantity, setOpenAddQuantity] = useState(false);
+    const [selectedEquipmentForQuantity, setSelectedEquipmentForQuantity] = useState<EquipmentItem | null>(null);
+    const [quantityToAdd, setQuantityToAdd] = useState('0');
+    const [isAddingQuantity, setIsAddingQuantity] = useState(false);
 
     const loadEquipments = useCallback(async () => {
         setIsLoading(true);
@@ -49,6 +53,43 @@ export function EquipmentPage() {
     useEffect(() => {
         void loadEquipments();
     }, [loadEquipments]);
+
+    const handleAddQuantity = (equipment: EquipmentItem) => {
+        if (!ensure('update_amenity', 'add equipment quantity')) {
+            return;
+        }
+        setSelectedEquipmentForQuantity(equipment);
+        setQuantityToAdd('0');
+        setOpenAddQuantity(true);
+    };
+
+    const handleSaveAddQuantity = async () => {
+        if (!selectedEquipmentForQuantity || !quantityToAdd) {
+            toast.error('Please enter quantity to add');
+            return;
+        }
+
+        const qtyToAdd = Number(quantityToAdd);
+        if (qtyToAdd <= 0) {
+            toast.error('Quantity must be greater than 0');
+            return;
+        }
+
+        setIsAddingQuantity(true);
+        try {
+            await equipmentsApi.update(selectedEquipmentForQuantity.id, {
+                totalQuantity: selectedEquipmentForQuantity.totalQuantity + qtyToAdd,
+            });
+            toast.success(`Added ${qtyToAdd} units to ${selectedEquipmentForQuantity.name}`);
+            setOpenAddQuantity(false);
+            void loadEquipments();
+        } catch (error) {
+            const apiError = toApiError(error);
+            toast.error(apiError.message || 'Failed to add quantity');
+        } finally {
+            setIsAddingQuantity(false);
+        }
+    };
 
     const filtered = useMemo(() => {
         const next = rows.filter((item) => {
@@ -90,37 +131,42 @@ export function EquipmentPage() {
             key: 'actions',
             label: 'Actions',
             render: (row: EquipmentItem) => (
-                <button
-                    type="button"
-                    className="rounded-lg border border-rose-200 px-2 py-1 text-xs text-rose-600"
-                    onClick={() => {
-                        if (!ensure('delete_amenity', 'delete equipment')) {
-                            return;
-                        }
-
-                        void (async () => {
-                            try {
-                                await equipmentsApi.remove(row.id);
-                                setRows((prev) => prev.filter((item) => item.id !== row.id));
-                                toast.success(`Deleted ${row.itemCode}`);
-                            } catch (error) {
-                                const apiError = toApiError(error);
-                                toast.error(apiError.message || 'Failed to delete equipment');
+                <div className="flex gap-2">
+                    <button
+                        type="button"
+                        className="rounded-lg border border-cyan-200 px-2 py-1 text-xs text-cyan-600 hover:bg-cyan-50"
+                        onClick={() => handleAddQuantity(row)}
+                    >
+                        Add Quantity
+                    </button>
+                    <button
+                        type="button"
+                        className="rounded-lg border border-rose-200 px-2 py-1 text-xs text-rose-600"
+                        onClick={() => {
+                            if (!ensure('delete_amenity', 'delete equipment')) {
+                                return;
                             }
-                        })();
-                    }}
-                >
-                    Delete
-                </button>
+
+                            void (async () => {
+                                try {
+                                    await equipmentsApi.remove(row.id);
+                                    setRows((prev) => prev.filter((item) => item.id !== row.id));
+                                    toast.success(`Deleted ${row.itemCode}`);
+                                } catch (error) {
+                                    const apiError = toApiError(error);
+                                    toast.error(apiError.message || 'Failed to delete equipment');
+                                }
+                            })();
+                        }}
+                    >
+                        Delete
+                    </button>
+                </div>
             ),
         },
     ];
 
-    const createItem = async () => {
-        if (!ensure('create_amenity', 'create equipment')) {
-            return false;
-        }
-
+    const createItem = async (): Promise<boolean> => {
         if (!form.itemCode.trim() || !form.name.trim() || !form.category.trim() || !form.unit.trim()) {
             toast.error('Item code, name, category and unit are required');
             return false;
@@ -296,6 +342,63 @@ export function EquipmentPage() {
                         </button>
                     </div>
                 </div>
+            </Modal>
+
+            <Modal
+                open={openAddQuantity}
+                title={selectedEquipmentForQuantity ? `Add Quantity - ${selectedEquipmentForQuantity.name}` : 'Add Quantity'}
+                onClose={() => setOpenAddQuantity(false)}
+            >
+                {selectedEquipmentForQuantity && (
+                    <div className="space-y-4">
+                        <div className="rounded-lg bg-slate-50 p-3 space-y-2 text-sm">
+                            <div className="flex justify-between">
+                                <span className="text-slate-600">Current Total:</span>
+                                <span className="font-bold text-cyan-700">
+                                    {selectedEquipmentForQuantity.totalQuantity} {selectedEquipmentForQuantity.unit}
+                                </span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-slate-600">In Use:</span>
+                                <span className="font-medium">{selectedEquipmentForQuantity.inUseQuantity}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span className="text-slate-600">Damaged:</span>
+                                <span className="font-medium">{selectedEquipmentForQuantity.damagedQuantity}</span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 mb-2">Quantity to Add</label>
+                            <Input
+                                type="number"
+                                min="1"
+                                value={quantityToAdd}
+                                onChange={(e) => setQuantityToAdd(e.target.value)}
+                                placeholder="Enter quantity to add"
+                            />
+                        </div>
+
+                        <div className="flex justify-end gap-2 border-t border-slate-200 pt-4">
+                            <button
+                                type="button"
+                                className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                                onClick={() => setOpenAddQuantity(false)}
+                                disabled={isAddingQuantity}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                className="rounded-lg bg-cyan-700 px-4 py-2 text-sm font-medium text-white hover:bg-cyan-800 disabled:opacity-50"
+                                onClick={handleSaveAddQuantity}
+                                disabled={isAddingQuantity || !quantityToAdd}
+                            >
+                                {isAddingQuantity ? 'Adding...' : 'Add Quantity'}
+                            </button>
+                        </div>
+                    </div>
+                )}
             </Modal>
         </div>
     );

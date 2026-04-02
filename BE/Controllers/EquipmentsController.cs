@@ -39,7 +39,7 @@ public class EquipmentsController : ControllerBase
 
     [Permission(PermissionNames.UpdateAmenity)]
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(int id, [FromForm] UpdateEquipmentDto dto)
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateEquipmentDto dto)
     {
         var ok = await _service.UpdateAsync(id, dto);
         if (!ok)

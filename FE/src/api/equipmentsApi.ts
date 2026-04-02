@@ -97,6 +97,20 @@ function toCreateFormData(payload: CreateEquipmentPayload): FormData {
     return form;
 }
 
+export interface UpdateEquipmentPayload {
+    name?: string;
+    category?: string;
+    unit?: string;
+    totalQuantity?: number;
+    inUseQuantity?: number;
+    damagedQuantity?: number;
+    liquidatedQuantity?: number;
+    basePrice?: number;
+    defaultPriceIfLost?: number;
+    supplier?: string;
+    isActive?: boolean;
+}
+
 export const equipmentsApi = {
     async getAll() {
         const { data } = await httpClient.get<EquipmentDto[]>('equipments');
@@ -109,6 +123,10 @@ export const equipmentsApi = {
                 'Content-Type': 'multipart/form-data',
             },
         });
+    },
+
+    async update(id: number, payload: UpdateEquipmentPayload) {
+        await httpClient.put(`equipments/${id}`, payload);
     },
 
     async remove(id: number) {
