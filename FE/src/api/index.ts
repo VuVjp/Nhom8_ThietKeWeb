@@ -8,3 +8,4 @@ export * from './lossApi';
 export * from './amenitiesApi';
 export * from './roomTypesApi';
 export * from './notificationsApi';
+export * from './equipmentsApi';

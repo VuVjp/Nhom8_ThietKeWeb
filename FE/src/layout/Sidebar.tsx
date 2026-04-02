@@ -1,4 +1,4 @@
-import { HomeIcon, BuildingOffice2Icon, ArchiveBoxIcon, ExclamationTriangleIcon, SparklesIcon, UsersIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
+import { HomeIcon, BuildingOffice2Icon, ArchiveBoxIcon, ExclamationTriangleIcon, SparklesIcon, UsersIcon, ShieldCheckIcon, WrenchScrewdriverIcon, Squares2X2Icon } from '@heroicons/react/24/outline';
 import { NavLink } from 'react-router-dom';
 import type { AppPermission } from '../auth/auth.types';
 import { useAppAuth } from '../auth/useAppAuth';
@@ -20,6 +20,8 @@ const navItems: SidebarNavItem[] = [
   { to: '/admin/dashboard', label: 'Dashboard', icon: HomeIcon },
   { to: '/admin/rooms', label: 'Rooms', icon: BuildingOffice2Icon, permissions: ['get_all_rooms', 'create_room', 'update_room', 'change_room_status', 'change_room_cleaning_status', 'delete_room'] as AppPermission[] },
   { to: '/admin/inventory', label: 'Inventory', icon: ArchiveBoxIcon, permissions: ['get_all_room_inventory', 'create_room_inventory', 'update_room_inventory', 'delete_room_inventory'] as AppPermission[] },
+  { to: '/admin/amenities', label: 'Amenities', icon: Squares2X2Icon, permissions: ['create_amenity', 'update_amenity', 'delete_amenity'] as AppPermission[] },
+  { to: '/admin/equipments', label: 'Equipments', icon: WrenchScrewdriverIcon, permissions: ['create_amenity', 'update_amenity', 'delete_amenity'] as AppPermission[] },
   { to: '/admin/loss', label: 'Loss & Compensation', icon: ExclamationTriangleIcon },
   { to: '/admin/cleaning', label: 'Cleaning', icon: SparklesIcon, permissions: ['change_room_cleaning_status'] as AppPermission[] },
   { to: '/admin/users', label: 'Users', icon: UsersIcon, permissions: ['manage_user'] as AppPermission[] },

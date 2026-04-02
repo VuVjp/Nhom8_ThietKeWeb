@@ -1,5 +1,7 @@
 namespace HotelManagement.Dtos;
 
+using Microsoft.AspNetCore.Http;
+
 public class EquipmentDto
 {
     public int Id { get; set; }
@@ -30,6 +32,7 @@ public class CreateEquipmentDto
     public decimal BasePrice { get; set; }
     public decimal DefaultPriceIfLost { get; set; }
     public string? Supplier { get; set; }
+    public IFormFile? File { get; set; }
 }
 
 public class UpdateEquipmentDto
@@ -46,4 +49,5 @@ public class UpdateEquipmentDto
     public string? Supplier { get; set; }
     public bool IsActive { get; set; }
     public string? ImageUrl { get; set; }
+    public IFormFile? File { get; set; }
 }
