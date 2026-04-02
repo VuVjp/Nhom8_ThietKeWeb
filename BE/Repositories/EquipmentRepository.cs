@@ -20,4 +20,11 @@ public class EquipmentRepository : Repository<Equipment>, IEquipmentRepository
     {
         return await _dbSet.FirstOrDefaultAsync(e => e.ItemCode == itemCode);
     }
+
+    public async Task<Equipment?> GetByNameNormalizedAsync(string name)
+    {
+        var normalized = name.Trim().ToLower();
+
+        return await _dbSet.FirstOrDefaultAsync(e => e.Name.Trim().ToLower() == normalized);
+    }
 }

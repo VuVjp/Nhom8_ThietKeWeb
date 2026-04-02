@@ -1,4 +1,5 @@
 using HotelManagement.Entities;
+using System.Text.RegularExpressions;
 
 public class AmenityService : IAmenityService
 {
@@ -38,16 +39,46 @@ public class AmenityService : IAmenityService
 
     public async Task<bool> CreateAsync(CreateAmenityRequestDto dto)
     {
+        if (string.IsNullOrWhiteSpace(dto.Name))
+        {
+            throw new ArgumentException("Amenity name is required.");
+        }
+
+        var normalizedName = dto.Name.Trim();
+        var normalizedKey = NormalizeKey(normalizedName);
+        var existing = (await _repo.GetAllAsync())
+            .FirstOrDefault(a => NormalizeKey(a.Name) == normalizedKey);
+
         string? iconUrl = null;
 
         if (dto.File != null)
         {
-            iconUrl = await _cloudinary.UploadImageAsync(dto.File, "amenities", dto.Name);
+            iconUrl = await _cloudinary.UploadImageAsync(dto.File, "amenities", normalizedName);
+        }
+
+        if (existing != null)
+        {
+            if (existing.IsActive)
+            {
+                throw new ConflictException($"Amenity '{normalizedName}' already exists.");
+            }
+
+            existing.Name = normalizedName;
+            existing.IsActive = true;
+
+            if (!string.IsNullOrWhiteSpace(iconUrl))
+            {
+                existing.IconUrl = iconUrl;
+            }
+
+            _repo.Update(existing);
+            await _repo.SaveChangesAsync();
+            return true;
         }
 
         var entity = new Amenity
         {
-            Name = dto.Name,
+            Name = normalizedName,
             IconUrl = iconUrl
         };
 
@@ -55,6 +86,12 @@ public class AmenityService : IAmenityService
         await _repo.SaveChangesAsync();
 
         return true;
+    }
+
+    private static string NormalizeKey(string value)
+    {
+        var trimmed = value.Trim().ToLowerInvariant();
+        return Regex.Replace(trimmed, "\\s+", " ");
     }
 
     public async Task<bool> UpdateAsync(int id, UpdateAmenityDto dto)

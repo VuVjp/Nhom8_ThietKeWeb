@@ -51,7 +51,6 @@ export function RoomsPage() {
   const [openCreate, setOpenCreate] = useState(false);
   const [createStep, setCreateStep] = useState<1 | 2 | 3>(1);
   const [isSaving, setIsSaving] = useState(false);
-  const [createdRoomId, setCreatedRoomId] = useState<number | null>(null);
   const [amenityMode, setAmenityMode] = useState<'manual' | 'roomType'>('manual');
   const [inventoryMode, setInventoryMode] = useState<'manual' | 'cloneRoom'>('manual');
   const [cloneSourceRoomId, setCloneSourceRoomId] = useState<number | null>(null);
@@ -230,7 +229,6 @@ export function RoomsPage() {
   const resetCreateFlow = () => {
     setCreateStep(1);
     setIsSaving(false);
-    setCreatedRoomId(null);
     setAmenityMode('manual');
     setInventoryMode('manual');
     setCloneSourceRoomId(null);
@@ -255,12 +253,22 @@ export function RoomsPage() {
       return;
     }
 
-    const roomNumber = draft.roomNumber.trim();
-    const floorValue = Number(draft.floor);
+    setCreateStep(2);
+    toast.success('Room information saved. Continue to amenities');
+  };
 
+  const saveAmenitiesStep = () => {
+    setCreateStep(3);
+    toast.success('Amenities selection saved. Continue to equipment setup');
+  };
+
+  const finishCreateFlow = () => {
     void (async () => {
       setIsSaving(true);
       try {
+        const roomNumber = draft.roomNumber.trim();
+        const floorValue = Number(draft.floor);
+
         await roomsApi.create({
           roomNumber,
           floor: floorValue,
@@ -279,35 +287,15 @@ export function RoomsPage() {
           return;
         }
 
-        setCreatedRoomId(createdRoom.id);
-        setCreateStep(2);
-        toast.success(`Room ${roomNumber} created. Continue to amenities`);
-      } catch (error) {
-        const apiError = toApiError(error);
-        toast.error(apiError.message || 'Failed to create room');
-      } finally {
-        setIsSaving(false);
-      }
-    })();
-  };
+        const createdRoomId = createdRoom.id;
 
-  const saveAmenitiesStep = () => {
-    if (!createdRoomId) {
-      toast.error('Missing room ID. Please recreate room');
-      return;
-    }
-
-    void (async () => {
-      setIsSaving(true);
-      try {
-        const selectedFromRoomType = roomTypes.find((item) => item.id === draft.roomTypeId)?.amenities ?? [];
-        const selected =
+        const selectedAmenities =
           amenityMode === 'roomType'
-            ? selectedFromRoomType
+            ? roomTypes.find((item) => item.id === draft.roomTypeId)?.amenities ?? []
             : amenities.filter((item) => selectedAmenityIds.includes(item.id));
 
         await Promise.all(
-          selected.map((item) =>
+          selectedAmenities.map((item) =>
             roomInventoriesApi.create({
               roomId: createdRoomId,
               itemName: `[Amenity] ${item.name}`,
@@ -316,27 +304,8 @@ export function RoomsPage() {
             }),
           ),
         );
-        setCreateStep(3);
-        toast.success('Amenities added. Continue to equipment setup');
-      } catch (error) {
-        const apiError = toApiError(error);
-        toast.error(apiError.message || 'Failed to add amenities');
-      } finally {
-        setIsSaving(false);
-      }
-    })();
-  };
 
-  const finishCreateFlow = () => {
-    if (!createdRoomId) {
-      toast.error('Missing room ID. Please recreate room');
-      return;
-    }
-
-    void (async () => {
-      setIsSaving(true);
-      try {
-        const selectedItems =
+        const selectedEquipmentItems =
           inventoryMode === 'cloneRoom'
             ? (() => {
               if (!cloneSourceRoomId) {
@@ -350,7 +319,7 @@ export function RoomsPage() {
                     quantity: Number(item.quantity || 0),
                     priceIfLost: Number(item.compensationPrice || 0),
                   }))
-                  .filter((item) => item.itemName.trim().length > 0 && item.quantity > 0),
+                  .filter((item) => !item.itemName.trim().toLowerCase().startsWith('[amenity]') && item.itemName.trim().length > 0 && item.quantity > 0),
               );
             })()
             : Promise.resolve(
@@ -363,8 +332,7 @@ export function RoomsPage() {
                 .filter((item) => item.itemName.trim().length > 0 && item.quantity > 0),
             );
 
-        const normalizedItems = await selectedItems;
-
+        const normalizedItems = await selectedEquipmentItems;
         await Promise.all(
           normalizedItems.map((item) =>
             roomInventoriesApi.create({
@@ -645,7 +613,6 @@ export function RoomsPage() {
                   >
                     <option value="">Select source room</option>
                     {rooms
-                      .filter((room) => room.id !== createdRoomId)
                       .map((room) => (
                         <option key={room.id} value={room.id}>
                           {room.roomNumber} - {room.roomType}

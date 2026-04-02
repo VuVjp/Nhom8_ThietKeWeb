@@ -1,5 +1,6 @@
 using HotelManagement.Entities;
 using HotelManagement.Dtos;
+using System.Text.RegularExpressions;
 
 public class EquipmentService : IEquipmentService
 {
@@ -34,10 +35,70 @@ public class EquipmentService : IEquipmentService
         ValidateCreateDto(dto);
 
         var normalizedCode = dto.ItemCode!.Trim().ToUpperInvariant();
-        var existing = await _repo.GetByItemCodeAsync(normalizedCode);
-        if (existing != null && existing.IsActive)
+        var normalizedName = dto.Name!.Trim();
+
+        var allEquipments = await _repo.GetAllAsync();
+        var normalizedCodeKey = NormalizeCodeKey(normalizedCode);
+        var normalizedNameKey = NormalizeNameKey(normalizedName);
+
+        var existingByCode = allEquipments.FirstOrDefault(e => NormalizeCodeKey(e.ItemCode) == normalizedCodeKey);
+        var existingByName = allEquipments.FirstOrDefault(e => NormalizeNameKey(e.Name) == normalizedNameKey);
+        var existing = existingByCode ?? existingByName;
+
+        if (existingByCode != null && existingByName != null && existingByCode.Id != existingByName.Id)
         {
-            throw new ConflictException($"Equipment code '{normalizedCode}' already exists.");
+            throw new ConflictException("Another equipment already exists with the same code or name.");
+        }
+
+        if (existing != null)
+        {
+            if (existing.IsActive)
+            {
+                existing.TotalQuantity = dto.TotalQuantity;
+                existing.InUseQuantity = 0;
+                existing.DamagedQuantity = 0;
+                existing.LiquidatedQuantity = 0;
+                existing.BasePrice = dto.BasePrice;
+                existing.DefaultPriceIfLost = dto.DefaultPriceIfLost;
+                existing.Supplier = dto.Supplier?.Trim() ?? string.Empty;
+                existing.Category = dto.Category!.Trim();
+                existing.Unit = dto.Unit!.Trim();
+                existing.Name = normalizedName;
+                existing.ItemCode = normalizedCode;
+
+                if (dto.File != null)
+                {
+                    existing.ImageUrl = await _cloudinary.UploadImageAsync(dto.File, "equipments", normalizedCode);
+                }
+
+                existing.UpdatedAt = DateTime.UtcNow;
+                _repo.Update(existing);
+                await _repo.SaveChangesAsync();
+                return true;
+            }
+
+            existing.ItemCode = normalizedCode;
+            existing.Name = normalizedName;
+            existing.Category = dto.Category!.Trim();
+            existing.Unit = dto.Unit!.Trim();
+            existing.TotalQuantity = dto.TotalQuantity;
+            existing.InUseQuantity = 0;
+            existing.DamagedQuantity = 0;
+            existing.LiquidatedQuantity = 0;
+            existing.BasePrice = dto.BasePrice;
+            existing.DefaultPriceIfLost = dto.DefaultPriceIfLost;
+            existing.Supplier = dto.Supplier?.Trim() ?? string.Empty;
+            existing.IsActive = true;
+
+            if (dto.File != null)
+            {
+                existing.ImageUrl = await _cloudinary.UploadImageAsync(dto.File, "equipments", normalizedCode);
+            }
+
+            existing.UpdatedAt = DateTime.UtcNow;
+            _repo.Update(existing);
+            await _repo.SaveChangesAsync();
+            return true;
         }
 
         string imageUrl = string.Empty;
@@ -49,7 +110,7 @@ public class EquipmentService : IEquipmentService
         var entity = new Equipment
         {
             ItemCode = normalizedCode,
-            Name = dto.Name!.Trim(),
+            Name = normalizedName,
             Category = dto.Category!.Trim(),
             Unit = dto.Unit!.Trim(),
             TotalQuantity = dto.TotalQuantity,
@@ -116,6 +177,10 @@ public class EquipmentService : IEquipmentService
             throw new NotFoundException($"Equipment with ID {id} not found.");
         }
 
+        entity.TotalQuantity = 0;
+        entity.InUseQuantity = 0;
+        entity.DamagedQuantity = 0;
+        entity.LiquidatedQuantity = 0;
         entity.IsActive = false;
         entity.UpdatedAt = DateTime.UtcNow;
 
@@ -211,5 +276,16 @@ public class EquipmentService : IEquipmentService
         {
             throw new ArgumentException("Price values cannot be negative.");
         }
+    }
+
+    private static string NormalizeCodeKey(string? value)
+    {
+        return (value ?? string.Empty).Trim().ToUpperInvariant();
+    }
+
+    private static string NormalizeNameKey(string? value)
+    {
+        var trimmed = (value ?? string.Empty).Trim().ToLowerInvariant();
+        return Regex.Replace(trimmed, "\\s+", " ");
     }
 }

@@ -14,4 +14,12 @@ public class AmenityRepository : Repository<Amenity>, IAmenityRepository
             .Where(a => a.IsActive)
             .ToListAsync();
     }
+
+    public async Task<Amenity?> GetByNameNormalizedAsync(string name)
+    {
+        var normalized = name.Trim().ToLower();
+
+        return await _dbSet
+            .FirstOrDefaultAsync(a => a.Name.Trim().ToLower() == normalized);
+    }
 }
