@@ -247,7 +247,7 @@ export function RoomDetailPage() {
               type="button"
               className="rounded-lg border border-slate-200 p-1.5"
               onClick={() => {
-                if (!ensure('update_room_inventory', 'edit room inventory item')) {
+                if (!ensure('MANAGE_ROOMS', 'edit room inventory item')) {
                   return;
                 }
 
@@ -282,7 +282,7 @@ export function RoomDetailPage() {
               type="button"
               className={`rounded-lg border p-1.5 ${row.isActive ? 'border-amber-200 text-amber-700' : 'border-emerald-200 text-emerald-700'}`}
               onClick={() => {
-                if (!ensure('delete_room_inventory', 'toggle room inventory item')) {
+                if (!ensure('MANAGE_ROOMS', 'toggle room inventory item')) {
                   return;
                 }
                 void (async () => {
@@ -318,7 +318,7 @@ export function RoomDetailPage() {
   );
 
   const addItem = () => {
-    if (!ensure('create_room_inventory', 'add room inventory item')) {
+    if (!ensure('MANAGE_ROOMS', 'add room inventory item')) {
       return;
     }
 
@@ -401,7 +401,7 @@ export function RoomDetailPage() {
   };
 
   const handleQuickAddAmenitiesFromRoomType = () => {
-    if (!ensure('create_room_inventory', 'add room type amenities')) {
+    if (!ensure('MANAGE_ROOMS', 'add room type amenities')) {
       return;
     }
 
@@ -440,7 +440,7 @@ export function RoomDetailPage() {
   };
 
   const handleCloneEquipmentFromRoom = () => {
-    if (!ensure('create_room_inventory', 'clone equipment from room')) {
+    if (!ensure('MANAGE_ROOMS', 'clone equipment from room')) {
       return;
     }
 
@@ -501,7 +501,7 @@ export function RoomDetailPage() {
       return;
     }
 
-    if (!ensure('update_room_inventory', 'save room inventory item edit')) {
+    if (!ensure('MANAGE_ROOMS', 'save room inventory item edit')) {
       return;
     }
 
@@ -612,7 +612,7 @@ export function RoomDetailPage() {
             type="button"
             className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm"
             onClick={() => {
-              if (!ensure('create_room_inventory', 'open add equipment form')) {
+              if (!ensure('MANAGE_ROOMS', 'open add equipment form')) {
                 return;
               }
               setAddMode('equipment');
@@ -626,7 +626,7 @@ export function RoomDetailPage() {
             type="button"
             className="inline-flex items-center gap-2 rounded-lg bg-cyan-700 px-3 py-2 text-sm text-white"
             onClick={() => {
-              if (!ensure('create_room_inventory', 'open add amenity form')) {
+              if (!ensure('MANAGE_ROOMS', 'open add amenity form')) {
                 return;
               }
               setAddMode('amenity');

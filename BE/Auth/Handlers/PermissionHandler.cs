@@ -40,18 +40,12 @@ public class PermissionHandler : AuthorizationHandler<PermissionRequirement>
             .Select(rp => rp.Permission.Name)
             .ToListAsync();
 
-        var normalizedUserPermissions = PermissionNameMapper
-            .NormalizeMany(rawPermissionNames)
+        var normalizedUserPermissions = rawPermissionNames
+            .Where(permission => !string.IsNullOrWhiteSpace(permission))
+            .Select(permission => permission.Trim())
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        var normalizedRequiredPermissions = PermissionNameMapper.NormalizeMany([requirement.Permission]);
-        if (normalizedRequiredPermissions.Count == 0 && !string.IsNullOrWhiteSpace(requirement.Permission))
-        {
-            normalizedRequiredPermissions = [requirement.Permission.Trim()];
-        }
-
-        var hasPermission = normalizedRequiredPermissions.Any(requiredPermission =>
-            normalizedUserPermissions.Contains(requiredPermission));
+        var hasPermission = normalizedUserPermissions.Contains(requirement.Permission.Trim());
 
         if (hasPermission)
         {

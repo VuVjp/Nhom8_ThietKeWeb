@@ -31,7 +31,7 @@ namespace HotelManagement.Controllers
             return Ok(roomType);
         }
 
-        [Permission(PermissionNames.ManageRoomType)]
+        [Permission(PermissionNames.ManageRoomTypes)]
         [HttpPost]
         public async Task<ActionResult<RoomTypeDto>> CreateRoomType(CreateRoomTypeDto dto)
         {
@@ -42,7 +42,7 @@ namespace HotelManagement.Controllers
             return Ok(new { message = "Room type created successfully." });
         }
 
-        [Permission(PermissionNames.ManageRoomType)]
+        [Permission(PermissionNames.ManageRoomTypes)]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateRoomType(int id, UpdateRoomTypeDto dto)
         {
@@ -53,7 +53,7 @@ namespace HotelManagement.Controllers
             return NoContent();
         }
 
-        [Permission(PermissionNames.ManageRoomType)]
+        [Permission(PermissionNames.ManageRoomTypes)]
         [HttpPatch("{id}/toggle-active")]
         public async Task<IActionResult> ToggleRoomTypeActive(int id)
         {
@@ -64,7 +64,7 @@ namespace HotelManagement.Controllers
             return Ok(new { message = "Room type active status toggled successfully." });
         }
 
-        [Permission(PermissionNames.ManageRoomType)]
+        [Permission(PermissionNames.ManageRoomTypes)]
         [HttpPost("{id}/images")]
         public async Task<ActionResult<RoomImageDto>> AddImage(int id, [FromForm] AddRoomImageDto dto)
         {
@@ -75,7 +75,7 @@ namespace HotelManagement.Controllers
             return Ok(new { message = "Image added successfully." });
         }
 
-        [Permission(PermissionNames.ManageRoomType)]
+        [Permission(PermissionNames.ManageRoomTypes)]
         [HttpDelete("images/{imageId}")]
         public async Task<IActionResult> DeleteImage(int imageId)
         {
@@ -87,7 +87,7 @@ namespace HotelManagement.Controllers
             return NoContent();
         }
 
-        [Permission(PermissionNames.ManageRoomType)]
+        [Permission(PermissionNames.ManageRoomTypes)]
         [HttpPatch("{roomTypeId}/images/{imageId}/set-primary")]
         public async Task<IActionResult> SetPrimaryImage(int roomTypeId, int imageId)
         {
@@ -99,7 +99,7 @@ namespace HotelManagement.Controllers
             return NoContent();
         }
 
-        [Permission(PermissionNames.ManageRoomType)]
+        [Permission(PermissionNames.ManageRoomTypes)]
         [HttpGet("{id}/amenities")]
         public async Task<IActionResult> GetAmenities(int id)
         {
@@ -107,7 +107,7 @@ namespace HotelManagement.Controllers
             return Ok(amenities);
         }
 
-        [Permission(PermissionNames.ManageRoomType)]
+        [Permission(PermissionNames.ManageRoomTypes)]
         [HttpPost("{id}/amenities")]
         public async Task<IActionResult> AddAmenity(int id, [FromBody] AddRoomTypeAmenityDto dto)
         {
@@ -118,7 +118,7 @@ namespace HotelManagement.Controllers
             return Ok(new { message = "Amenity added successfully." });
         }
 
-        [Permission(PermissionNames.ManageRoomType)]
+        [Permission(PermissionNames.ManageRoomTypes)]
         [HttpPost("{id}/amenities/bulk")]
         public async Task<IActionResult> AddAmenities(int id, [FromBody] AddRoomTypeAmenitiesDto dto)
         {
@@ -129,7 +129,7 @@ namespace HotelManagement.Controllers
             return Ok(new { message = "Amenities added successfully." });
         }
 
-        [Permission(PermissionNames.ManageRoomType)]
+        [Permission(PermissionNames.ManageRoomTypes)]
         [HttpDelete("{id}/amenities/{amenityId}")]
         public async Task<IActionResult> RemoveAmenity(int id, int amenityId)
         {

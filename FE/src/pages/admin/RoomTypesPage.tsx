@@ -49,7 +49,7 @@ export function RoomTypesPage() {
     }, [loadRoomTypes]);
 
     const createRoomType = async () => {
-        if (!ensure('manage_room_type', 'create room type')) {
+        if (!ensure('MANAGE_ROOM_TYPES', 'create room type')) {
             return false;
         }
 
@@ -114,7 +114,7 @@ export function RoomTypesPage() {
     };
 
     const toggleRoomTypeActive = async (item: RoomTypeItem) => {
-        if (!ensure('manage_room_type', 'toggle room type active status')) {
+        if (!ensure('MANAGE_ROOM_TYPES', 'toggle room type active status')) {
             return;
         }
 
@@ -406,7 +406,7 @@ export function RoomTypesPage() {
                                         return;
                                     }
 
-                                    if (!ensure('manage_room_type', 'update room type')) {
+                                    if (!ensure('MANAGE_ROOM_TYPES', 'update room type')) {
                                         return;
                                     }
 

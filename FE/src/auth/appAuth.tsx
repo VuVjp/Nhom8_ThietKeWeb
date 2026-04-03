@@ -45,34 +45,12 @@ function normalizeRole(rawRole: unknown): AppRole {
     return 'Admin';
 }
 
-const legacyPermissionMap: Record<string, AppPermission[]> = {
-    MANAGE_USERS: ['manage_user'],
-    CREATE_USERS: ['manage_user'],
-    UPDATE_USERS: ['manage_user'],
-    DELETE_USERS: ['manage_user'],
-    MANAGE_ROLES: ['manage_role'],
-    MANAGE_ROOMS: [
-        'get_all_rooms',
-        'create_room',
-        'update_room',
-        'delete_room',
-        'change_room_status',
-        'change_room_cleaning_status',
-        'manage_room_type',
-        'get_all_room_inventory',
-        'create_room_inventory',
-        'update_room_inventory',
-        'delete_room_inventory',
-    ],
-    MANAGE_EQUIPMENTS: ['create_amenity', 'update_amenity', 'delete_amenity'],
-};
-
 function toKnownPermissions(items: string[] | null | undefined): AppPermission[] {
     if (!items?.length) {
         return [];
     }
 
-    const allowed = new Set(appPermissions);
+    const allowed = new Set<string>(appPermissions);
     const normalized = new Set<AppPermission>();
 
     for (const item of items) {
@@ -81,14 +59,10 @@ function toKnownPermissions(items: string[] | null | undefined): AppPermission[]
             continue;
         }
 
-        if (allowed.has(trimmed as AppPermission)) {
-            normalized.add(trimmed as AppPermission);
+        const canonical = trimmed.toUpperCase() as AppPermission;
+        if (allowed.has(canonical)) {
+            normalized.add(canonical);
             continue;
-        }
-
-        const mapped = legacyPermissionMap[trimmed.toUpperCase()];
-        if (mapped) {
-            mapped.forEach((permission) => normalized.add(permission));
         }
     }
 
@@ -217,7 +191,7 @@ export function AppAuthProvider({ children }: PropsWithChildren) {
                 if (user.role === 'Admin') {
                     return true;
                 }
-                return user.permissions.includes(permission);
+                return user.permissions.includes(permission.toUpperCase() as AppPermission);
             },
             hasAnyPermission: (permissions: AppPermission[]) => {
                 if (!user) {
@@ -226,7 +200,7 @@ export function AppAuthProvider({ children }: PropsWithChildren) {
                 if (user.role === 'Admin') {
                     return true;
                 }
-                return permissions.some((permission) => user.permissions.includes(permission));
+                return permissions.some((permission) => user.permissions.includes(permission.toUpperCase() as AppPermission));
             },
         }),
         [user, isAuthReady],

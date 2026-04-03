@@ -203,7 +203,7 @@ export function InventoryPage() {
                         type="button"
                         className={`rounded-lg border px-2 py-1 text-xs ${row.isActive ? 'border-amber-200 text-amber-700' : 'border-emerald-200 text-emerald-700'}`}
                         onClick={() => {
-                            if (!ensure('delete_room_inventory', 'toggle inventory active status')) {
+                            if (!ensure('MANAGE_INVENTORY', 'toggle inventory active status')) {
                                 return;
                             }
                             void (async () => {

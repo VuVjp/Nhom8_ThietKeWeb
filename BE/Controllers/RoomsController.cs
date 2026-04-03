@@ -37,7 +37,7 @@ public class RoomsController : ControllerBase
 		return room == null ? NotFound("Room not found.") : Ok(room);
 	}
 
-	[Permission(PermissionNames.CreateRoom)]
+	[Permission(PermissionNames.ManageRooms)]
 	[HttpPost]
 	public async Task<IActionResult> Create([FromBody] RoomDto room)
 	{
@@ -52,7 +52,7 @@ public class RoomsController : ControllerBase
 		}
 	}
 
-	[Permission(PermissionNames.ChangeRoomStatus)]
+	[Permission(PermissionNames.UpdateCleaning)]
 	[HttpPatch("{id}/status")]
 	public async Task<IActionResult> ChangeStatus(int id, [FromBody] string newStatus)
 	{
@@ -67,7 +67,7 @@ public class RoomsController : ControllerBase
 		}
 	}
 
-	[Permission(PermissionNames.ChangeRoomCleaningStatus)]
+	[Permission(PermissionNames.UpdateCleaning)]
 	[HttpPatch("{id}/cleaning-status")]
 	public async Task<IActionResult> ChangeCleaningStatus(int id, [FromBody] string newCleaningStatus)
 	{
@@ -82,7 +82,7 @@ public class RoomsController : ControllerBase
 		}
 	}
 
-	[Permission(PermissionNames.UpdateRoom)]
+	[Permission(PermissionNames.ManageRooms)]
 	[HttpPut("{id}")]
 	public async Task<IActionResult> Update(int id, [FromBody] RoomDto room)
 	{
@@ -97,7 +97,7 @@ public class RoomsController : ControllerBase
 		}
 	}
 
-	[Permission(PermissionNames.DeleteRoom)]
+	[Permission(PermissionNames.ManageRooms)]
 	[HttpDelete("{id}")]
 	public async Task<IActionResult> Delete(int id)
 	{

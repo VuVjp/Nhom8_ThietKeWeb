@@ -1,28 +1,6 @@
 import { httpClient } from './httpClient';
 import type { RoleItem } from '../types/models';
 
-const legacyPermissionMap: Record<string, string[]> = {
-    MANAGE_USERS: ['manage_user'],
-    CREATE_USERS: ['manage_user'],
-    UPDATE_USERS: ['manage_user'],
-    DELETE_USERS: ['manage_user'],
-    MANAGE_ROLES: ['manage_role'],
-    MANAGE_ROOMS: [
-        'get_all_rooms',
-        'create_room',
-        'update_room',
-        'delete_room',
-        'change_room_status',
-        'change_room_cleaning_status',
-        'manage_room_type',
-        'get_all_room_inventory',
-        'create_room_inventory',
-        'update_room_inventory',
-        'delete_room_inventory',
-    ],
-    MANAGE_EQUIPMENTS: ['create_amenity', 'update_amenity', 'delete_amenity'],
-};
-
 function normalizePermissions(values: string[] | null | undefined): string[] {
     if (!values?.length) {
         return [];
@@ -36,15 +14,7 @@ function normalizePermissions(values: string[] | null | undefined): string[] {
             continue;
         }
 
-        if (/^[a-z0-9_]+$/.test(trimmed)) {
-            normalized.add(trimmed);
-            continue;
-        }
-
-        const mapped = legacyPermissionMap[trimmed.toUpperCase()];
-        if (mapped) {
-            mapped.forEach((permission) => normalized.add(permission));
-        }
+        normalized.add(trimmed.toUpperCase());
     }
 
     return Array.from(normalized);

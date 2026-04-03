@@ -25,7 +25,7 @@ public class AmenitiesController : ControllerBase
         return Ok(data);
     }
 
-    [Permission(PermissionNames.CreateAmenity)]
+    [Permission(PermissionNames.ManageAmenity)]
     [HttpPost]
     public async Task<IActionResult> Create([FromForm] CreateAmenityRequestDto dto)
     {
@@ -35,7 +35,7 @@ public class AmenitiesController : ControllerBase
         return Ok();
     }
 
-    [Permission(PermissionNames.UpdateAmenity)]
+    [Permission(PermissionNames.ManageAmenity)]
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(int id, [FromForm] UpdateAmenityDto dto)
     {
@@ -45,7 +45,7 @@ public class AmenitiesController : ControllerBase
     }
 
 
-    [Permission(PermissionNames.DeleteAmenity)]
+    [Permission(PermissionNames.ManageAmenity)]
     [HttpPatch("{id}/toggle-active")]
     public async Task<IActionResult> ToggleActive(int id)
     {

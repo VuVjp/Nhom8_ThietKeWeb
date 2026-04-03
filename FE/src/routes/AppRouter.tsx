@@ -26,14 +26,15 @@ function AdminEntryRedirect() {
 
     const permissions = user?.permissions ?? [];
     const nextPath =
-        (permissions.includes('manage_role') && '/admin/roles') ||
-        (permissions.includes('manage_user') && '/admin/users') ||
-        (permissions.includes('manage_room_type') && '/admin/room-types') ||
-        (permissions.includes('create_amenity') && '/admin/amenities') ||
-        (permissions.includes('create_amenity') && '/admin/equipments') ||
-        (permissions.includes('get_all_room_inventory') && '/admin/inventory') ||
-        (permissions.includes('get_all_rooms') && '/admin/rooms') ||
-        (permissions.includes('change_room_cleaning_status') && '/admin/cleaning') ||
+        (permissions.includes('VIEW_DASHBOARD') && '/admin/dashboard') ||
+        (permissions.includes('MANAGE_ROLES') && '/admin/roles') ||
+        (permissions.includes('MANAGE_USERS') && '/admin/users') ||
+        (permissions.includes('MANAGE_ROOM_TYPES') && '/admin/room-types') ||
+        (permissions.includes('MANAGE_AMENITY') && '/admin/amenities') ||
+        (permissions.includes('MANAGE_EQUIPMENTS') && '/admin/equipments') ||
+        (permissions.includes('MANAGE_ROOM_INVENTORY') && '/admin/inventory') ||
+        (permissions.includes('MANAGE_ROOMS') && '/admin/rooms') ||
+        (permissions.includes('UPDATE_CLEANING') && '/admin/cleaning') ||
         '/admin/dashboard';
 
     return <Navigate to={nextPath} replace />;
@@ -48,40 +49,44 @@ export const AppRouter = () => {
             <Route element={<RequireAuth />}>
                 <Route path="admin" element={<AdminEntryRedirect />} />
                 <Route element={<AdminLayout />}>
-                    <Route path="admin/dashboard" element={<DashboardPage />} />
+                    <Route element={<RequireAnyPermission permissions={['VIEW_DASHBOARD']} />}>
+                        <Route path="admin/dashboard" element={<DashboardPage />} />
+                    </Route>
 
-                    <Route element={<RequireAnyPermission permissions={['get_all_rooms', 'create_room', 'update_room', 'change_room_status', 'change_room_cleaning_status', 'delete_room']} />}>
+                    <Route element={<RequireAnyPermission permissions={['MANAGE_ROOMS']} />}>
                         <Route path="admin/rooms" element={<RoomsPage />} />
                         <Route path="admin/rooms/:roomId" element={<RoomDetailPage />} />
                     </Route>
 
-                    <Route element={<RequireAnyPermission permissions={['get_all_room_inventory', 'create_room_inventory', 'update_room_inventory', 'delete_room_inventory']} />}>
+                    <Route element={<RequireAnyPermission permissions={['MANAGE_INVENTORY']} />}>
                         <Route path="admin/inventory" element={<InventoryPage />} />
                     </Route>
 
-                    <Route path="admin/loss" element={<LossPage />} />
+                    <Route element={<RequirePermission permission="APPROVE_LOSS" />}>
+                        <Route path="admin/loss" element={<LossPage />} />
+                    </Route>
 
-                    <Route element={<RequirePermission permission="change_room_cleaning_status" />}>
+                    <Route element={<RequirePermission permission="UPDATE_CLEANING" />}>
                         <Route path="admin/cleaning" element={<CleaningPage />} />
                     </Route>
 
-                    <Route element={<RequirePermission permission="manage_user" />}>
+                    <Route element={<RequirePermission permission="MANAGE_USERS" />}>
                         <Route path="admin/users" element={<UsersPage />} />
                     </Route>
 
-                    <Route element={<RequirePermission permission="manage_role" />}>
+                    <Route element={<RequirePermission permission="MANAGE_ROLES" />}>
                         <Route path="admin/roles" element={<RolesPage />} />
                     </Route>
 
-                    <Route element={<RequirePermission permission="manage_room_type" />}>
+                    <Route element={<RequirePermission permission="MANAGE_ROOM_TYPES" />}>
                         <Route path="admin/room-types" element={<RoomTypesPage />} />
                     </Route>
 
-                    <Route element={<RequireAnyPermission permissions={['create_amenity', 'update_amenity', 'delete_amenity']} />}>
+                    <Route element={<RequireAnyPermission permissions={['MANAGE_AMENITY']} />}>
                         <Route path="admin/amenities" element={<AmenitiesPage />} />
                     </Route>
 
-                    <Route element={<RequireAnyPermission permissions={['create_amenity', 'update_amenity', 'delete_amenity']} />}>
+                    <Route element={<RequireAnyPermission permissions={['MANAGE_EQUIPMENTS']} />}>
                         <Route path="admin/equipments" element={<EquipmentPage />} />
                     </Route>
                 </Route>

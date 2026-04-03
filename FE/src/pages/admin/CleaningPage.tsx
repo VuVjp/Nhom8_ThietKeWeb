@@ -208,7 +208,7 @@ export function CleaningPage() {
                                 return;
                             }
 
-                            if (!ensure('change_room_cleaning_status', 'report loss and damage')) {
+                            if (!ensure('MANAGE_CLEANING', 'report loss and damage')) {
                                 return;
                             }
 
@@ -256,7 +256,7 @@ export function CleaningPage() {
             return;
         }
 
-        if (!ensure('change_room_cleaning_status', 'move room to cleaning')) {
+        if (!ensure('MANAGE_CLEANING', 'move room to cleaning')) {
             return;
         }
 
@@ -296,7 +296,7 @@ export function CleaningPage() {
             return;
         }
 
-        if (!ensure('change_room_cleaning_status', 'finish room cleaning')) {
+        if (!ensure('MANAGE_CLEANING', 'finish room cleaning')) {
             return;
         }
 

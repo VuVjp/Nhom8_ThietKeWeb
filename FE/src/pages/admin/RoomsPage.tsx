@@ -191,14 +191,14 @@ export function RoomsPage() {
         <Select
           value={row.status}
           onChange={(event) => {
-            if (!ensure('change_room_status', 'update room status')) {
+            if (!ensure('MANAGE_ROOMS', 'update room status')) {
               return;
             }
             const value = event.target.value as Room['status'];
             void (async () => {
               try {
                 await roomsApi.changeStatus(row.id, value);
-                setRooms((prev) => prev.map((item) => (item.id === row.id ? { ...item, status: value, cleaningStatus: value === 'Available' ? 'Clean' : value === 'Maintenance' ? 'Inspecting' : value === 'Cleaning' ? 'Dirty' : item.cleaningStatus } : item)));
+                setRooms((prev) => prev.map((item) => (item.id === row.id ? { ...item, status: value, cleaningStatus: value === 'Available' ? 'Clean' : value === 'Maintenance' ? 'Inspecting' : value === 'Cleaning' ? 'Dirty' : value === 'Inspecting' ? 'Inspecting' : value === 'Occupied' ? 'Clean' : item.cleaningStatus } : item)));
                 toast.success(`Room ${row.roomNumber} status updated`);
               } catch (error) {
                 const apiError = toApiError(error);
@@ -222,7 +222,7 @@ export function RoomsPage() {
         <Select
           value={row.cleaningStatus}
           onChange={(event) => {
-            if (!ensure('change_room_cleaning_status', 'update room condition')) {
+            if (!ensure('UPDATE_CLEANING', 'update room condition')) {
               return;
             }
             const value = event.target.value as Room['cleaningStatus'];
@@ -276,7 +276,7 @@ export function RoomsPage() {
   };
 
   const createRoomStep = () => {
-    if (!ensure('create_room', 'create room')) {
+    if (!ensure('MANAGE_ROOMS', 'create room')) {
       return;
     }
 
@@ -419,7 +419,7 @@ export function RoomsPage() {
         <button
           type="button"
           onClick={() => {
-            if (!ensure('create_room', 'create room')) {
+            if (!ensure('MANAGE_ROOMS', 'create room')) {
               return;
             }
 

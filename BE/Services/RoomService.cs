@@ -144,6 +144,14 @@ public class RoomService : IRoomService
 		{
 			room.CleaningStatus = "Dirty";
 		}
+		if (string.Equals(targetStatus.ToLower(), "inspecting", StringComparison.OrdinalIgnoreCase))
+		{
+			room.CleaningStatus = "Inspecting";
+		}
+		if (string.Equals(targetStatus.ToLower(), "occupied", StringComparison.OrdinalIgnoreCase) && string.Equals(room.CleaningStatus, "Completed", StringComparison.OrdinalIgnoreCase))
+		{
+			room.CleaningStatus = "Clean";
+		}
 		room.Status = targetStatus;
 		_repository.Update(room);
 		await _repository.SaveChangesAsync();

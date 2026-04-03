@@ -24,7 +24,7 @@ public class EquipmentsController : ControllerBase
         return Ok(await _service.GetByIdAsync(id));
     }
 
-    [Permission(PermissionNames.CreateAmenity)]
+    [Permission(PermissionNames.ManageEquipments)]
     [HttpPost]
     public async Task<IActionResult> Create([FromForm] CreateEquipmentDto dto)
     {
@@ -37,7 +37,7 @@ public class EquipmentsController : ControllerBase
         return Ok();
     }
 
-    [Permission(PermissionNames.UpdateAmenity)]
+    [Permission(PermissionNames.ManageEquipments)]
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateEquipmentDto dto)
     {
@@ -50,7 +50,7 @@ public class EquipmentsController : ControllerBase
         return NoContent();
     }
 
-    [Permission(PermissionNames.DeleteAmenity)]
+    [Permission(PermissionNames.ManageEquipments)]
     [HttpPatch("{id}/toggle-active")]
     public async Task<IActionResult> ToggleActive(int id)
     {

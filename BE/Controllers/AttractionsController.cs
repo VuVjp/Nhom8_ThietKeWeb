@@ -32,7 +32,7 @@ public class AttractionsController : ControllerBase
 		return Ok(result);
 	}
 
-	[Permission(PermissionNames.ManageAttraction)]
+	[Permission(PermissionNames.ManageAttractions)]
 	[HttpPost]
 	public async Task<IActionResult> Create([FromBody] CreateAttractionDto dto)
 	{
@@ -41,7 +41,7 @@ public class AttractionsController : ControllerBase
 		return Ok("Tạo địa điểm thành công.");
 	}
 
-	[Permission(PermissionNames.ManageAttraction)]
+	[Permission(PermissionNames.ManageAttractions)]
 	[HttpPut("{id}")]
 	public async Task<IActionResult> Update(int id, [FromBody] UpdateAttractionDto dto)
 	{
@@ -50,7 +50,7 @@ public class AttractionsController : ControllerBase
 		return Ok("Cập nhật thành công.");
 	}
 
-	[Permission(PermissionNames.ManageAttraction)]
+	[Permission(PermissionNames.ManageAttractions)]
 	[HttpDelete("{id}")]
 	public async Task<IActionResult> Delete(int id)
 	{

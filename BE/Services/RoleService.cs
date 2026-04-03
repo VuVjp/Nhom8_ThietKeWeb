@@ -21,14 +21,12 @@ public class RoleService : IRoleService
 
     public async Task<List<string>> GetMyPermissionsAsync(int userId)
     {
-        var rawPermissions = await _roleRepository.GetMyPermissionsAsync(userId);
-        return PermissionNameMapper.NormalizeMany(rawPermissions);
+        return await _roleRepository.GetMyPermissionsAsync(userId);
     }
 
     public async Task<List<string>> GetAllPermissionNamesAsync()
     {
-        var rawPermissions = await _roleRepository.GetAllPermissionNamesAsync();
-        return PermissionNameMapper.NormalizeMany(rawPermissions);
+        return await _roleRepository.GetAllPermissionNamesAsync();
     }
 
     public async Task UpdateRolePermissionsAsync(int roleId, IEnumerable<string> permissionNames)

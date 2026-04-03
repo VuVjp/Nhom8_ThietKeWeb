@@ -41,7 +41,7 @@ export function AmenitiesPage() {
     }, [loadAmenities]);
 
     const createAmenity = async () => {
-        if (!ensure('create_amenity', 'create amenity')) {
+        if (!ensure('MANAGE_AMENITY', 'create amenity')) {
             return false;
         }
 
@@ -75,7 +75,7 @@ export function AmenitiesPage() {
             return;
         }
 
-        if (!ensure('update_amenity', 'update amenity')) {
+        if (!ensure('MANAGE_AMENITY', 'update amenity')) {
             return;
         }
 
@@ -105,7 +105,7 @@ export function AmenitiesPage() {
     };
 
     const toggleAmenityActive = async (item: AmenityItem) => {
-        if (!ensure('delete_amenity', 'toggle amenity active status')) {
+        if (!ensure('MANAGE_AMENITY', 'toggle amenity active status')) {
             return;
         }
 

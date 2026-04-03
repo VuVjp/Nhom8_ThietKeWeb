@@ -17,7 +17,7 @@ public class RoomInventoriesController : ControllerBase
 		_service = service;
 	}
 
-	[Permission(PermissionNames.GetAllRoomInventory)]
+	[Permission(PermissionNames.ManageRoomInventory)]
 	[HttpGet]
 	public async Task<IActionResult> GetAll() => Ok(await _service.GetInventoriesAsync());
 
@@ -32,7 +32,7 @@ public class RoomInventoriesController : ControllerBase
 		return item == null ? NotFound() : Ok(item);
 	}
 
-	[Permission(PermissionNames.CreateRoomInventory)]
+	[Permission(PermissionNames.ManageRoomInventory)]
 	[HttpPost]
 	public async Task<IActionResult> Create(CreateRoomInventoryDto inventory)
 	{
@@ -40,7 +40,7 @@ public class RoomInventoriesController : ControllerBase
 		return result ? Ok("Created item successfully.") : BadRequest("Failed to create item.");
 	}
 
-	[Permission(PermissionNames.UpdateRoomInventory)]
+	[Permission(PermissionNames.ManageRoomInventory)]
 	[HttpPut("{id}")]
 	public async Task<IActionResult> Update(int id, UpdateRoomInventoryDto inventory)
 	{
@@ -48,7 +48,7 @@ public class RoomInventoriesController : ControllerBase
 		return result ? NoContent() : NotFound();
 	}
 
-	[Permission(PermissionNames.DeleteRoomInventory)]
+	[Permission(PermissionNames.ManageRoomInventory)]
 	[HttpPatch("{id}/toggle-active")]
 	public async Task<IActionResult> ToggleActive(int id)
 	{
@@ -56,7 +56,7 @@ public class RoomInventoriesController : ControllerBase
 		return result ? Ok("Room inventory active status toggled successfully.") : NotFound();
 	}
 
-	[Permission(PermissionNames.CreateRoomInventory)]
+	[Permission(PermissionNames.ManageRoomInventory)]
 	[HttpPost("clone/{idClone}/to/{newRoomId}")]
 	public async Task<IActionResult> Clone(int idClone, int newRoomId)
 	{

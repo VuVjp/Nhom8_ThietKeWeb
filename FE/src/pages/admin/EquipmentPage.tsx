@@ -55,7 +55,7 @@ export function EquipmentPage() {
     }, [loadEquipments]);
 
     const handleAddQuantity = (equipment: EquipmentItem) => {
-        if (!ensure('update_amenity', 'add equipment quantity')) {
+        if (!ensure('MANAGE_EQUIPMENTS', 'add equipment quantity')) {
             return;
         }
         if (!equipment.isActive) {
@@ -82,7 +82,7 @@ export function EquipmentPage() {
         setIsAddingQuantity(true);
         try {
             await equipmentsApi.update(selectedEquipmentForQuantity.id, {
-                
+
                 totalQuantity: selectedEquipmentForQuantity.totalQuantity + qtyToAdd,
             });
             toast.success(`Added ${qtyToAdd} units to ${selectedEquipmentForQuantity.name}`);
@@ -158,7 +158,7 @@ export function EquipmentPage() {
                         type="button"
                         className={`rounded-lg border px-2 py-1 text-xs ${row.isActive ? 'border-amber-200 text-amber-700' : 'border-emerald-200 text-emerald-700'}`}
                         onClick={() => {
-                            if (!ensure('delete_amenity', 'toggle equipment active status')) {
+                            if (!ensure('MANAGE_EQUIPMENTS', 'toggle equipment active status')) {
                                 return;
                             }
 

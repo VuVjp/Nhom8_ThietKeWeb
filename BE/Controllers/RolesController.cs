@@ -40,7 +40,7 @@ namespace HotelManagement.Controllers
             }
         }
 
-        [Permission(PermissionNames.ManageRole)]
+        [Permission(PermissionNames.ManageRoles)]
         [HttpGet]
         [Authorize]
         public async Task<IActionResult> GetAllRoles()
@@ -57,7 +57,7 @@ namespace HotelManagement.Controllers
             return Ok(permissions);
         }
 
-        [Permission(PermissionNames.ManageRole)]
+        [Permission(PermissionNames.ManageRoles)]
         [HttpPost("assign-permission")]
         [Authorize]
         public async Task<IActionResult> AssignPermission([FromBody] AssignPermissionDto dto)
@@ -84,7 +84,7 @@ namespace HotelManagement.Controllers
             return Ok();
         }
 
-        [Permission(PermissionNames.ManageRole)]
+        [Permission(PermissionNames.ManageRoles)]
         [HttpPut("{roleId}/permissions")]
         [Authorize]
         public async Task<IActionResult> UpdateRolePermissions(int roleId, [FromBody] UpdateRolePermissionsDto dto)

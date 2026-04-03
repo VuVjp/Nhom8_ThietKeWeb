@@ -33,7 +33,7 @@ public class AuthService : IAuthService
             Email = email,
             FullName = fullName,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
-            RoleId = 2, // Assuming 2 is the ID for the "Guest" role
+            RoleId = 6, // Assuming 6 is the ID for the "Guest" role
         };
 
         await _userRepository.AddAsync(user);
@@ -85,7 +85,7 @@ public class AuthService : IAuthService
                 Email = email,
                 FullName = name,
                 GoogleId = googleId,
-                RoleId = 2, // Assuming 2 is the ID for the "Guest" role
+                RoleId = 6, // Assuming 6 is the ID for the "Guest" role
             };
             await _userRepository.AddAsync(user);
             await _userRepository.SaveChangesAsync();

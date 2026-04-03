@@ -91,7 +91,7 @@ export function RolesPage() {
           type="button"
           className="inline-flex items-center gap-2 rounded-xl bg-cyan-700 px-4 py-2 text-sm font-semibold text-white"
           onClick={() => {
-            if (!ensure('manage_role', 'open create role form')) {
+            if (!ensure('MANAGE_ROLES', 'open create role form')) {
               return;
             }
             setOpenAdd(true);
@@ -117,7 +117,7 @@ export function RolesPage() {
                     if (!selectedRole) {
                       return;
                     }
-                    if (!ensure('manage_role', 'update role permissions')) {
+                    if (!ensure('MANAGE_ROLES', 'update role permissions')) {
                       return;
                     }
                     const next = event.target.checked
@@ -143,7 +143,7 @@ export function RolesPage() {
                 toast.error('Please select a role first');
                 return;
               }
-              if (!ensure('manage_role', 'save role permissions')) {
+              if (!ensure('MANAGE_ROLES', 'save role permissions')) {
                 return;
               }
               void (async () => {
@@ -174,7 +174,7 @@ export function RolesPage() {
               type="button"
               className="rounded-lg bg-cyan-700 px-3 py-2 text-sm font-semibold text-white"
               onClick={() => {
-                if (!ensure('manage_role', 'create role')) {
+                if (!ensure('MANAGE_ROLES', 'create role')) {
                   return;
                 }
                 if (!draftName.trim()) {

@@ -17,16 +17,16 @@ interface SidebarNavItem {
 }
 
 const navItems: SidebarNavItem[] = [
-  { to: '/admin/dashboard', label: 'Dashboard', icon: HomeIcon },
-  { to: '/admin/rooms', label: 'Rooms', icon: BuildingOffice2Icon, permissions: ['get_all_rooms', 'create_room', 'update_room', 'change_room_status', 'change_room_cleaning_status', 'delete_room'] as AppPermission[] },
-  { to: '/admin/room-types', label: 'Room Types', icon: RectangleStackIcon, permissions: ['manage_room_type'] as AppPermission[] },
-  { to: '/admin/inventory', label: 'Inventory', icon: ArchiveBoxIcon, permissions: ['get_all_room_inventory', 'create_room_inventory', 'update_room_inventory', 'delete_room_inventory'] as AppPermission[] },
-  { to: '/admin/amenities', label: 'Amenities', icon: Squares2X2Icon, permissions: ['create_amenity', 'update_amenity', 'delete_amenity'] as AppPermission[] },
-  { to: '/admin/equipments', label: 'Equipments', icon: WrenchScrewdriverIcon, permissions: ['create_amenity', 'update_amenity', 'delete_amenity'] as AppPermission[] },
-  { to: '/admin/loss', label: 'Loss & Compensation', icon: ExclamationTriangleIcon },
-  { to: '/admin/cleaning', label: 'Cleaning', icon: SparklesIcon, permissions: ['change_room_cleaning_status'] as AppPermission[] },
-  { to: '/admin/users', label: 'Users', icon: UsersIcon, permissions: ['manage_user'] as AppPermission[] },
-  { to: '/admin/roles', label: 'Roles', icon: ShieldCheckIcon, permissions: ['manage_role'] as AppPermission[] },
+  { to: '/admin/dashboard', label: 'Dashboard', icon: HomeIcon, permissions: ['VIEW_DASHBOARD'] as AppPermission[] },
+  { to: '/admin/rooms', label: 'Rooms', icon: BuildingOffice2Icon, permissions: ['MANAGE_ROOMS'] as AppPermission[] },
+  { to: '/admin/room-types', label: 'Room Types', icon: RectangleStackIcon, permissions: ['MANAGE_ROOM_TYPES'] as AppPermission[] },
+  { to: '/admin/inventory', label: 'Inventory', icon: ArchiveBoxIcon, permissions: ['MANAGE_INVENTORY'] as AppPermission[] },
+  { to: '/admin/amenities', label: 'Amenities', icon: Squares2X2Icon, permissions: ['MANAGE_AMENITY'] as AppPermission[] },
+  { to: '/admin/equipments', label: 'Equipments', icon: WrenchScrewdriverIcon, permissions: ['MANAGE_EQUIPMENTS'] as AppPermission[] },
+  { to: '/admin/loss', label: 'Loss & Compensation', icon: ExclamationTriangleIcon, permissions: ['APPROVE_LOSS'] as AppPermission[] },
+  { to: '/admin/cleaning', label: 'Cleaning', icon: SparklesIcon, permissions: ['UPDATE_CLEANING'] as AppPermission[] },
+  { to: '/admin/users', label: 'Users', icon: UsersIcon, permissions: ['MANAGE_USERS'] as AppPermission[] },
+  { to: '/admin/roles', label: 'Roles', icon: ShieldCheckIcon, permissions: ['MANAGE_ROLES'] as AppPermission[] },
 ];
 
 export function Sidebar({ collapsed, mobileOpen, onCloseMobile }: SidebarProps) {
