@@ -113,7 +113,7 @@ public class RoomService : IRoomService
 		if (string.Equals(targetStatus.ToLower(), "available", StringComparison.OrdinalIgnoreCase))
 		{
 			var validationMessage = await ValidateCleaningCompletionAsync(room.Id);
-			validationMessage ??= await ValidateEquipmentAvailabilityForRoomAsync(room.Id);
+			// validationMessage ??= await ValidateEquipmentAvailabilityForRoomAsync(room.Id);
 			if (validationMessage != null)
 			{
 				room.Status = "Maintenance";
