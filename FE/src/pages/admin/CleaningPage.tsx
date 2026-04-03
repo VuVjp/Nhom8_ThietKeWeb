@@ -311,10 +311,10 @@ export function CleaningPage() {
                 //     toast.success(`Room ${selectedCleaningRoom.roomNumber} marked Available`);
                 // }
             } catch (error) {
+                await loadBoards();
                 const apiError = toApiError(error);
                 if (apiError.status === 400 && apiError.message?.toLowerCase().includes('room cannot be set to available')) {
-                    await loadBoards();
-                    toast.success("Successfully finished cleaning!");
+                    toast.error(`Room ${selectedCleaningRoom.roomNumber} cannot be marked Available due to pending issues. It has been moved to Maintenance. Admin has been notified.`, { icon: '⚠️' });
                     return;
                 }
                 toast.error(apiError.message || 'Failed to finish cleaning');
