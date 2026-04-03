@@ -13,16 +13,20 @@ export interface Room {
   id: number;
   roomNumber: string;
   floor: number;
-  roomType: 'Standard' | 'Deluxe' | 'Suite';
+  roomType: string;
+  roomTypeId?: number;
   status: RoomStatus;
   cleaningStatus: 'Clean' | 'Dirty' | 'Inspecting';
 }
 
 export interface InventoryItem {
   id: number;
+  roomId?: number;
+  equipmentId?: number;
+  amenityId?: number;
   code: string;
   name: string;
-  category: 'Linen' | 'Bathroom' | 'Electronics' | 'Minibar';
+  category: string;
   unit: string;
   price: number;
   stock: number;

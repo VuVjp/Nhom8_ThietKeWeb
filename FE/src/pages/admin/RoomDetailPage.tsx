@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { TrashIcon, PencilIcon, PlusIcon, DocumentDuplicateIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
+import { PencilIcon, PlusIcon, DocumentDuplicateIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { Table } from '../../components/Table';
 import { Modal } from '../../components/Modal';
 import { Input } from '../../components/Input';
@@ -140,12 +140,13 @@ export function RoomDetailPage() {
   };
 
   const isAmenityInventoryName = (name: string) => name.trim().toLowerCase().startsWith('[amenity]');
+  const isAmenityInventoryItem = (item: InventoryItem) => Boolean(item.amenityId) || (!item.equipmentId && isAmenityInventoryName(item.name));
   const removeAmenityPrefix = (name: string) => name.replace(/^\[amenity\]\s*/i, '').trim();
   const normalizeName = (name: string) => name.trim().toLowerCase();
 
   const currentRoomType = useMemo(
-    () => roomTypes.find((item) => normalizeName(item.name) === normalizeName(room?.roomType ?? '')),
-    [roomTypes, room?.roomType],
+    () => roomTypes.find((item) => item.id === room?.roomTypeId) ?? roomTypes.find((item) => normalizeName(item.name) === normalizeName(room?.roomType ?? '')),
+    [roomTypes, room?.roomTypeId, room?.roomType],
   );
 
   const roomTypeAmenities = useMemo(() => currentRoomType?.amenities ?? [], [currentRoomType]);
@@ -156,13 +157,23 @@ export function RoomDetailPage() {
   );
 
   const amenityItems = useMemo(
-    () => items.filter((item) => item.name.trim().toLowerCase().startsWith('[amenity]')),
+    () => items.filter((item) => isAmenityInventoryItem(item)),
     [items],
   );
 
   const equipmentItems = useMemo(
-    () => items.filter((item) => !item.name.trim().toLowerCase().startsWith('[amenity]')),
+    () => items.filter((item) => !isAmenityInventoryItem(item)),
     [items],
+  );
+
+  const availableEquipmentOptions = useMemo(
+    () => equipmentOptions.filter((item) => !equipmentItems.some((row) => row.equipmentId === item.id)),
+    [equipmentOptions, equipmentItems],
+  );
+
+  const availableAmenityOptions = useMemo(
+    () => amenityOptions.filter((item) => !amenityItems.some((row) => row.amenityId === item.id)),
+    [amenityOptions, amenityItems],
   );
 
   const selectedEquipment = useMemo(
@@ -219,6 +230,15 @@ export function RoomDetailPage() {
       { key: 'comp', label: 'Compensation Price', render: (row: InventoryItem) => `$${row.compensationPrice}` },
       { key: 'notes', label: 'Notes', render: (row: InventoryItem) => row.notes },
       {
+        key: 'status',
+        label: 'Status',
+        render: (row: InventoryItem) => (
+          <span className={`rounded-full px-2 py-1 text-xs font-medium ${row.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
+            {row.isActive ? 'ON' : 'OFF'}
+          </span>
+        ),
+      },
+      {
         key: 'actions',
         label: 'Actions',
         render: (row: InventoryItem) => (
@@ -232,26 +252,26 @@ export function RoomDetailPage() {
                 }
 
                 const amenityRow = isAmenityInventoryName(row.name);
-                const rowNameWithoutPrefix = removeAmenityPrefix(row.name);
+                const amenityById = Boolean(row.amenityId);
 
                 setEditingItem(row);
-                setEditMode(amenityRow ? 'amenity' : 'equipment');
+                setEditMode(amenityById || amenityRow ? 'amenity' : 'equipment');
                 setEditDraft({
-                  quantity: amenityRow ? 1 : Number(row.quantity || 1),
-                  compensationPrice: amenityRow ? 0 : Number(row.compensationPrice || 0),
+                  quantity: amenityById || amenityRow ? 1 : Number(row.quantity || 1),
+                  compensationPrice: amenityById || amenityRow ? 0 : Number(row.compensationPrice || 0),
                 });
 
-                if (amenityRow) {
+                if (amenityById || amenityRow) {
                   const matchedAmenity = amenityOptions.find(
-                    (item) => item.name.trim().toLowerCase() === rowNameWithoutPrefix.toLowerCase(),
+                    (item) => item.id === row.amenityId,
                   );
-                  setSelectedEditAmenityId(matchedAmenity?.id ?? '');
+                  setSelectedEditAmenityId(matchedAmenity?.id ?? row.amenityId ?? '');
                   setSelectedEditEquipmentId('');
                 } else {
                   const matchedEquipment = equipmentOptions.find(
-                    (item) => item.name.trim().toLowerCase() === row.name.trim().toLowerCase(),
+                    (item) => item.id === row.equipmentId,
                   );
-                  setSelectedEditEquipmentId(matchedEquipment?.id ?? '');
+                  setSelectedEditEquipmentId(matchedEquipment?.id ?? row.equipmentId ?? '');
                   setSelectedEditAmenityId('');
                 }
               }}
@@ -260,24 +280,35 @@ export function RoomDetailPage() {
             </button>
             <button
               type="button"
-              className="rounded-lg border border-rose-200 p-1.5 text-rose-600"
+              className={`rounded-lg border p-1.5 ${row.isActive ? 'border-amber-200 text-amber-700' : 'border-emerald-200 text-emerald-700'}`}
               onClick={() => {
-                if (!ensure('delete_room_inventory', 'delete room inventory item')) {
+                if (!ensure('delete_room_inventory', 'toggle room inventory item')) {
                   return;
                 }
                 void (async () => {
                   try {
-                    await roomInventoriesApi.remove(row.id);
-                    setItems((prev) => prev.filter((item) => item.id !== row.id));
-                    toast.success(isAmenityInventoryName(row.name) ? `Removed amenity ${removeAmenityPrefix(row.name)}` : `Removed equipment ${row.name}`);
+                    await roomInventoriesApi.toggleActive(row.id);
+                    setItems((prev) =>
+                      prev.map((item) =>
+                        item.id === row.id
+                          ? {
+                            ...item,
+                            isActive: !item.isActive,
+                          }
+                          : item,
+                      ),
+                    );
+                    toast.success(
+                      `${isAmenityInventoryItem(row) ? `Amenity ${removeAmenityPrefix(row.name)}` : `Equipment ${row.name}`} is now ${row.isActive ? 'OFF' : 'ON'}`,
+                    );
                   } catch (error) {
                     const apiError = toApiError(error);
-                    toast.error(apiError.message || 'Failed to delete item');
+                    toast.error(apiError.message || 'Failed to toggle item status');
                   }
                 })();
               }}
             >
-              <TrashIcon className="h-4 w-4" />
+              {row.isActive ? 'OFF' : 'ON'}
             </button>
           </div>
         ),
@@ -328,21 +359,11 @@ export function RoomDetailPage() {
 
         if (addMode === 'equipment') {
           const existingEquipmentRow = equipmentItems.find(
-            (item) => item.isActive && normalizeName(item.name) === normalizeName(itemName),
+            (item) => normalizeName(item.name) === normalizeName(itemName),
           );
 
           if (existingEquipmentRow) {
-            await roomInventoriesApi.update(existingEquipmentRow.id, {
-              roomId: roomIdNumber,
-              equipmentId: Number(selectedEquipmentId),
-              itemName,
-              quantity: Number(existingEquipmentRow.quantity ?? 0) + quantity,
-              priceIfLost,
-            });
-
-            await loadInventory();
-            resetAddForm();
-            toast.success(`Equipment already exists. Quantity increased by ${quantity}.`);
+            toast.error('Equipment already exists in the list');
             return;
           }
         }
@@ -350,11 +371,11 @@ export function RoomDetailPage() {
         if (addMode === 'amenity') {
           const amenityName = removeAmenityPrefix(itemName);
           const existingAmenityRow = amenityItems.find(
-            (item) => item.isActive && normalizeName(removeAmenityPrefix(item.name)) === normalizeName(amenityName),
+            (item) => normalizeName(removeAmenityPrefix(item.name)) === normalizeName(amenityName),
           );
 
           if (existingAmenityRow) {
-            toast.error('Amenity already exists in this room');
+            toast.error('Amenity already exists in the list');
             return;
           }
         }
@@ -362,6 +383,7 @@ export function RoomDetailPage() {
         await roomInventoriesApi.create({
           roomId: roomIdNumber,
           equipmentId: addMode === 'equipment' ? Number(selectedEquipmentId) : undefined,
+          amenityId: addMode === 'amenity' ? Number(selectedAmenityId) : undefined,
           itemName,
           quantity,
           priceIfLost,
@@ -391,24 +413,15 @@ export function RoomDetailPage() {
     void (async () => {
       setIsQuickAdding(true);
       try {
-        for (const amenity of roomTypeAmenities.filter((item) => item.isActive)) {
+        const eligibleRoomTypeAmenities = roomTypeAmenities.filter(
+          (item) => item.isActive && !amenityItems.some((row) => row.amenityId === item.id),
+        );
+
+        for (const amenity of eligibleRoomTypeAmenities) {
           const itemName = `[Amenity] ${amenity.name}`;
-          const existingAmenityRow = amenityItems.find(
-            (item) => item.isActive && normalizeName(removeAmenityPrefix(item.name)) === normalizeName(amenity.name),
-          );
-
-          if (existingAmenityRow) {
-            await roomInventoriesApi.update(existingAmenityRow.id, {
-              roomId: roomIdNumber,
-              itemName,
-              quantity: Number(existingAmenityRow.quantity ?? 0) + 1,
-              priceIfLost: 0,
-            });
-            continue;
-          }
-
           await roomInventoriesApi.create({
             roomId: roomIdNumber,
+            amenityId: amenity.id,
             itemName,
             quantity: 1,
             priceIfLost: 0,
@@ -449,26 +462,17 @@ export function RoomDetailPage() {
             continue;
           }
 
-          const matchedEquipment = equipmentOptions.find(
-            (item) => normalizeName(item.name) === normalizeName(itemName),
-          );
+          const matchedEquipment = sourceItem.equipmentId
+            ? equipmentOptions.find((item) => item.id === sourceItem.equipmentId)
+            : equipmentOptions.find((item) => normalizeName(item.name) === normalizeName(itemName));
 
           if (!matchedEquipment || !matchedEquipment.isActive) {
             continue;
           }
 
-          const existingEquipmentRow = equipmentItems.find(
-            (item) => item.isActive && normalizeName(item.name) === normalizeName(itemName),
-          );
+          const existingEquipmentRow = equipmentItems.find((item) => item.equipmentId === matchedEquipment.id);
 
           if (existingEquipmentRow) {
-            await roomInventoriesApi.update(existingEquipmentRow.id, {
-              roomId: roomIdNumber,
-              equipmentId: matchedEquipment?.id,
-              itemName,
-              quantity: Number(existingEquipmentRow.quantity ?? 0) + quantity,
-              priceIfLost: Number(sourceItem.compensationPrice ?? 0),
-            });
             continue;
           }
 
@@ -538,7 +542,7 @@ export function RoomDetailPage() {
 
         if (editMode === 'equipment') {
           const duplicateEquipmentRow = equipmentItems.find(
-            (item) => item.id !== editingItem.id && item.isActive && normalizeName(item.name) === normalizeName(itemName),
+            (item) => item.id !== editingItem.id && normalizeName(item.name) === normalizeName(itemName),
           );
 
           if (duplicateEquipmentRow) {
@@ -549,7 +553,7 @@ export function RoomDetailPage() {
 
         if (editMode === 'amenity') {
           const duplicateAmenityRow = amenityItems.find(
-            (item) => item.id !== editingItem.id && item.isActive && normalizeName(removeAmenityPrefix(item.name)) === normalizeName(removeAmenityPrefix(itemName)),
+            (item) => item.id !== editingItem.id && normalizeName(removeAmenityPrefix(item.name)) === normalizeName(removeAmenityPrefix(itemName)),
           );
 
           if (duplicateAmenityRow) {
@@ -560,6 +564,8 @@ export function RoomDetailPage() {
 
         await roomInventoriesApi.update(editingItem.id, {
           roomId: roomIdNumber,
+          equipmentId: editMode === 'equipment' ? Number(selectedEditEquipmentId) : undefined,
+          amenityId: editMode === 'amenity' ? Number(selectedEditAmenityId) : undefined,
           itemName,
           quantity,
           priceIfLost,
@@ -750,7 +756,7 @@ export function RoomDetailPage() {
                   }}
                 >
                   <option value="">Select equipment</option>
-                  {equipmentOptions.map((item) => (
+                  {availableEquipmentOptions.map((item) => (
                     <option key={item.id} value={item.id}>
                       {item.itemCode} - {item.name} (Available: {getEquipmentAvailableQuantity(item)} {item.unit})
                     </option>
@@ -807,7 +813,7 @@ export function RoomDetailPage() {
                 </div>
                 {roomTypeAmenities.filter((item) => item.isActive).length > 0 ? (
                   <div className="max-h-32 overflow-auto rounded-lg bg-slate-50 p-2 text-xs text-slate-600">
-                    {roomTypeAmenities.filter((item) => item.isActive).map((item) => (
+                    {roomTypeAmenities.filter((item) => item.isActive && !amenityItems.some((row) => normalizeName(removeAmenityPrefix(row.name)) === normalizeName(item.name))).map((item) => (
                       <div key={item.id} className="flex items-center justify-between py-1">
                         <span>{item.name}</span>
                         <span>qty 1</span>
@@ -825,7 +831,7 @@ export function RoomDetailPage() {
                   onChange={(e) => setSelectedAmenityId(e.target.value ? Number(e.target.value) : '')}
                 >
                   <option value="">Select amenity</option>
-                  {amenityOptions.map((item) => (
+                  {availableAmenityOptions.map((item) => (
                     <option key={item.id} value={item.id}>
                       {item.name}
                     </option>

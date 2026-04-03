@@ -9,16 +9,24 @@ import { Modal } from '../../components/Modal';
 import type { InventoryItem } from '../../types/models';
 import { toApiError } from '../../api/httpClient';
 import { roomInventoriesApi, type UpdateRoomInventoryPayload } from '../../api/roomInventoriesApi';
-import { paginate, queryIncludes, sortBy } from '../../utils/table';
+import { amenitiesApi, type AmenityItem } from '../../api/amenitiesApi';
+import { equipmentsApi, type EquipmentItem } from '../../api/equipmentsApi';
+import { roomsApi } from '../../api/roomsApi';
+import type { Room } from '../../types/models';
+import { paginate, sortBy } from '../../utils/table';
 import { usePermissionCheck } from '../../hooks/usePermissionCheck';
 
 export function InventoryPage() {
     const { ensure } = usePermissionCheck();
     const [rows, setRows] = useState<InventoryItem[]>([]);
+    const [amenities, setAmenities] = useState<AmenityItem[]>([]);
+    const [equipments, setEquipments] = useState<EquipmentItem[]>([]);
+    const [rooms, setRooms] = useState<Room[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [search, setSearch] = useState('');
-    const [category, setCategory] = useState('all');
-    const [sortField, setSortField] = useState<'name' | 'code'>('name');
+    const [roomFilterId, setRoomFilterId] = useState('all');
+    const [typeFilter, setTypeFilter] = useState<'all' | 'amenity' | 'equipment'>('all');
+    const [itemFilterId, setItemFilterId] = useState('all');
+    const [sortMode, setSortMode] = useState<'asc' | 'desc'>('asc');
     const [page, setPage] = useState(1);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
@@ -27,8 +35,16 @@ export function InventoryPage() {
     const loadInventory = useCallback(async () => {
         setIsLoading(true);
         try {
-            const data = await roomInventoriesApi.getAll();
-            setRows(data);
+            const [inventoryData, amenityData, equipmentData, roomData] = await Promise.all([
+                roomInventoriesApi.getAll(),
+                amenitiesApi.getAll(),
+                equipmentsApi.getAll(),
+                roomsApi.getAll(),
+            ]);
+            setRows(inventoryData);
+            setAmenities(amenityData);
+            setEquipments(equipmentData);
+            setRooms(roomData);
         } catch (error) {
             const apiError = toApiError(error);
             toast.error(apiError.message || 'Failed to load inventory');
@@ -36,11 +52,6 @@ export function InventoryPage() {
             setIsLoading(false);
         }
     }, []);
-
-    const openEditModal = (item: InventoryItem) => {
-        setEditingItem(item);
-        setIsEditModalOpen(true);
-    };
 
     const handleCloseEditModal = () => {
         setIsEditModalOpen(false);
@@ -53,6 +64,9 @@ export function InventoryPage() {
         setIsSaving(true);
         try {
             const payload: UpdateRoomInventoryPayload = {
+                roomId: editingItem.roomId,
+                equipmentId: editingItem.equipmentId,
+                amenityId: editingItem.amenityId,
                 itemName: editingItem.name,
                 quantity: editingItem.quantity,
                 priceIfLost: editingItem.compensationPrice,
@@ -80,13 +94,78 @@ export function InventoryPage() {
 
     const filtered = useMemo(() => {
         const next = rows.filter((item) => {
-            const byQuery = queryIncludes(item.name, search) || queryIncludes(item.code, search);
-            const byCategory = category === 'all' || item.category === category;
-            return byQuery && byCategory;
+            const byRoomId = roomFilterId === 'all' || String(item.roomId ?? '') === roomFilterId;
+            const byType =
+                typeFilter === 'all' ||
+                (typeFilter === 'amenity' && Boolean(item.amenityId)) ||
+                (typeFilter === 'equipment' && Boolean(item.equipmentId));
+
+            const byItemId =
+                itemFilterId === 'all' ||
+                (typeFilter === 'amenity' && String(item.amenityId ?? '') === itemFilterId) ||
+                (typeFilter === 'equipment' && String(item.equipmentId ?? '') === itemFilterId);
+
+            return byRoomId && byType && byItemId;
         });
 
-        return sortBy(next, (item) => (sortField === 'name' ? item.name : item.code), 'asc');
-    }, [rows, search, category, sortField]);
+        return sortBy(next, (item) => item.name, sortMode);
+    }, [rows, roomFilterId, typeFilter, itemFilterId, sortMode]);
+
+    const roomLookup = useMemo(
+        () => new Map(rooms.map((room) => [room.id, room])),
+        [rooms],
+    );
+
+    const filteredRoomOptions = useMemo(
+        () => rooms.filter((room) => rows.some((row) => row.roomId === room.id)),
+        [rooms, rows],
+    );
+
+    const filteredAmenityOptions = useMemo(() => {
+        return amenities.filter((item) => {
+            if (!(item.isActive || rows.some((row) => row.amenityId === item.id))) {
+                return false;
+            }
+            if (roomFilterId === 'all') {
+                return true;
+            }
+            return rows.some((row) => String(row.roomId ?? '') === roomFilterId && row.amenityId === item.id);
+        });
+    }, [amenities, rows, roomFilterId]);
+
+    const filteredEquipmentOptions = useMemo(() => {
+        return equipments.filter((item) => {
+            if (!(item.isActive || rows.some((row) => row.equipmentId === item.id))) {
+                return false;
+            }
+            if (roomFilterId === 'all') {
+                return true;
+            }
+            return rows.some((row) => String(row.roomId ?? '') === roomFilterId && row.equipmentId === item.id);
+        });
+    }, [equipments, rows, roomFilterId]);
+
+    const itemOptions = useMemo(() => {
+        if (typeFilter === 'amenity') {
+            return filteredAmenityOptions.map((item) => ({
+                id: String(item.id),
+                label: item.name,
+            }));
+        }
+
+        if (typeFilter === 'equipment') {
+            return filteredEquipmentOptions.map((item) => ({
+                id: String(item.id),
+                label: `${item.itemCode} - ${item.name}`,
+            }));
+        }
+
+        return [];
+    }, [typeFilter, filteredAmenityOptions, filteredEquipmentOptions]);
+
+    useEffect(() => {
+        setItemFilterId('all');
+    }, [typeFilter, roomFilterId]);
 
     const pageSize = 10;
     const paged = paginate(filtered, page, pageSize);
@@ -94,7 +173,15 @@ export function InventoryPage() {
     const columns = [
         { key: 'code', label: 'Code', render: (row: InventoryItem) => row.code },
         { key: 'name', label: 'Name', render: (row: InventoryItem) => row.name },
-        { key: 'category', label: 'Category', render: (row: InventoryItem) => row.category },
+        {
+            key: 'room',
+            label: 'Room',
+            render: (row: InventoryItem) => {
+                const room = row.roomId ? roomLookup.get(row.roomId) : undefined;
+                return room ? room.roomNumber : `#${row.roomId ?? '-'}`;
+            },
+        },
+        { key: 'category', label: 'Category', render: (row: InventoryItem) => (row.amenityId ? 'Amenity' : 'Equipment') },
         { key: 'unit', label: 'Unit', render: (row: InventoryItem) => row.unit },
         { key: 'price', label: 'Price', render: (row: InventoryItem) => `$${row.price}` },
         { key: 'stock', label: 'Stock', render: (row: InventoryItem) => row.stock },
@@ -114,22 +201,6 @@ export function InventoryPage() {
                 <div className="flex gap-2">
                     <button
                         type="button"
-                        className="rounded-lg border border-slate-200 px-2 py-1 text-xs"
-                        onClick={() => {
-                            if (!row.isActive) {
-                                toast.error('Cannot edit while item is OFF');
-                                return;
-                            }
-                            if (!ensure('update_room_inventory', 'edit inventory item')) {
-                                return;
-                            }
-                            openEditModal(row);
-                        }}
-                    >
-                        Edit
-                    </button>
-                    <button
-                        type="button"
                         className={`rounded-lg border px-2 py-1 text-xs ${row.isActive ? 'border-amber-200 text-amber-700' : 'border-emerald-200 text-emerald-700'}`}
                         onClick={() => {
                             if (!ensure('delete_room_inventory', 'toggle inventory active status')) {
@@ -142,9 +213,9 @@ export function InventoryPage() {
                                         prev.map((item) =>
                                             item.id === row.id
                                                 ? {
-                                                      ...item,
-                                                      isActive: !item.isActive,
-                                                  }
+                                                    ...item,
+                                                    isActive: !item.isActive,
+                                                }
                                                 : item,
                                         ),
                                     );
@@ -171,17 +242,39 @@ export function InventoryPage() {
             </div>
 
             <div className="grid gap-2 rounded-xl border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-4">
-                <Input placeholder="Search by name or code" value={search} onChange={(e) => setSearch(e.target.value)} />
-                <Select value={sortField} onChange={(e) => setSortField(e.target.value as 'name' | 'code')}><option value="name">Sort: Name</option><option value="code">Sort: Code</option></Select>
-                <Select value={category} onChange={(e) => setCategory(e.target.value)}><option value="all">All Categories</option><option>Linen</option><option>Bathroom</option><option>Electronics</option><option>Minibar</option></Select>
+                <Select value={roomFilterId} onChange={(e) => setRoomFilterId(e.target.value)}>
+                    <option value="all">Room: All</option>
+                    {filteredRoomOptions.map((room) => (
+                        <option key={room.id} value={room.id}>{room.roomNumber}</option>
+                    ))}
+                </Select>
+                <Select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value as 'all' | 'amenity' | 'equipment')}>
+                    <option value="all">Type: All</option>
+                    <option value="amenity">Type: Amenity</option>
+                    <option value="equipment">Type: Equipment</option>
+                </Select>
+                <Select
+                    value={itemFilterId}
+                    onChange={(e) => setItemFilterId(e.target.value)}
+                    disabled={typeFilter === 'all'}
+                >
+                    <option value="all">
+                        {typeFilter === 'amenity' ? 'Amenity: All' : typeFilter === 'equipment' ? 'Equipment: All' : 'Choose Type First'}
+                    </option>
+                    {itemOptions.map((item) => (
+                        <option key={item.id} value={item.id}>{item.label}</option>
+                    ))}
+                </Select>
+                <Select value={sortMode} onChange={(e) => setSortMode(e.target.value as 'asc' | 'desc')}><option value="asc">Sort A-Z</option><option value="desc">Sort Z-A</option></Select>
                 <div className="flex gap-2">
                     <button
                         type="button"
                         className="inline-flex items-center justify-center rounded-lg border border-slate-200 px-3 py-2 text-sm hover:bg-slate-50 flex-1"
                         onClick={() => {
-                            setSearch('');
-                            setCategory('all');
-                            setSortField('name');
+                            setRoomFilterId('all');
+                            setTypeFilter('all');
+                            setItemFilterId('all');
+                            setSortMode('asc');
                             void loadInventory();
                             toast('Filters refreshed', { icon: 'ℹ️' });
                         }}
@@ -214,24 +307,7 @@ export function InventoryPage() {
 
                         <div>
                             <label className="block text-sm font-medium text-slate-700">Category</label>
-                            <Select
-                                value={editingItem.category}
-                                onChange={(e) =>
-                                    setEditingItem({
-                                        ...editingItem,
-                                        category: e.target.value as
-                                            | 'Linen'
-                                            | 'Bathroom'
-                                            | 'Electronics'
-                                            | 'Minibar',
-                                    })
-                                }
-                            >
-                                <option value="Linen">Linen</option>
-                                <option value="Bathroom">Bathroom</option>
-                                <option value="Electronics">Electronics</option>
-                                <option value="Minibar">Minibar</option>
-                            </Select>
+                            <Input value={editingItem.amenityId ? 'Amenity' : 'Equipment'} disabled />
                         </div>
 
                         <div>

@@ -108,15 +108,16 @@ public class RoomService : IRoomService
 	{
 		var room = await _repository.GetByIdAsync(id);
 		if (room == null) throw new NotFoundException("Room not found.");
-
+		if (newStatus.Equals(room.Status, StringComparison.OrdinalIgnoreCase)) throw new ArgumentException("New status must be different from current status.");
 		var targetStatus = newStatus.Trim();
-		if (string.Equals(targetStatus, "Available", StringComparison.OrdinalIgnoreCase) && string.Equals(room.Status, "Cleaning", StringComparison.OrdinalIgnoreCase))
+		if (string.Equals(targetStatus.ToLower(), "available", StringComparison.OrdinalIgnoreCase))
 		{
 			var validationMessage = await ValidateCleaningCompletionAsync(room.Id);
+			validationMessage ??= await ValidateEquipmentAvailabilityForRoomAsync(room.Id);
 			if (validationMessage != null)
 			{
 				room.Status = "Maintenance";
-				room.CleaningStatus = "Dirty";
+				room.CleaningStatus = "Inspecting";
 				_repository.Update(room);
 				await _repository.SaveChangesAsync();
 
@@ -128,10 +129,21 @@ public class RoomService : IRoomService
 					ReferenceLink = $"admin/rooms/{room.Id}"
 				});
 
-				return;
+				throw new InvalidOperationException($"Room cannot be set to Available: {validationMessage}");
 			}
 		}
-
+		if (string.Equals(targetStatus.ToLower(), "maintenance", StringComparison.OrdinalIgnoreCase))
+		{
+			room.CleaningStatus = "Inspecting";
+		}
+		if (string.Equals(targetStatus.ToLower(), "available", StringComparison.OrdinalIgnoreCase) && !string.Equals(room.CleaningStatus, "Completed", StringComparison.OrdinalIgnoreCase))
+		{
+			room.CleaningStatus = "Clean";
+		}
+		if (string.Equals(targetStatus.ToLower(), "cleaning", StringComparison.OrdinalIgnoreCase))
+		{
+			room.CleaningStatus = "Dirty";
+		}
 		room.Status = targetStatus;
 		_repository.Update(room);
 		await _repository.SaveChangesAsync();
@@ -141,7 +153,7 @@ public class RoomService : IRoomService
 	{
 		var room = await _repository.GetByIdAsync(id);
 		if (room == null) throw new NotFoundException("Room not found.");
-
+		if (newCleaningStatus.Equals(room.CleaningStatus, StringComparison.OrdinalIgnoreCase)) throw new ArgumentException("New cleaning status must be different from current cleaning status.");
 		room.CleaningStatus = newCleaningStatus;
 		_repository.Update(room);
 		await _repository.SaveChangesAsync();
@@ -226,6 +238,64 @@ public class RoomService : IRoomService
 			{
 				var remainingQuantity = Math.Max(inventory.Quantity - lostQuantity, 0);
 				return $"item '{inventory.ItemName}' is missing/damaged ({lostQuantity}), remaining {remainingQuantity}/{inventory.Quantity}";
+			}
+		}
+
+		return null;
+	}
+
+	private async Task<string?> ValidateEquipmentAvailabilityForRoomAsync(int roomId)
+	{
+		var roomEquipments = await _context.RoomInventories
+			.AsNoTracking()
+			.Where(item => item.RoomId == roomId && item.IsActive && item.EquipmentId.HasValue)
+			.Select(item => new
+			{
+				item.ItemName,
+				EquipmentId = item.EquipmentId!.Value,
+				Quantity = item.Quantity ?? 0
+			})
+			.ToListAsync();
+
+		if (roomEquipments.Count == 0)
+		{
+			return null;
+		}
+
+		var equipmentIds = roomEquipments
+			.Select(item => item.EquipmentId)
+			.Distinct()
+			.ToList();
+
+		var equipmentMap = await _context.Equipments
+			.AsNoTracking()
+			.Where(item => equipmentIds.Contains(item.Id))
+			.ToDictionaryAsync(item => item.Id);
+
+		foreach (var grouped in roomEquipments.GroupBy(item => item.EquipmentId))
+		{
+			if (!equipmentMap.TryGetValue(grouped.Key, out var equipment))
+			{
+				return $"equipment with ID {grouped.Key} was not found";
+			}
+
+			if (!equipment.IsActive)
+			{
+				return $"equipment '{equipment.Name}' is inactive";
+			}
+
+			var roomAllocatedQuantity = grouped.Sum(item => item.Quantity);
+			if (roomAllocatedQuantity <= 0)
+			{
+				return $"equipment '{equipment.Name}' has invalid quantity {roomAllocatedQuantity}";
+			}
+
+			var inUseExcludingCurrentRoom = Math.Max(equipment.InUseQuantity - roomAllocatedQuantity, 0);
+			var availableForCurrentRoom = equipment.TotalQuantity - inUseExcludingCurrentRoom - equipment.DamagedQuantity - equipment.LiquidatedQuantity;
+
+			if (availableForCurrentRoom < roomAllocatedQuantity)
+			{
+				return $"equipment '{equipment.Name}' exceeds available stock ({roomAllocatedQuantity}/{Math.Max(availableForCurrentRoom, 0)})";
 			}
 		}
 

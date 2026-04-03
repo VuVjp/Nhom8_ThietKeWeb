@@ -285,6 +285,7 @@ public class AppDbContext : DbContext
             e.Property(x => x.Id).HasColumnName("id");
             e.Property(x => x.RoomId).HasColumnName("room_id");
             e.Property(x => x.EquipmentId).HasColumnName("equipment_id");
+            e.Property(x => x.AmenityId).HasColumnName("amenity_id");
             e.Property(x => x.ItemName).HasColumnName("item_name");
             e.Property(x => x.Quantity).HasColumnName("quantity");
             e.Property(x => x.PriceIfLost).HasColumnName("price_if_lost").HasColumnType("decimal(18,2)");
@@ -417,6 +418,9 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<RoomInventory>()
             .HasOne(ri => ri.Room).WithMany(r => r.RoomInventories).HasForeignKey(ri => ri.RoomId).OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<RoomInventory>()
+            .HasOne(ri => ri.Amenity).WithMany(a => a.RoomInventories).HasForeignKey(ri => ri.AmenityId).OnDelete(DeleteBehavior.SetNull);
 
         modelBuilder.Entity<RoomInventory>()
             .HasOne(ri => ri.Equipment).WithMany(e => e.RoomInventories).HasForeignKey(ri => ri.EquipmentId).OnDelete(DeleteBehavior.SetNull);

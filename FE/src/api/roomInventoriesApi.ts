@@ -8,6 +8,8 @@ interface RoomInventoryDto {
     RoomId?: number;
     equipmentId?: number;
     EquipmentId?: number;
+    amenityId?: number;
+    AmenityId?: number;
     itemName?: string;
     ItemName?: string;
     quantity?: number;
@@ -21,6 +23,7 @@ interface RoomInventoryDto {
 export interface CreateRoomInventoryPayload {
     roomId: number;
     equipmentId?: number;
+    amenityId?: number;
     itemName: string;
     quantity: number;
     priceIfLost: number;
@@ -29,6 +32,7 @@ export interface CreateRoomInventoryPayload {
 export interface UpdateRoomInventoryPayload {
     roomId?: number;
     equipmentId?: number;
+    amenityId?: number;
     itemName?: string;
     quantity?: number;
     priceIfLost?: number;
@@ -36,15 +40,21 @@ export interface UpdateRoomInventoryPayload {
 
 function mapRoomInventoryToItem(dto: RoomInventoryDto): InventoryItem {
     const id = Number(dto.id ?? dto.Id ?? 0);
+    const equipmentId = Number(dto.equipmentId ?? dto.EquipmentId ?? 0) || undefined;
+    const amenityId = Number(dto.amenityId ?? dto.AmenityId ?? 0) || undefined;
+    const roomId = Number(dto.roomId ?? dto.RoomId ?? 0) || undefined;
     const name = String(dto.itemName ?? dto.ItemName ?? `Item ${id}`);
     const quantity = Number(dto.quantity ?? dto.Quantity ?? 0);
     const compensationPrice = Number(dto.priceIfLost ?? dto.PriceIfLost ?? 0);
 
     return {
         id,
+        roomId,
+        equipmentId,
+        amenityId,
         code: `RINV-${String(id).padStart(3, '0')}`,
         name,
-        category: 'Linen',
+        category: amenityId ? 'Amenity' : 'Equipment',
         unit: 'pcs',
         price: compensationPrice,
         stock: quantity,

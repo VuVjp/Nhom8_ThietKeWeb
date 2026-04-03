@@ -31,6 +31,7 @@ public class RoomInventoryService : IRoomInventoryService
 			Id = i.Id,
 			RoomId = i.RoomId,
 			EquipmentId = i.EquipmentId,
+			AmenityId = i.AmenityId,
 			ItemName = i.ItemName,
 			Quantity = i.Quantity,
 			PriceIfLost = i.PriceIfLost,
@@ -46,6 +47,7 @@ public class RoomInventoryService : IRoomInventoryService
 			Id = i.Id,
 			RoomId = i.RoomId,
 			EquipmentId = i.EquipmentId,
+			AmenityId = i.AmenityId,
 			ItemName = i.ItemName,
 			Quantity = i.Quantity,
 			PriceIfLost = i.PriceIfLost,
@@ -61,6 +63,7 @@ public class RoomInventoryService : IRoomInventoryService
 			Id = inventory.Id,
 			RoomId = inventory.RoomId,
 			EquipmentId = inventory.EquipmentId,
+			AmenityId = inventory.AmenityId,
 			ItemName = inventory.ItemName,
 			Quantity = inventory.Quantity,
 			PriceIfLost = inventory.PriceIfLost,
@@ -79,9 +82,15 @@ public class RoomInventoryService : IRoomInventoryService
 		if (string.IsNullOrWhiteSpace(dto.ItemName))
 			throw new ArgumentException("Item name is required.");
 
-		if (!dto.EquipmentId.HasValue && IsAmenityInventoryName(dto.ItemName))
+		if (dto.EquipmentId.HasValue && dto.AmenityId.HasValue)
+			throw new ArgumentException("Only one of equipmentId or amenityId can be provided.");
+
+		if (!dto.EquipmentId.HasValue && !dto.AmenityId.HasValue)
+			throw new ArgumentException("Either equipmentId or amenityId is required.");
+
+		if (dto.AmenityId.HasValue)
 		{
-			await EnsureAmenityIsActiveAsync(dto.ItemName);
+			await EnsureAmenityIsActiveAsync(dto.AmenityId.Value);
 		}
 
 		Equipment? equipment = null;
@@ -99,7 +108,7 @@ public class RoomInventoryService : IRoomInventoryService
 				throw new ArgumentException($"Not enough available quantity. Available: {availableQuantity}, Requested: {dto.Quantity.Value}");
 		}
 
-		var duplicated = await _repository.GetActiveByRoomAndItemNameAsync(dto.RoomId.Value, dto.ItemName);
+		var duplicated = await FindItemByRoomAndNameAsync(dto.RoomId.Value, dto.ItemName);
 		if (duplicated != null)
 			throw new ConflictException("This item already exists in room inventory.");
 
@@ -107,6 +116,7 @@ public class RoomInventoryService : IRoomInventoryService
 		{
 			RoomId = dto.RoomId,
 			EquipmentId = dto.EquipmentId,
+			AmenityId = dto.AmenityId,
 			ItemName = dto.ItemName.Trim(),
 			Quantity = dto.Quantity,
 			PriceIfLost = dto.PriceIfLost
@@ -140,14 +150,33 @@ public class RoomInventoryService : IRoomInventoryService
 		if (string.IsNullOrWhiteSpace(dto.ItemName))
 			throw new ArgumentException("Item name is required.");
 
-		if (!dto.EquipmentId.HasValue && IsAmenityInventoryName(dto.ItemName))
+		if (dto.EquipmentId.HasValue && dto.AmenityId.HasValue)
+			throw new ArgumentException("Only one of equipmentId or amenityId can be provided.");
+
+		if (!dto.EquipmentId.HasValue && !dto.AmenityId.HasValue)
+			throw new ArgumentException("Either equipmentId or amenityId is required.");
+
+		if (dto.AmenityId.HasValue)
 		{
-			await EnsureAmenityIsActiveAsync(dto.ItemName);
+			await EnsureAmenityIsActiveAsync(dto.AmenityId.Value);
 		}
 
-		var duplicated = await _repository.GetActiveByRoomAndItemNameAsync(dto.RoomId.Value, dto.ItemName, id);
+		var duplicated = await FindItemByRoomAndNameAsync(dto.RoomId.Value, dto.ItemName, id);
 		if (duplicated != null)
 			throw new ConflictException("This item already exists in room inventory.");
+
+		// Sync old equipment usage when switching away from equipment.
+		if (!dto.EquipmentId.HasValue && existing.EquipmentId.HasValue)
+		{
+			var oldEquipment = await _equipmentRepository.GetByIdAsync(existing.EquipmentId.Value);
+			if (oldEquipment != null)
+			{
+				oldEquipment.InUseQuantity -= existing.Quantity ?? 0;
+				if (oldEquipment.InUseQuantity < 0) oldEquipment.InUseQuantity = 0;
+				_equipmentRepository.Update(oldEquipment);
+				await _equipmentRepository.SaveChangesAsync();
+			}
+		}
 
 		// Only handle equipment tracking if equipment ID is provided
 		if (dto.EquipmentId.HasValue)
@@ -208,12 +237,9 @@ public class RoomInventoryService : IRoomInventoryService
 		existing.Quantity = dto.Quantity;
 		existing.PriceIfLost = dto.PriceIfLost;
 		existing.RoomId = dto.RoomId;
+		existing.AmenityId = dto.AmenityId;
 
-		// Only update EquipmentId if provided
-		if (dto.EquipmentId.HasValue)
-		{
-			existing.EquipmentId = dto.EquipmentId;
-		}
+		existing.EquipmentId = dto.EquipmentId;
 
 		_repository.Update(existing);
 		return await _repository.SaveChangesAsync();
@@ -229,12 +255,12 @@ public class RoomInventoryService : IRoomInventoryService
 			if (string.IsNullOrWhiteSpace(item.ItemName))
 				continue;
 
-			if (!item.EquipmentId.HasValue && IsAmenityInventoryName(item.ItemName))
+			if (!item.EquipmentId.HasValue && item.AmenityId.HasValue)
 			{
-				await EnsureAmenityIsActiveAsync(item.ItemName);
+				await EnsureAmenityIsActiveAsync(item.AmenityId.Value);
 			}
 
-			var duplicated = await _repository.GetActiveByRoomAndItemNameAsync(newRoomId, item.ItemName);
+			var duplicated = await FindItemByRoomAndNameAsync(newRoomId, item.ItemName);
 			if (duplicated != null)
 				throw new ConflictException($"Item '{item.ItemName}' already exists in target room inventory.");
 
@@ -261,7 +287,8 @@ public class RoomInventoryService : IRoomInventoryService
 				Quantity = item.Quantity,
 				PriceIfLost = item.PriceIfLost,
 				RoomId = newRoomId,
-				EquipmentId = item.EquipmentId
+				EquipmentId = item.EquipmentId,
+				AmenityId = item.AmenityId
 			};
 
 			await _repository.AddAsync(newClone);
@@ -326,17 +353,23 @@ public class RoomInventoryService : IRoomInventoryService
 		return trimmed;
 	}
 
-	private async Task EnsureAmenityIsActiveAsync(string itemName)
+	private async Task EnsureAmenityIsActiveAsync(int amenityId)
 	{
-		var amenityName = ExtractAmenityName(itemName);
-		if (string.IsNullOrWhiteSpace(amenityName))
-			throw new ArgumentException("Amenity name is required.");
-
-		var amenity = await _amenityRepository.GetByNameNormalizedAsync(amenityName);
+		var amenity = await _amenityRepository.GetByIdAsync(amenityId);
 		if (amenity == null)
-			throw new NotFoundException($"Amenity '{amenityName}' not found.");
+			throw new NotFoundException($"Amenity with ID {amenityId} not found.");
 
 		if (!amenity.IsActive)
-			throw new ArgumentException($"Amenity '{amenityName}' is inactive.");
+			throw new ArgumentException($"Amenity '{amenity.Name}' is inactive.");
+	}
+
+	private async Task<RoomInventory?> FindItemByRoomAndNameAsync(int roomId, string itemName, int? excludeId = null)
+	{
+		var normalized = itemName.Trim().ToLowerInvariant();
+		var items = await _repository.GetByRoomIdAsync(roomId);
+
+		return items.FirstOrDefault(item =>
+			(!excludeId.HasValue || item.Id != excludeId.Value) &&
+			item.ItemName.Trim().ToLowerInvariant() == normalized);
 	}
 }

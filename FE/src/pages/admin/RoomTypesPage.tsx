@@ -124,9 +124,9 @@ export function RoomTypesPage() {
                 prev.map((row) =>
                     row.id === item.id
                         ? {
-                              ...row,
-                              isActive: !row.isActive,
-                          }
+                            ...row,
+                            isActive: !row.isActive,
+                        }
                         : row,
                 ),
             );

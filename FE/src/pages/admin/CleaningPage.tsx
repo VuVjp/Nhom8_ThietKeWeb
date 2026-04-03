@@ -304,15 +304,19 @@ export function CleaningPage() {
             setIsUpdatingStatus(true);
             try {
                 await roomsApi.changeStatus(selectedCleaningRoom.id, 'Available');
-                const updatedRoom = await roomsApi.getById(selectedCleaningRoom.id);
-                if (updatedRoom.status === 'Maintenance') {
-                    toast.error(`Room ${selectedCleaningRoom.roomNumber} was moved to Maintenance. Admin has been notified.`);
-                } else {
-                    toast.success(`Room ${selectedCleaningRoom.roomNumber} marked Available`);
-                }
-                await loadBoards();
+                // const updatedRoom = await roomsApi.getById(selectedCleaningRoom.id);
+                // if (updatedRoom.status === 'Maintenance') {
+                //     toast.error(`Room ${selectedCleaningRoom.roomNumber} was moved to Maintenance. Admin has been notified.`);
+                // } else {
+                //     toast.success(`Room ${selectedCleaningRoom.roomNumber} marked Available`);
+                // }
             } catch (error) {
                 const apiError = toApiError(error);
+                if (apiError.status === 400 && apiError.message?.toLowerCase().includes('room cannot be set to available')) {
+                    await loadBoards();
+                    toast.success("Successfully finished cleaning!");
+                    return;
+                }
                 toast.error(apiError.message || 'Failed to finish cleaning');
             } finally {
                 setIsUpdatingStatus(false);

@@ -245,20 +245,6 @@ public class EquipmentService : IEquipmentService
 
     private static void ValidateUpdateDto(UpdateEquipmentDto dto)
     {
-        if (string.IsNullOrWhiteSpace(dto.Name))
-        {
-            throw new ArgumentException("Name is required.");
-        }
-
-        if (string.IsNullOrWhiteSpace(dto.Category))
-        {
-            throw new ArgumentException("Category is required.");
-        }
-
-        if (string.IsNullOrWhiteSpace(dto.Unit))
-        {
-            throw new ArgumentException("Unit is required.");
-        }
 
         if (dto.TotalQuantity < 0 || dto.InUseQuantity < 0 || dto.DamagedQuantity < 0 || dto.LiquidatedQuantity < 0)
         {

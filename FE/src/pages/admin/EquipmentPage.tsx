@@ -82,6 +82,7 @@ export function EquipmentPage() {
         setIsAddingQuantity(true);
         try {
             await equipmentsApi.update(selectedEquipmentForQuantity.id, {
+                
                 totalQuantity: selectedEquipmentForQuantity.totalQuantity + qtyToAdd,
             });
             toast.success(`Added ${qtyToAdd} units to ${selectedEquipmentForQuantity.name}`);
@@ -168,9 +169,9 @@ export function EquipmentPage() {
                                         prev.map((item) =>
                                             item.id === row.id
                                                 ? {
-                                                      ...item,
-                                                      isActive: !item.isActive,
-                                                  }
+                                                    ...item,
+                                                    isActive: !item.isActive,
+                                                }
                                                 : item,
                                         ),
                                     );

@@ -35,6 +35,8 @@ interface InventoryOption {
 }
 
 interface SelectedInventoryValue {
+  equipmentId: number;
+  itemName: string;
   quantity: number;
   priceIfLost: number;
 }
@@ -48,7 +50,7 @@ export function RoomsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [status, setStatus] = useState('all');
   const [cleaningStatus, setCleaningStatus] = useState('all');
-  const [roomType, setRoomType] = useState('all');
+  const [roomTypeIdFilter, setRoomTypeIdFilter] = useState('all');
   const [floor, setFloor] = useState('all');
   const [sortMode, setSortMode] = useState<'asc' | 'desc'>('asc');
   const [page, setPage] = useState(1);
@@ -114,11 +116,11 @@ export function RoomsPage() {
         const equipmentOptions = equipmentData
           .filter((item) => item.isActive)
           .map((item) => ({
-          id: item.id,
-          name: item.name.trim(),
-          unit: item.unit,
-          priceIfLost: Number(item.defaultPriceIfLost ?? 0),
-          availableQuantity: getEquipmentAvailableQuantity(item),
+            id: item.id,
+            name: item.name.trim(),
+            unit: item.unit,
+            priceIfLost: Number(item.defaultPriceIfLost ?? 0),
+            availableQuantity: getEquipmentAvailableQuantity(item),
           }));
 
         setRoomTypes(types);
@@ -144,13 +146,13 @@ export function RoomsPage() {
         searchHit &&
         (status === 'all' || item.status === status) &&
         (cleaningStatus === 'all' || item.cleaningStatus === cleaningStatus) &&
-        (roomType === 'all' || item.roomType === roomType) &&
+        (roomTypeIdFilter === 'all' || String(item.roomTypeId ?? '') === roomTypeIdFilter) &&
         (floor === 'all' || String(item.floor) === floor)
       );
     });
 
     return sortBy(rows, (row) => row.roomNumber, sortMode);
-  }, [rooms, globalSearch, status, cleaningStatus, roomType, floor, sortMode]);
+  }, [rooms, globalSearch, status, cleaningStatus, roomTypeIdFilter, floor, sortMode]);
 
   const pageSize = 8;
   const paged = paginate(filtered, page, pageSize);
@@ -158,10 +160,25 @@ export function RoomsPage() {
     () => Array.from(new Set(rooms.map((room) => room.floor))).sort((a, b) => a - b),
     [rooms],
   );
-  const roomTypeOptions = useMemo(
-    () => Array.from(new Set(rooms.map((room) => room.roomType))).sort((a, b) => a.localeCompare(b)),
-    [rooms],
-  );
+  const roomTypeOptions = useMemo(() => {
+    const usedRoomTypeIds = Array.from(
+      new Set(
+        rooms
+          .map((room) => room.roomTypeId)
+          .filter((id): id is number => typeof id === 'number' && id > 0),
+      ),
+    );
+
+    return usedRoomTypeIds
+      .map((id) => {
+        const type = roomTypes.find((item) => item.id === id);
+        return {
+          id,
+          name: type?.name ?? `Room Type #${id}`,
+        };
+      })
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [rooms, roomTypes]);
 
   const columns = [
     { key: 'roomNumber', label: 'Room Number', render: (row: Room) => row.roomNumber },
@@ -181,7 +198,7 @@ export function RoomsPage() {
             void (async () => {
               try {
                 await roomsApi.changeStatus(row.id, value);
-                setRooms((prev) => prev.map((item) => (item.id === row.id ? { ...item, status: value } : item)));
+                setRooms((prev) => prev.map((item) => (item.id === row.id ? { ...item, status: value, cleaningStatus: value === 'Available' ? 'Clean' : value === 'Maintenance' ? 'Inspecting' : value === 'Cleaning' ? 'Dirty' : item.cleaningStatus } : item)));
                 toast.success(`Room ${row.roomNumber} status updated`);
               } catch (error) {
                 const apiError = toApiError(error);
@@ -318,6 +335,7 @@ export function RoomsPage() {
           selectedAmenities.map((item) =>
             roomInventoriesApi.create({
               roomId: createdRoomId,
+              amenityId: item.id,
               itemName: `[Amenity] ${item.name}`,
               quantity: 1,
               priceIfLost: 0,
@@ -336,21 +354,23 @@ export function RoomsPage() {
                 items
                   .filter((item) => item.isActive)
                   .map((item) => ({
+                    equipmentId: Number(item.equipmentId || 0),
                     itemName: item.name,
                     quantity: Number(item.quantity || 0),
                     priceIfLost: Number(item.compensationPrice || 0),
                   }))
-                  .filter((item) => !item.itemName.trim().toLowerCase().startsWith('[amenity]') && item.itemName.trim().length > 0 && item.quantity > 0),
+                  .filter((item) => item.equipmentId > 0 && item.itemName.trim().length > 0 && item.quantity > 0),
               );
             })()
             : Promise.resolve(
               Object.entries(selectedInventories)
-                .map(([itemName, value]) => ({
-                  itemName,
+                .map(([, value]) => ({
+                  equipmentId: Number(value.equipmentId || 0),
+                  itemName: value.itemName,
                   quantity: Number(value.quantity || 0),
                   priceIfLost: Number(value.priceIfLost || 0),
                 }))
-                .filter((item) => item.itemName.trim().length > 0 && item.quantity > 0),
+                .filter((item) => item.equipmentId > 0 && item.itemName.trim().length > 0 && item.quantity > 0),
             );
 
         const normalizedItems = await selectedEquipmentItems;
@@ -368,6 +388,7 @@ export function RoomsPage() {
           normalizedItems.map((item) =>
             roomInventoriesApi.create({
               roomId: createdRoomId,
+              equipmentId: item.equipmentId,
               itemName: item.itemName.trim(),
               quantity: item.quantity,
               priceIfLost: item.priceIfLost,
@@ -418,7 +439,7 @@ export function RoomsPage() {
       <div className="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-5">
         <Select value={status} onChange={(e) => setStatus(e.target.value)}><option value="all">Room Status</option><option>Available</option><option>Occupied</option><option>Inspecting</option><option>Cleaning</option><option>Maintenance</option></Select>
         <Select value={cleaningStatus} onChange={(e) => setCleaningStatus(e.target.value)}><option value="all">Cleaning Status</option><option>Clean</option><option>Dirty</option><option>Inspecting</option></Select>
-        <Select value={roomType} onChange={(e) => setRoomType(e.target.value)}><option value="all">Room Type</option>{roomTypeOptions.map((item) => <option key={item}>{item}</option>)}</Select>
+        <Select value={roomTypeIdFilter} onChange={(e) => setRoomTypeIdFilter(e.target.value)}><option value="all">Room Type</option>{roomTypeOptions.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</Select>
         <Select value={floor} onChange={(e) => setFloor(e.target.value)}><option value="all">Floor</option>{floorOptions.map((f) => <option key={f}>{f}</option>)}</Select>
         <Select value={sortMode} onChange={(e) => setSortMode(e.target.value as 'asc' | 'desc')}><option value="asc">Sort A-Z</option><option value="desc">Sort Z-A</option></Select>
       </div>
@@ -572,9 +593,10 @@ export function RoomsPage() {
               {inventoryMode === 'manual' ? (
                 <div className="max-h-64 space-y-2 overflow-auto rounded-lg border border-slate-200 p-3">
                   {inventoryOptions.map((item) => {
-                    const selected = Boolean(selectedInventories[item.name]);
-                    const quantity = selectedInventories[item.name]?.quantity ?? 1;
-                    const priceIfLost = selectedInventories[item.name]?.priceIfLost ?? item.priceIfLost;
+                    const key = String(item.id);
+                    const selected = Boolean(selectedInventories[key]);
+                    const quantity = selectedInventories[key]?.quantity ?? 1;
+                    const priceIfLost = selectedInventories[key]?.priceIfLost ?? item.priceIfLost;
                     const isOutOfStock = item.availableQuantity <= 0;
 
                     return (
@@ -589,15 +611,17 @@ export function RoomsPage() {
                               setSelectedInventories((prev) => {
                                 if (!checked) {
                                   const next = { ...prev };
-                                  delete next[item.name];
+                                  delete next[key];
                                   return next;
                                 }
 
                                 return {
                                   ...prev,
-                                  [item.name]: {
-                                    quantity: prev[item.name]?.quantity ?? 1,
-                                    priceIfLost: prev[item.name]?.priceIfLost ?? item.priceIfLost,
+                                  [key]: {
+                                    equipmentId: item.id,
+                                    itemName: item.name,
+                                    quantity: prev[key]?.quantity ?? 1,
+                                    priceIfLost: prev[key]?.priceIfLost ?? item.priceIfLost,
                                   },
                                 };
                               });
@@ -620,7 +644,9 @@ export function RoomsPage() {
                               onChange={(e) =>
                                 setSelectedInventories((prev) => ({
                                   ...prev,
-                                  [item.name]: {
+                                  [key]: {
+                                    equipmentId: item.id,
+                                    itemName: item.name,
                                     quantity: Number(e.target.value),
                                     priceIfLost,
                                   },
@@ -634,7 +660,9 @@ export function RoomsPage() {
                               onChange={(e) =>
                                 setSelectedInventories((prev) => ({
                                   ...prev,
-                                  [item.name]: {
+                                  [key]: {
+                                    equipmentId: item.id,
+                                    itemName: item.name,
                                     quantity,
                                     priceIfLost: Number(e.target.value),
                                   },

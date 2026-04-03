@@ -12,6 +12,8 @@ interface RoomDto {
     RoomType?: string;
     roomTypeName?: string;
     RoomTypeName?: string;
+    roomTypeId?: number;
+    RoomTypeId?: number;
     status?: string;
     Status?: string;
     cleaningStatus?: string;
@@ -32,6 +34,7 @@ function normalizeRoom(dto: RoomDto): Room {
         roomNumber: String(dto.roomNumber ?? dto.RoomNumber ?? ''),
         floor: Number(dto.floor ?? dto.Floor ?? 0),
         roomType: String(dto.roomTypeName ?? dto.RoomTypeName ?? dto.roomType ?? dto.RoomType ?? 'Standard') as Room['roomType'],
+        roomTypeId: Number(dto.roomTypeId ?? dto.RoomTypeId ?? 0) || undefined,
         status: String(dto.status ?? dto.Status ?? 'Available') as Room['status'],
         cleaningStatus: String(dto.cleaningStatus ?? dto.CleaningStatus ?? 'Clean') as Room['cleaningStatus'],
     };
