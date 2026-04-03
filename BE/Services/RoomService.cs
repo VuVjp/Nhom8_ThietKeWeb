@@ -138,6 +138,7 @@ public class RoomService : IRoomService
 		}
 		if (string.Equals(targetStatus.ToLower(), "available", StringComparison.OrdinalIgnoreCase) && !string.Equals(room.CleaningStatus, "Completed", StringComparison.OrdinalIgnoreCase))
 		{
+			await EnsureActiveRoomTypeAsync(room.RoomTypeId);
 			room.CleaningStatus = "Clean";
 		}
 		if (string.Equals(targetStatus.ToLower(), "cleaning", StringComparison.OrdinalIgnoreCase))
@@ -201,6 +202,19 @@ public class RoomService : IRoomService
 
 		if (roomType == null)
 			throw new NotFoundException($"Room type with ID {roomTypeId.Value} not found.");
+
+		if (!roomType.IsActive)
+			throw new ArgumentException("Selected room type is inactive.");
+	}
+
+	private async Task EnsureActiveRoomTypeAsync(int roomTypeId)
+	{
+		var roomType = await _context.RoomTypes
+			.AsNoTracking()
+			.FirstOrDefaultAsync(item => item.Id == roomTypeId);
+
+		if (roomType == null)
+			throw new NotFoundException($"Room type with ID {roomTypeId} not found.");
 
 		if (!roomType.IsActive)
 			throw new ArgumentException("Selected room type is inactive.");
