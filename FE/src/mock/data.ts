@@ -34,12 +34,13 @@ export const inventorySeed: InventoryItem[] = Array.from({ length: 26 }).map((_,
   quantity: 2 + (idx % 5),
   compensationPrice: 30 + idx * 4,
   notes: idx % 3 === 0 ? 'Inspect weekly' : 'Ready',
+  isActive: true,
 }));
 
 export const roomTemplateInventory: InventoryItem[] = [
-  { id: 9001, code: 'TMP-001', name: 'Bath Towel', category: 'Linen', unit: 'pcs', price: 18, stock: 8, quantity: 8, compensationPrice: 22, notes: 'Template' },
-  { id: 9002, code: 'TMP-002', name: 'Hair Dryer', category: 'Electronics', unit: 'pcs', price: 45, stock: 1, quantity: 1, compensationPrice: 65, notes: 'Template' },
-  { id: 9003, code: 'TMP-003', name: 'Wine Glass', category: 'Minibar', unit: 'pcs', price: 12, stock: 4, quantity: 4, compensationPrice: 20, notes: 'Template' },
+  { id: 9001, code: 'TMP-001', name: 'Bath Towel', category: 'Linen', unit: 'pcs', price: 18, stock: 8, quantity: 8, compensationPrice: 22, notes: 'Template', isActive: true },
+  { id: 9002, code: 'TMP-002', name: 'Hair Dryer', category: 'Electronics', unit: 'pcs', price: 45, stock: 1, quantity: 1, compensationPrice: 65, notes: 'Template', isActive: true },
+  { id: 9003, code: 'TMP-003', name: 'Wine Glass', category: 'Minibar', unit: 'pcs', price: 12, stock: 4, quantity: 4, compensationPrice: 20, notes: 'Template', isActive: true },
 ];
 
 export const lossSeed: LossRecord[] = Array.from({ length: 18 }).map((_, idx) => ({

@@ -336,7 +336,6 @@ public class AppDbContext : DbContext
             e.Property(x => x.Email).HasColumnName("email");
             e.Property(x => x.Phone).HasColumnName("phone");
             e.Property(x => x.PasswordHash).HasColumnName("password_hash");
-            e.Property(x => x.Status).HasColumnName("status");
             e.Property(x => x.IsActive).HasColumnName("is_active");
             e.Property(x => x.GoogleId).HasColumnName("google_id");
             e.Property(x => x.AvatarUrl).HasColumnName("avatar_url");

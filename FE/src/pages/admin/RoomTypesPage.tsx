@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { PencilSquareIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { PencilSquareIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { roomTypesApi, type RoomTypeItem, type RoomTypePayload } from '../../api/roomTypesApi';
 import { amenitiesApi, type AmenityItem } from '../../api/amenitiesApi';
 import { toApiError } from '../../api/httpClient';
@@ -113,18 +113,27 @@ export function RoomTypesPage() {
         }
     };
 
-    const deleteRoomType = async (item: RoomTypeItem) => {
-        if (!ensure('manage_room_type', 'delete room type')) {
+    const toggleRoomTypeActive = async (item: RoomTypeItem) => {
+        if (!ensure('manage_room_type', 'toggle room type active status')) {
             return;
         }
 
         try {
-            await roomTypesApi.remove(item.id);
-            setRows((prev) => prev.filter((row) => row.id !== item.id));
-            toast.success('Room type deleted');
+            await roomTypesApi.toggleActive(item.id);
+            setRows((prev) =>
+                prev.map((row) =>
+                    row.id === item.id
+                        ? {
+                              ...row,
+                              isActive: !row.isActive,
+                          }
+                        : row,
+                ),
+            );
+            toast.success(`${item.name} is now ${item.isActive ? 'OFF' : 'ON'}`);
         } catch (error) {
             const apiError = toApiError(error);
-            toast.error(apiError.message || 'Failed to delete room type');
+            toast.error(apiError.message || 'Failed to toggle room type status');
         }
     };
 
@@ -146,6 +155,15 @@ export function RoomTypesPage() {
         { key: 'capacityAdults', label: 'Adults', render: (row: RoomTypeItem) => row.capacityAdults },
         { key: 'capacityChildren', label: 'Children', render: (row: RoomTypeItem) => row.capacityChildren },
         { key: 'description', label: 'Description', render: (row: RoomTypeItem) => row.description || '-' },
+        {
+            key: 'status',
+            label: 'Status',
+            render: (row: RoomTypeItem) => (
+                <span className={`rounded-full px-2 py-1 text-xs font-medium ${row.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
+                    {row.isActive ? 'ON' : 'OFF'}
+                </span>
+            ),
+        },
         {
             key: 'amenities',
             label: 'Amenities',
@@ -176,12 +194,12 @@ export function RoomTypesPage() {
                     </button>
                     <button
                         type="button"
-                        className="inline-flex items-center gap-1 rounded-lg border border-rose-200 px-2 py-1 text-xs text-rose-600"
+                        className={`inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-xs ${row.isActive ? 'border-amber-200 text-amber-700' : 'border-emerald-200 text-emerald-700'}`}
                         onClick={() => {
-                            void deleteRoomType(row);
+                            void toggleRoomTypeActive(row);
                         }}
                     >
-                        <TrashIcon className="h-4 w-4" /> Delete
+                        {row.isActive ? 'Set OFF' : 'Set ON'}
                     </button>
                 </div>
             ),

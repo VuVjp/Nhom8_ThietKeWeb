@@ -8,6 +8,7 @@ public class RoomTypeDto
     public int CapacityAdults { get; set; }
     public int CapacityChildren { get; set; }
     public string? Description { get; set; }
+    public bool IsActive { get; set; }
 
     public List<AmenityDto> Amenities { get; set; } = new();
     public List<RoomImageDto> RoomImages { get; set; } = new();

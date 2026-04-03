@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { PencilSquareIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { PencilSquareIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { amenitiesApi, type AmenityItem } from '../../api/amenitiesApi';
 import { toApiError } from '../../api/httpClient';
 import { Input } from '../../components/Input';
@@ -104,18 +104,27 @@ export function AmenitiesPage() {
         }
     };
 
-    const removeAmenity = async (item: AmenityItem) => {
-        if (!ensure('delete_amenity', 'delete amenity')) {
+    const toggleAmenityActive = async (item: AmenityItem) => {
+        if (!ensure('delete_amenity', 'toggle amenity active status')) {
             return;
         }
 
         try {
-            await amenitiesApi.remove(item.id);
-            setRows((prev) => prev.filter((row) => row.id !== item.id));
-            toast.success(`Deleted ${item.name}`);
+            await amenitiesApi.toggleActive(item.id);
+            setRows((prev) =>
+                prev.map((row) =>
+                    row.id === item.id
+                        ? {
+                              ...row,
+                              isActive: !row.isActive,
+                          }
+                        : row,
+                ),
+            );
+            toast.success(`${item.name} is now ${item.isActive ? 'OFF' : 'ON'}`);
         } catch (error) {
             const apiError = toApiError(error);
-            toast.error(apiError.message || 'Failed to delete amenity');
+            toast.error(apiError.message || 'Failed to toggle amenity status');
         }
     };
 
@@ -131,6 +140,15 @@ export function AmenitiesPage() {
                 ),
         },
         { key: 'name', label: 'Name', render: (row: AmenityItem) => row.name },
+        {
+            key: 'status',
+            label: 'Status',
+            render: (row: AmenityItem) => (
+                <span className={`rounded-full px-2 py-1 text-xs font-medium ${row.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
+                    {row.isActive ? 'ON' : 'OFF'}
+                </span>
+            ),
+        },
         {
             key: 'actions',
             label: 'Actions',
@@ -149,12 +167,12 @@ export function AmenitiesPage() {
                     </button>
                     <button
                         type="button"
-                        className="inline-flex items-center gap-1 rounded-lg border border-rose-200 px-2 py-1 text-xs text-rose-600"
+                        className={`inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-xs ${row.isActive ? 'border-amber-200 text-amber-700' : 'border-emerald-200 text-emerald-700'}`}
                         onClick={() => {
-                            void removeAmenity(row);
+                            void toggleAmenityActive(row);
                         }}
                     >
-                        <TrashIcon className="h-4 w-4" /> Delete
+                        {row.isActive ? 'Set OFF' : 'Set ON'}
                     </button>
                 </div>
             ),

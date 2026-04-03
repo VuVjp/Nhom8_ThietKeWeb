@@ -99,6 +99,15 @@ export function InventoryPage() {
         { key: 'price', label: 'Price', render: (row: InventoryItem) => `$${row.price}` },
         { key: 'stock', label: 'Stock', render: (row: InventoryItem) => row.stock },
         {
+            key: 'status',
+            label: 'Status',
+            render: (row: InventoryItem) => (
+                <span className={`rounded-full px-2 py-1 text-xs font-medium ${row.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
+                    {row.isActive ? 'ON' : 'OFF'}
+                </span>
+            ),
+        },
+        {
             key: 'actions',
             label: 'Actions',
             render: (row: InventoryItem) => (
@@ -107,6 +116,10 @@ export function InventoryPage() {
                         type="button"
                         className="rounded-lg border border-slate-200 px-2 py-1 text-xs"
                         onClick={() => {
+                            if (!row.isActive) {
+                                toast.error('Cannot edit while item is OFF');
+                                return;
+                            }
                             if (!ensure('update_room_inventory', 'edit inventory item')) {
                                 return;
                             }
@@ -117,24 +130,33 @@ export function InventoryPage() {
                     </button>
                     <button
                         type="button"
-                        className="rounded-lg border border-rose-200 px-2 py-1 text-xs text-rose-600"
+                        className={`rounded-lg border px-2 py-1 text-xs ${row.isActive ? 'border-amber-200 text-amber-700' : 'border-emerald-200 text-emerald-700'}`}
                         onClick={() => {
-                            if (!ensure('delete_room_inventory', 'delete inventory item')) {
+                            if (!ensure('delete_room_inventory', 'toggle inventory active status')) {
                                 return;
                             }
                             void (async () => {
                                 try {
-                                    await roomInventoriesApi.remove(row.id);
-                                    setRows((prev) => prev.filter((item) => item.id !== row.id));
-                                    toast.success(`Deleted ${row.code}`);
+                                    await roomInventoriesApi.toggleActive(row.id);
+                                    setRows((prev) =>
+                                        prev.map((item) =>
+                                            item.id === row.id
+                                                ? {
+                                                      ...item,
+                                                      isActive: !item.isActive,
+                                                  }
+                                                : item,
+                                        ),
+                                    );
+                                    toast.success(`${row.code} is now ${row.isActive ? 'OFF' : 'ON'}`);
                                 } catch (error) {
                                     const apiError = toApiError(error);
-                                    toast.error(apiError.message || 'Failed to delete inventory item');
+                                    toast.error(apiError.message || 'Failed to toggle inventory status');
                                 }
                             })();
                         }}
                     >
-                        Delete
+                        {row.isActive ? 'Set OFF' : 'Set ON'}
                     </button>
                 </div>
             ),

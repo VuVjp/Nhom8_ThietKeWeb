@@ -4,6 +4,7 @@ export interface AmenityItem {
     id: number;
     name: string;
     iconUrl?: string;
+    isActive: boolean;
 }
 
 export interface CreateAmenityPayload {
@@ -24,6 +25,8 @@ interface AmenityDto {
     Name?: string;
     iconUrl?: string;
     IconUrl?: string;
+    isActive?: boolean;
+    IsActive?: boolean;
 }
 
 function normalizeAmenity(dto: AmenityDto): AmenityItem {
@@ -31,6 +34,7 @@ function normalizeAmenity(dto: AmenityDto): AmenityItem {
         id: Number(dto.id ?? dto.Id ?? 0),
         name: String(dto.name ?? dto.Name ?? ''),
         iconUrl: String(dto.iconUrl ?? dto.IconUrl ?? ''),
+        isActive: Boolean(dto.isActive ?? dto.IsActive ?? false),
     };
 }
 
@@ -71,7 +75,11 @@ export const amenitiesApi = {
         });
     },
 
+    async toggleActive(id: number) {
+        await httpClient.patch(`amenities/${id}/toggle-active`);
+    },
+
     async remove(id: number) {
-        await httpClient.delete(`amenities/${id}`);
+        await this.toggleActive(id);
     },
 };

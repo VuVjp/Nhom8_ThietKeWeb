@@ -9,6 +9,7 @@ export interface RoomTypeItem {
     capacityChildren: number;
     description: string;
     amenities: AmenityItem[];
+    isActive: boolean;
 }
 
 export interface RoomTypePayload {
@@ -32,6 +33,8 @@ interface RoomTypeDto {
     CapacityChildren?: number;
     description?: string;
     Description?: string;
+    isActive?: boolean;
+    IsActive?: boolean;
     amenities?: Array<{ id?: number; Id?: number; name?: string; Name?: string; iconUrl?: string; IconUrl?: string }>;
     Amenities?: Array<{ id?: number; Id?: number; name?: string; Name?: string; iconUrl?: string; IconUrl?: string }>;
 }
@@ -49,6 +52,7 @@ function normalizeAmenity(dto: { id?: number; Id?: number; name?: string; Name?:
         id: Number(dto.id ?? dto.Id ?? 0),
         name: String(dto.name ?? dto.Name ?? ''),
         iconUrl: String(dto.iconUrl ?? dto.IconUrl ?? ''),
+        isActive: true,
     };
 }
 
@@ -61,6 +65,7 @@ function normalizeRoomType(dto: RoomTypeDto): RoomTypeItem {
         capacityChildren: Number(dto.capacityChildren ?? dto.CapacityChildren ?? 0),
         description: String(dto.description ?? dto.Description ?? ''),
         amenities: (dto.amenities ?? dto.Amenities ?? []).map(normalizeAmenity),
+        isActive: Boolean(dto.isActive ?? dto.IsActive ?? false),
     };
 }
 
@@ -78,8 +83,12 @@ export const roomTypesApi = {
         await httpClient.put(`roomtypes/${id}`, payload);
     },
 
+    async toggleActive(id: number) {
+        await httpClient.patch(`roomtypes/${id}/toggle-active`);
+    },
+
     async remove(id: number) {
-        await httpClient.delete(`roomtypes/${id}`);
+        await this.toggleActive(id);
     },
 
     async getAmenities(roomTypeId: number) {

@@ -4,5 +4,5 @@ public interface IAmenityService
     Task<AmenityDto?> GetByIdAsync(int id);
     Task<bool> CreateAsync(CreateAmenityRequestDto dto);
     Task<bool> UpdateAsync(int id, UpdateAmenityDto dto);
-    Task<bool> DeleteAsync(int id);
+    Task<bool> ToggleActiveAsync(int id);
 }

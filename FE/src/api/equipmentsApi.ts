@@ -129,7 +129,11 @@ export const equipmentsApi = {
         await httpClient.put(`equipments/${id}`, payload);
     },
 
+    async toggleActive(id: number) {
+        await httpClient.patch(`equipments/${id}/toggle-active`);
+    },
+
     async remove(id: number) {
-        await httpClient.delete(`equipments/${id}`);
+        await this.toggleActive(id);
     },
 };

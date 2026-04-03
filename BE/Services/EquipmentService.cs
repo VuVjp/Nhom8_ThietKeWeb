@@ -15,7 +15,7 @@ public class EquipmentService : IEquipmentService
 
     public async Task<IEnumerable<EquipmentDto>> GetAllAsync()
     {
-        var data = await _repo.GetAllActiveAsync();
+        var data = await _repo.GetAllAsync();
         return data.Select(ToDto);
     }
 
@@ -171,19 +171,15 @@ public class EquipmentService : IEquipmentService
         return true;
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<bool> ToggleActiveAsync(int id)
     {
         var entity = await _repo.GetByIdAsync(id);
-        if (entity == null || !entity.IsActive)
+        if (entity == null)
         {
             throw new NotFoundException($"Equipment with ID {id} not found.");
         }
 
-        entity.TotalQuantity = 0;
-        entity.InUseQuantity = 0;
-        entity.DamagedQuantity = 0;
-        entity.LiquidatedQuantity = 0;
-        entity.IsActive = false;
+        entity.IsActive = !entity.IsActive;
         entity.UpdatedAt = DateTime.UtcNow;
 
         _repo.Update(entity);

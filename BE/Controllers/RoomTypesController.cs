@@ -54,14 +54,14 @@ namespace HotelManagement.Controllers
         }
 
         [Permission(PermissionNames.ManageRoomType)]
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteRoomType(int id)
+        [HttpPatch("{id}/toggle-active")]
+        public async Task<IActionResult> ToggleRoomTypeActive(int id)
         {
-            var result = await _roomTypeService.DeleteRoomTypeAsync(id);
+            var result = await _roomTypeService.ToggleActiveAsync(id);
             if (!result)
                 return NotFound(new { message = "Room type not found." });
 
-            return NoContent();
+            return Ok(new { message = "Room type active status toggled successfully." });
         }
 
         [Permission(PermissionNames.ManageRoomType)]

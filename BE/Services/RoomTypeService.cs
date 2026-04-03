@@ -24,7 +24,7 @@ public class RoomTypeService : IRoomTypeService
 
     public async Task<IEnumerable<RoomTypeDto>> GetAllRoomTypesAsync()
     {
-        var roomTypes = await _roomTypeRepository.GetAllActiveWithImagesAndAmenitiesAsync();
+        var roomTypes = await _roomTypeRepository.GetAllWithImagesAndAmenitiesAsync();
         return roomTypes.Select(ToDto);
     }
     public async Task<RoomTypeDto?> GetRoomTypeByIdAsync(int id)
@@ -68,12 +68,12 @@ public class RoomTypeService : IRoomTypeService
         return true;
     }
 
-    public async Task<bool> DeleteRoomTypeAsync(int id)
+    public async Task<bool> ToggleActiveAsync(int id)
     {
         var roomType = await _roomTypeRepository.GetByIdAsync(id);
         if (roomType == null) return false;
 
-        roomType.IsActive = false;
+        roomType.IsActive = !roomType.IsActive;
 
         _roomTypeRepository.Update(roomType);
         await _roomTypeRepository.SaveChangesAsync();
@@ -168,12 +168,13 @@ public class RoomTypeService : IRoomTypeService
         }
 
         return roomType.RoomTypeAmenities
-            .Where(x => x.Amenity != null && x.Amenity.IsActive)
+            .Where(x => x.Amenity != null)
             .Select(x => new AmenityDto
             {
                 Id = x.Amenity.Id,
                 Name = x.Amenity.Name,
-                IconUrl = x.Amenity.IconUrl
+                IconUrl = x.Amenity.IconUrl,
+                IsActive = x.Amenity.IsActive
             });
     }
 
@@ -236,13 +237,15 @@ public class RoomTypeService : IRoomTypeService
             CapacityAdults = roomType.CapacityAdults,
             CapacityChildren = roomType.CapacityChildren,
             Description = roomType.Description,
+            IsActive = roomType.IsActive,
             Amenities = roomType.RoomTypeAmenities
-                .Where(x => x.Amenity != null && x.Amenity.IsActive)
+                .Where(x => x.Amenity != null)
                 .Select(x => new AmenityDto
                 {
                     Id = x.Amenity.Id,
                     Name = x.Amenity.Name,
-                    IconUrl = x.Amenity.IconUrl
+                    IconUrl = x.Amenity.IconUrl,
+                    IsActive = x.Amenity.IsActive
                 })
                 .ToList(),
             RoomImages = roomType.RoomImages.Select(i => new RoomImageDto

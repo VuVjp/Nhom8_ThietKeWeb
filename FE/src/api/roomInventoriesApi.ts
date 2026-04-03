@@ -14,6 +14,8 @@ interface RoomInventoryDto {
     Quantity?: number;
     priceIfLost?: number;
     PriceIfLost?: number;
+    isActive?: boolean;
+    IsActive?: boolean;
 }
 
 export interface CreateRoomInventoryPayload {
@@ -49,6 +51,7 @@ function mapRoomInventoryToItem(dto: RoomInventoryDto): InventoryItem {
         quantity,
         compensationPrice,
         notes: 'From room inventory',
+        isActive: Boolean(dto.isActive ?? dto.IsActive ?? false),
     };
 }
 
@@ -77,8 +80,12 @@ export const roomInventoriesApi = {
         await httpClient.put(`roominventories/${id}`, payload);
     },
 
+    async toggleActive(id: number) {
+        await httpClient.patch(`roominventories/${id}/toggle-active`);
+    },
+
     async remove(id: number) {
-        await httpClient.delete(`roominventories/${id}`);
+        await this.toggleActive(id);
     },
 
     async clone(idClone: number, newRoomId: number) {

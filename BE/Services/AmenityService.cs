@@ -14,26 +14,28 @@ public class AmenityService : IAmenityService
 
     public async Task<IEnumerable<AmenityDto>> GetAllAsync()
     {
-        var data = await _repo.GetAllActiveAsync();
+        var data = await _repo.GetAllAsync();
 
         return data.Select(a => new AmenityDto
         {
             Id = a.Id,
             Name = a.Name,
-            IconUrl = a.IconUrl
+            IconUrl = a.IconUrl,
+            IsActive = a.IsActive
         });
     }
 
     public async Task<AmenityDto?> GetByIdAsync(int id)
     {
         var a = await _repo.GetByIdAsync(id);
-        if (a == null || !a.IsActive) throw new NotFoundException($"Amenity with ID {id} not found.");
+        if (a == null) throw new NotFoundException($"Amenity with ID {id} not found.");
 
         return new AmenityDto
         {
             Id = a.Id,
             Name = a.Name,
-            IconUrl = a.IconUrl
+            IconUrl = a.IconUrl,
+            IsActive = a.IsActive
         };
     }
 
@@ -115,12 +117,12 @@ public class AmenityService : IAmenityService
         return true;
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<bool> ToggleActiveAsync(int id)
     {
         var entity = await _repo.GetByIdAsync(id);
-        if (entity == null || !entity.IsActive) throw new NotFoundException($"Amenity with ID {id} not found.");
+        if (entity == null) throw new NotFoundException($"Amenity with ID {id} not found.");
 
-        entity.IsActive = false;
+        entity.IsActive = !entity.IsActive;
         _repo.Update(entity);
         await _repo.SaveChangesAsync();
 

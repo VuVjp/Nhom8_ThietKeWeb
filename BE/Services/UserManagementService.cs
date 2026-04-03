@@ -45,15 +45,25 @@ public class UserManagementService : IUserManagementService
         {
             throw new ConflictException("Email already exists.");
         }
-
-        await _userManagementRepository.AddAsync(new User
+        
+        var passwordHash = BCrypt.Net.BCrypt.HashPassword(password);
+        var user = new User
         {
             Email = email,
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
-            RoleId = roleId
-        });
+            PasswordHash = passwordHash,
+            RoleId = roleId,
+            IsActive = true
+        };
+        await _userManagementRepository.AddAsync(user);
 
         await _userManagementRepository.SaveChangesAsync();
+
+        var body = $"<p>Hello {user.FullName},</p>"
+            + "<p>Welcome to our platform!</p>"
+            + $"<p><strong>Your password:</strong> {passwordHash}</p>"
+            + "<p></p>";
+
+        await _emailService.SendAsync(user.Email, "Your new account password", body);
     }
 
     public async Task EditUserAsync(int userId, string email, string password, int roleId)

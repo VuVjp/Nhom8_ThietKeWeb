@@ -9,7 +9,6 @@ public class User
     public string Email { get; set; } = string.Empty;
     public string? Phone { get; set; }
     public string PasswordHash { get; set; } = string.Empty;
-    public bool? Status { get; set; }
     public bool IsActive { get; set; } = true;
     public string? GoogleId { get; set; }
     public string? AvatarUrl { get; set; }

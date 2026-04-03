@@ -68,6 +68,8 @@ public class RoomService : IRoomService
 		// LOGIC 3: Mặc định trạng thái
 		if (string.IsNullOrEmpty(room.Status)) room.Status = "Available";
 
+		await EnsureActiveRoomTypeAsync(room.RoomTypeId);
+
 		var newRoom = new Room
 		{
 			RoomNumber = room.RoomNumber,
@@ -85,6 +87,8 @@ public class RoomService : IRoomService
 	{
 		var existing = await _repository.GetByIdAsync(id);
 		if (existing == null) return false;
+
+		await EnsureActiveRoomTypeAsync(room.RoomTypeId);
 
 		// Cho phép cập nhật nhưng vẫn phải check trùng nếu đổi số phòng
 		if (existing.RoomNumber != room.RoomNumber && await _repository.IsRoomNumberExistsAsync(room.RoomNumber))
@@ -164,6 +168,22 @@ public class RoomService : IRoomService
 			RoomTypeId = room.RoomTypeId,
 			RoomTypeName = room.RoomType?.Name
 		};
+	}
+
+	private async Task EnsureActiveRoomTypeAsync(int? roomTypeId)
+	{
+		if (!roomTypeId.HasValue)
+			throw new ArgumentException("Room type is required.");
+
+		var roomType = await _context.RoomTypes
+			.AsNoTracking()
+			.FirstOrDefaultAsync(item => item.Id == roomTypeId.Value);
+
+		if (roomType == null)
+			throw new NotFoundException($"Room type with ID {roomTypeId.Value} not found.");
+
+		if (!roomType.IsActive)
+			throw new ArgumentException("Selected room type is inactive.");
 	}
 
 	private async Task<string?> ValidateCleaningCompletionAsync(int roomId)

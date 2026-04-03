@@ -12,5 +12,5 @@ public interface IRoomInventoryService
 	Task<bool> AddItemAsync(CreateRoomInventoryDto dto);
 	Task CloneItemAsync(int idClone, int newRoomId);
 	Task<bool> UpdateItemAsync(int id, UpdateRoomInventoryDto dto);
-	Task<bool> RemoveItemAsync(int id);
+	Task<bool> ToggleActiveAsync(int id);
 }

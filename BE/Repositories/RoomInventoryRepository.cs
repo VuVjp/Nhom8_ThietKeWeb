@@ -18,19 +18,18 @@ public class RoomInventoryRepository : IRoomInventoryRepository
 
 	public async Task<IEnumerable<RoomInventory>> GetAllAsync()
 		=> await _context.RoomInventories
-			.Where(ri => ri.IsActive)
 			.Include(ri => ri.Room)
 			.ToListAsync();
 
 	public async Task<IEnumerable<RoomInventory>> GetByRoomIdAsync(int roomId)
 		=> await _context.RoomInventories
-			.Where(ri => ri.IsActive && ri.RoomId == roomId)
+			.Where(ri => ri.RoomId == roomId)
 			.ToListAsync();
 
 	public async Task<RoomInventory?> GetByIdAsync(int id)
 		=> await _context.RoomInventories
 			.Include(ri => ri.Room)
-			.FirstOrDefaultAsync(ri => ri.Id == id && ri.IsActive);
+			.FirstOrDefaultAsync(ri => ri.Id == id);
 
 	public async Task<RoomInventory?> GetActiveByRoomAndItemNameAsync(int roomId, string itemName, int? excludeId = null)
 	{

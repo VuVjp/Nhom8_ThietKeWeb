@@ -26,6 +26,15 @@ public class RoomTypeRepository : Repository<RoomType>, IRoomTypeRepository
             .ToListAsync();
     }
 
+    public async Task<IEnumerable<RoomType>> GetAllWithImagesAndAmenitiesAsync()
+    {
+        return await _dbSet
+            .Include(r => r.RoomImages)
+            .Include(r => r.RoomTypeAmenities)
+                .ThenInclude(rta => rta.Amenity)
+            .ToListAsync();
+    }
+
     public async Task<RoomType?> GetByIdWithImagesAndAmenitiesAsync(int id)
     {
         return await _dbSet

@@ -71,6 +71,9 @@ export function RoomsPage() {
   const [inventoryOptions, setInventoryOptions] = useState<InventoryOption[]>([]);
   const [selectedInventories, setSelectedInventories] = useState<Record<string, SelectedInventoryValue>>({});
 
+  const activeRoomTypes = useMemo(() => roomTypes.filter((item) => item.isActive), [roomTypes]);
+  const activeAmenities = useMemo(() => amenities.filter((item) => item.isActive), [amenities]);
+
   const getEquipmentAvailableQuantity = useCallback(
     (item: EquipmentItem) => Math.max(0, item.totalQuantity - item.inUseQuantity - item.damagedQuantity - item.liquidatedQuantity),
     [],
@@ -108,26 +111,29 @@ export function RoomsPage() {
           equipmentsApi.getAll(),
         ]);
 
-        const equipmentOptions = equipmentData.map((item) => ({
+        const equipmentOptions = equipmentData
+          .filter((item) => item.isActive)
+          .map((item) => ({
           id: item.id,
           name: item.name.trim(),
           unit: item.unit,
           priceIfLost: Number(item.defaultPriceIfLost ?? 0),
           availableQuantity: getEquipmentAvailableQuantity(item),
-        }));
+          }));
 
         setRoomTypes(types);
         setAmenities(amenityData);
         setInventoryOptions(equipmentOptions);
-        if (types.length > 0) {
-          setDraft((prev) => ({ ...prev, roomTypeId: prev.roomTypeId || types[0].id }));
+        if (types.some((item) => item.isActive)) {
+          const firstActiveRoomType = types.find((item) => item.isActive)!;
+          setDraft((prev) => ({ ...prev, roomTypeId: prev.roomTypeId || firstActiveRoomType.id }));
         }
       } catch (error) {
         const apiError = toApiError(error);
         toast.error(apiError.message || 'Failed to load room setup data');
       }
     })();
-  }, []);
+  }, [getEquipmentAvailableQuantity]);
 
   const filtered = useMemo(() => {
     const rows = rooms.filter((item) => {
@@ -242,10 +248,11 @@ export function RoomsPage() {
     setCloneSourceRoomId(null);
     setSelectedAmenityIds([]);
     setSelectedInventories({});
+    const firstActiveRoomTypeId = activeRoomTypes[0]?.id ?? 0;
     setDraft((prev) => ({
       roomNumber: '',
       floor: 1,
-      roomTypeId: roomTypes[0]?.id ?? prev.roomTypeId,
+      roomTypeId: firstActiveRoomTypeId || prev.roomTypeId,
       status: 'Available',
       cleaningStatus: 'Clean',
     }));
@@ -258,6 +265,11 @@ export function RoomsPage() {
 
     if (!draft.roomNumber || !draft.floor || !draft.roomTypeId) {
       toast.error('Please fill all required room fields');
+      return;
+    }
+
+    if (!activeRoomTypes.some((item) => item.id === draft.roomTypeId)) {
+      toast.error('Selected room type is inactive');
       return;
     }
 
@@ -299,8 +311,8 @@ export function RoomsPage() {
 
         const selectedAmenities =
           amenityMode === 'roomType'
-            ? roomTypes.find((item) => item.id === draft.roomTypeId)?.amenities ?? []
-            : amenities.filter((item) => selectedAmenityIds.includes(item.id));
+            ? (activeRoomTypes.find((item) => item.id === draft.roomTypeId)?.amenities ?? []).filter((item) => item.isActive)
+            : activeAmenities.filter((item) => selectedAmenityIds.includes(item.id));
 
         await Promise.all(
           selectedAmenities.map((item) =>
@@ -322,6 +334,7 @@ export function RoomsPage() {
 
               return roomInventoriesApi.getByRoom(cloneSourceRoomId).then((items) =>
                 items
+                  .filter((item) => item.isActive)
                   .map((item) => ({
                     itemName: item.name,
                     quantity: Number(item.quantity || 0),
@@ -388,6 +401,12 @@ export function RoomsPage() {
             if (!ensure('create_room', 'create room')) {
               return;
             }
+
+            if (activeRoomTypes.length === 0) {
+              toast.error('No active room type available');
+              return;
+            }
+
             setOpenCreate(true);
           }}
           className="inline-flex items-center gap-2 rounded-xl bg-cyan-700 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-800"
@@ -441,7 +460,7 @@ export function RoomsPage() {
               <Input placeholder="Room number" value={draft.roomNumber} onChange={(e) => setDraft((prev) => ({ ...prev, roomNumber: e.target.value }))} />
               <Input placeholder="Floor" type="number" value={draft.floor} onChange={(e) => setDraft((prev) => ({ ...prev, floor: Number(e.target.value) }))} />
               <Select value={String(draft.roomTypeId)} onChange={(e) => setDraft((prev) => ({ ...prev, roomTypeId: Number(e.target.value) }))}>
-                {roomTypes.map((type) => (
+                {activeRoomTypes.map((type) => (
                   <option key={type.id} value={type.id}>{type.name}</option>
                 ))}
               </Select>
@@ -480,7 +499,7 @@ export function RoomsPage() {
 
               {amenityMode === 'manual' ? (
                 <div className="max-h-56 space-y-2 overflow-auto rounded-lg border border-slate-200 p-3">
-                  {amenities.map((item) => (
+                  {activeAmenities.map((item) => (
                     <label key={item.id} className="flex items-center gap-2 text-sm text-slate-700">
                       <input
                         type="checkbox"
@@ -495,18 +514,18 @@ export function RoomsPage() {
                       {item.name}
                     </label>
                   ))}
-                  {amenities.length === 0 ? <p className="text-xs text-slate-400">No amenities found.</p> : null}
+                  {activeAmenities.length === 0 ? <p className="text-xs text-slate-400">No active amenities found.</p> : null}
                 </div>
               ) : (
                 <div className="max-h-56 space-y-2 overflow-auto rounded-lg border border-slate-200 p-3">
-                  {(roomTypes.find((item) => item.id === draft.roomTypeId)?.amenities ?? []).map((item) => (
+                  {(activeRoomTypes.find((item) => item.id === draft.roomTypeId)?.amenities ?? []).filter((item) => item.isActive).map((item) => (
                     <div key={item.id} className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 text-sm text-slate-700">
                       <span>{item.name}</span>
                       <span className="text-xs text-cyan-700">from room type</span>
                     </div>
                   ))}
-                  {(roomTypes.find((item) => item.id === draft.roomTypeId)?.amenities?.length ?? 0) === 0 ? (
-                    <p className="text-xs text-slate-400">This room type has no preset amenities.</p>
+                  {((activeRoomTypes.find((item) => item.id === draft.roomTypeId)?.amenities ?? []).filter((item) => item.isActive).length) === 0 ? (
+                    <p className="text-xs text-slate-400">This room type has no active amenities.</p>
                   ) : null}
                 </div>
               )}

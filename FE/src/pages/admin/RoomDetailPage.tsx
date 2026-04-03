@@ -92,9 +92,9 @@ export function RoomDetailPage() {
           roomsApi.getAll(),
         ]);
 
-        setEquipmentOptions(equipmentData);
-        setAmenityOptions(amenityData);
-        setRoomTypes(roomTypeData);
+        setEquipmentOptions(equipmentData.filter((item) => item.isActive));
+        setAmenityOptions(amenityData.filter((item) => item.isActive));
+        setRoomTypes(roomTypeData.filter((item) => item.isActive));
         setAllRooms(roomData);
       } catch (error) {
         const apiError = toApiError(error);
@@ -112,7 +112,7 @@ export function RoomDetailPage() {
     void (async () => {
       try {
         const data = await roomInventoriesApi.getByRoom(Number(cloneSourceRoomId));
-        setClonePreviewItems(data.filter((item) => !isAmenityInventoryName(item.name)));
+        setClonePreviewItems(data.filter((item) => item.isActive && !isAmenityInventoryName(item.name)));
       } catch (error) {
         const apiError = toApiError(error);
         toast.error(apiError.message || 'Failed to load source room inventory');
@@ -301,8 +301,18 @@ export function RoomDetailPage() {
       return;
     }
 
+    if (addMode === 'equipment' && selectedEquipment && !selectedEquipment.isActive) {
+      toast.error('Selected equipment is inactive');
+      return;
+    }
+
     if (addMode === 'amenity' && !selectedAmenity) {
       toast.error('Please choose an existing amenity');
+      return;
+    }
+
+    if (addMode === 'amenity' && selectedAmenity && !selectedAmenity.isActive) {
+      toast.error('Selected amenity is inactive');
       return;
     }
 
@@ -318,7 +328,7 @@ export function RoomDetailPage() {
 
         if (addMode === 'equipment') {
           const existingEquipmentRow = equipmentItems.find(
-            (item) => normalizeName(item.name) === normalizeName(itemName),
+            (item) => item.isActive && normalizeName(item.name) === normalizeName(itemName),
           );
 
           if (existingEquipmentRow) {
@@ -340,7 +350,7 @@ export function RoomDetailPage() {
         if (addMode === 'amenity') {
           const amenityName = removeAmenityPrefix(itemName);
           const existingAmenityRow = amenityItems.find(
-            (item) => normalizeName(removeAmenityPrefix(item.name)) === normalizeName(amenityName),
+            (item) => item.isActive && normalizeName(removeAmenityPrefix(item.name)) === normalizeName(amenityName),
           );
 
           if (existingAmenityRow) {
@@ -381,10 +391,10 @@ export function RoomDetailPage() {
     void (async () => {
       setIsQuickAdding(true);
       try {
-        for (const amenity of roomTypeAmenities) {
+        for (const amenity of roomTypeAmenities.filter((item) => item.isActive)) {
           const itemName = `[Amenity] ${amenity.name}`;
           const existingAmenityRow = amenityItems.find(
-            (item) => normalizeName(removeAmenityPrefix(item.name)) === normalizeName(amenity.name),
+            (item) => item.isActive && normalizeName(removeAmenityPrefix(item.name)) === normalizeName(amenity.name),
           );
 
           if (existingAmenityRow) {
@@ -430,7 +440,7 @@ export function RoomDetailPage() {
       setIsQuickAdding(true);
       try {
         const sourceItems = clonePreviewItems.length > 0 ? clonePreviewItems : await roomInventoriesApi.getByRoom(Number(cloneSourceRoomId));
-        const equipmentRows = sourceItems.filter((item) => !isAmenityInventoryName(item.name));
+        const equipmentRows = sourceItems.filter((item) => item.isActive && !isAmenityInventoryName(item.name));
 
         for (const sourceItem of equipmentRows) {
           const itemName = sourceItem.name.trim();
@@ -443,8 +453,12 @@ export function RoomDetailPage() {
             (item) => normalizeName(item.name) === normalizeName(itemName),
           );
 
+          if (!matchedEquipment || !matchedEquipment.isActive) {
+            continue;
+          }
+
           const existingEquipmentRow = equipmentItems.find(
-            (item) => normalizeName(item.name) === normalizeName(itemName),
+            (item) => item.isActive && normalizeName(item.name) === normalizeName(itemName),
           );
 
           if (existingEquipmentRow) {
@@ -497,8 +511,18 @@ export function RoomDetailPage() {
       return;
     }
 
+    if (editMode === 'equipment' && selectedEditEquipment && !selectedEditEquipment.isActive) {
+      toast.error('Selected equipment is inactive');
+      return;
+    }
+
     if (editMode === 'amenity' && !selectedEditAmenity) {
       toast.error('Please choose an existing amenity');
+      return;
+    }
+
+    if (editMode === 'amenity' && selectedEditAmenity && !selectedEditAmenity.isActive) {
+      toast.error('Selected amenity is inactive');
       return;
     }
 
@@ -514,7 +538,7 @@ export function RoomDetailPage() {
 
         if (editMode === 'equipment') {
           const duplicateEquipmentRow = equipmentItems.find(
-            (item) => item.id !== editingItem.id && normalizeName(item.name) === normalizeName(itemName),
+            (item) => item.id !== editingItem.id && item.isActive && normalizeName(item.name) === normalizeName(itemName),
           );
 
           if (duplicateEquipmentRow) {
@@ -525,7 +549,7 @@ export function RoomDetailPage() {
 
         if (editMode === 'amenity') {
           const duplicateAmenityRow = amenityItems.find(
-            (item) => item.id !== editingItem.id && normalizeName(removeAmenityPrefix(item.name)) === normalizeName(removeAmenityPrefix(itemName)),
+            (item) => item.id !== editingItem.id && item.isActive && normalizeName(removeAmenityPrefix(item.name)) === normalizeName(removeAmenityPrefix(itemName)),
           );
 
           if (duplicateAmenityRow) {
@@ -776,14 +800,14 @@ export function RoomDetailPage() {
                     type="button"
                     className="rounded-lg bg-cyan-700 px-3 py-2 text-xs font-semibold text-white disabled:opacity-60"
                     onClick={handleQuickAddAmenitiesFromRoomType}
-                    disabled={!roomTypeAmenities.length || isQuickAdding}
+                    disabled={!roomTypeAmenities.some((item) => item.isActive) || isQuickAdding}
                   >
                     {isQuickAdding ? 'Adding...' : 'Add Room Type Amenities'}
                   </button>
                 </div>
-                {roomTypeAmenities.length > 0 ? (
+                {roomTypeAmenities.filter((item) => item.isActive).length > 0 ? (
                   <div className="max-h-32 overflow-auto rounded-lg bg-slate-50 p-2 text-xs text-slate-600">
-                    {roomTypeAmenities.map((item) => (
+                    {roomTypeAmenities.filter((item) => item.isActive).map((item) => (
                       <div key={item.id} className="flex items-center justify-between py-1">
                         <span>{item.name}</span>
                         <span>qty 1</span>

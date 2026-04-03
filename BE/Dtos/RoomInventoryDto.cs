@@ -6,4 +6,5 @@ public class RoomInventoryDto
     public string ItemName { get; set; } = string.Empty;
     public int? Quantity { get; set; }
     public decimal? PriceIfLost { get; set; }
+    public bool IsActive { get; set; }
 }

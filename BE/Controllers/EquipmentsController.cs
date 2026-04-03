@@ -51,15 +51,15 @@ public class EquipmentsController : ControllerBase
     }
 
     [Permission(PermissionNames.DeleteAmenity)]
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(int id)
+    [HttpPatch("{id}/toggle-active")]
+    public async Task<IActionResult> ToggleActive(int id)
     {
-        var ok = await _service.DeleteAsync(id);
+        var ok = await _service.ToggleActiveAsync(id);
         if (!ok)
         {
             return NotFound();
         }
 
-        return NoContent();
+        return Ok("Equipment active status toggled successfully.");
     }
 }

@@ -29,6 +29,7 @@ export interface InventoryItem {
   quantity: number;
   compensationPrice: number;
   notes: string;
+  isActive: boolean;
 }
 
 export interface LossRecord {

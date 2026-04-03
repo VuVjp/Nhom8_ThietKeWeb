@@ -58,6 +58,10 @@ export function EquipmentPage() {
         if (!ensure('update_amenity', 'add equipment quantity')) {
             return;
         }
+        if (!equipment.isActive) {
+            toast.error('Cannot add quantity while equipment is OFF');
+            return;
+        }
         setSelectedEquipmentForQuantity(equipment);
         setQuantityToAdd('0');
         setOpenAddQuantity(true);
@@ -116,6 +120,15 @@ export function EquipmentPage() {
         { key: 'damagedQty', label: 'Damaged Qty', render: (row: EquipmentItem) => row.damagedQuantity },
         { key: 'basePrice', label: 'Base Price', render: (row: EquipmentItem) => `$${row.basePrice}` },
         {
+            key: 'status',
+            label: 'Status',
+            render: (row: EquipmentItem) => (
+                <span className={`rounded-full px-2 py-1 text-xs font-medium ${row.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
+                    {row.isActive ? 'ON' : 'OFF'}
+                </span>
+            ),
+        },
+        {
             key: 'image',
             label: 'Image',
             render: (row: EquipmentItem) =>
@@ -136,30 +149,40 @@ export function EquipmentPage() {
                         type="button"
                         className="rounded-lg border border-cyan-200 px-2 py-1 text-xs text-cyan-600 hover:bg-cyan-50"
                         onClick={() => handleAddQuantity(row)}
+                        disabled={!row.isActive}
                     >
                         Add Quantity
                     </button>
                     <button
                         type="button"
-                        className="rounded-lg border border-rose-200 px-2 py-1 text-xs text-rose-600"
+                        className={`rounded-lg border px-2 py-1 text-xs ${row.isActive ? 'border-amber-200 text-amber-700' : 'border-emerald-200 text-emerald-700'}`}
                         onClick={() => {
-                            if (!ensure('delete_amenity', 'delete equipment')) {
+                            if (!ensure('delete_amenity', 'toggle equipment active status')) {
                                 return;
                             }
 
                             void (async () => {
                                 try {
-                                    await equipmentsApi.remove(row.id);
-                                    setRows((prev) => prev.filter((item) => item.id !== row.id));
-                                    toast.success(`Deleted ${row.itemCode}`);
+                                    await equipmentsApi.toggleActive(row.id);
+                                    setRows((prev) =>
+                                        prev.map((item) =>
+                                            item.id === row.id
+                                                ? {
+                                                      ...item,
+                                                      isActive: !item.isActive,
+                                                  }
+                                                : item,
+                                        ),
+                                    );
+                                    toast.success(`${row.itemCode} is now ${row.isActive ? 'OFF' : 'ON'}`);
                                 } catch (error) {
                                     const apiError = toApiError(error);
-                                    toast.error(apiError.message || 'Failed to delete equipment');
+                                    toast.error(apiError.message || 'Failed to toggle equipment status');
                                 }
                             })();
                         }}
                     >
-                        Delete
+                        {row.isActive ? 'Set OFF' : 'Set ON'}
                     </button>
                 </div>
             ),

@@ -49,11 +49,11 @@ public class RoomInventoriesController : ControllerBase
 	}
 
 	[Permission(PermissionNames.DeleteRoomInventory)]
-	[HttpDelete("{id}")]
-	public async Task<IActionResult> Delete(int id)
+	[HttpPatch("{id}/toggle-active")]
+	public async Task<IActionResult> ToggleActive(int id)
 	{
-		var result = await _service.RemoveItemAsync(id);
-		return result ? Ok("Deleted item successfully.") : NotFound();
+		var result = await _service.ToggleActiveAsync(id);
+		return result ? Ok("Room inventory active status toggled successfully.") : NotFound();
 	}
 
 	[Permission(PermissionNames.CreateRoomInventory)]
