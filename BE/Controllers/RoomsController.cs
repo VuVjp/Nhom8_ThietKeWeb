@@ -50,6 +50,33 @@ public class RoomsController : ControllerBase
 		{
 			return BadRequest(ex.Message);
 		}
+		catch (NotFoundException ex)
+		{
+			return NotFound(ex.Message);
+		}
+	}
+
+	[Permission(PermissionNames.ManageRooms)]
+	[HttpPost("bulk-create")]
+	public async Task<IActionResult> BulkCreate([FromBody] IEnumerable<RoomDto> rooms)
+	{
+		try
+		{
+			var createdCount = await _service.CreateRoomsBulkAsync(rooms);
+			return Ok(new
+			{
+				message = $"Created {createdCount} rooms successfully.",
+				createdCount
+			});
+		}
+		catch (ArgumentException ex)
+		{
+			return BadRequest(ex.Message);
+		}
+		catch (NotFoundException ex)
+		{
+			return NotFound(ex.Message);
+		}
 	}
 
 	[Permission(PermissionNames.UpdateCleaning)]

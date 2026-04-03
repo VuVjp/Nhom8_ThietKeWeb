@@ -54,25 +54,11 @@ public class RoomService : IRoomService
 
 	public async Task<bool> CreateRoomAsync(RoomDto room)
 	{
-		// LOGIC 1: Kiểm tra số phòng trống/trùng	
-		if (string.IsNullOrWhiteSpace(room.RoomNumber))
-			throw new ArgumentException("Số phòng không được để trống.");
-
-		if (await _repository.IsRoomNumberExistsAsync(room.RoomNumber))
-			throw new ArgumentException($"Số phòng {room.RoomNumber} đã tồn tại trong hệ thống.");
-
-		// LOGIC 2: Kiểm tra số tầng
-		if (room.Floor < 0)
-			throw new ArgumentException("Số tầng không thể là số âm.");
-
-		// LOGIC 3: Mặc định trạng thái
-		if (string.IsNullOrEmpty(room.Status)) room.Status = "Available";
-
-		await EnsureActiveRoomTypeAsync(room.RoomTypeId);
+		await ValidateCreateRoomInputAsync(room, new HashSet<string>(StringComparer.OrdinalIgnoreCase));
 
 		var newRoom = new Room
 		{
-			RoomNumber = room.RoomNumber,
+			RoomNumber = room.RoomNumber.Trim(),
 			Floor = room.Floor,
 			Status = room.Status,
 			CleaningStatus = room.CleaningStatus,
@@ -81,6 +67,38 @@ public class RoomService : IRoomService
 
 		await _repository.AddAsync(newRoom);
 		return await _repository.SaveChangesAsync();
+	}
+
+	public async Task<int> CreateRoomsBulkAsync(IEnumerable<RoomDto> rooms)
+	{
+		if (rooms == null)
+			throw new ArgumentException("Room list is required.");
+
+		var roomList = rooms.ToList();
+		if (roomList.Count == 0)
+			throw new ArgumentException("Room list is required.");
+
+
+		var batchRoomNumbers = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+		foreach (var room in roomList)
+		{
+			await ValidateCreateRoomInputAsync(room, batchRoomNumbers);
+
+			var newRoom = new Room
+			{
+				RoomNumber = room.RoomNumber.Trim(),
+				Floor = room.Floor,
+				Status = room.Status,
+				CleaningStatus = room.CleaningStatus,
+				RoomTypeId = room.RoomTypeId
+			};
+
+			await _repository.AddAsync(newRoom);
+		}
+
+		var saved = await _repository.SaveChangesAsync();
+		return saved ? roomList.Count : 0;
 	}
 
 	public async Task<bool> UpdateRoomAsync(int id, RoomDto room)
@@ -189,6 +207,30 @@ public class RoomService : IRoomService
 			RoomTypeId = room.RoomTypeId,
 			RoomTypeName = room.RoomType?.Name
 		};
+	}
+
+	private async Task ValidateCreateRoomInputAsync(RoomDto room, HashSet<string> batchRoomNumbers)
+	{
+		if (room == null)
+			throw new ArgumentException("Room data is required.");
+
+		if (string.IsNullOrWhiteSpace(room.RoomNumber))
+			throw new ArgumentException("Room number is required.");
+
+		var normalizedRoomNumber = room.RoomNumber.Trim();
+		if (!batchRoomNumbers.Add(normalizedRoomNumber))
+			throw new ArgumentException($"Room number {normalizedRoomNumber} is duplicated in the batch.");
+
+		if (await _repository.IsRoomNumberExistsAsync(normalizedRoomNumber))
+			throw new ArgumentException($"Room number {normalizedRoomNumber} already exists in the system.");
+
+		if (room.Floor < 0)
+			throw new ArgumentException("Floor number cannot be a negative value.");
+
+		if (string.IsNullOrWhiteSpace(room.Status))
+			room.Status = "Available";
+
+		await EnsureActiveRoomTypeAsync(room.RoomTypeId);
 	}
 
 	private async Task EnsureActiveRoomTypeAsync(int? roomTypeId)

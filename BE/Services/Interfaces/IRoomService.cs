@@ -11,6 +11,7 @@ public interface IRoomService
 	Task<IEnumerable<RoomDto>> GetByStatusAsync(string status);
 	Task<RoomDto?> GetDetailAsync(int id);
 	Task<bool> CreateRoomAsync(RoomDto room);
+	Task<int> CreateRoomsBulkAsync(IEnumerable<RoomDto> rooms);
 	Task<bool> UpdateRoomAsync(int id, RoomDto room);
 	Task<bool> DeleteRoomAsync(int id);
 	Task ChangeRoomStatusAsync(int id, string newStatus);

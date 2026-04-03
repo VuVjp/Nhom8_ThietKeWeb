@@ -28,6 +28,10 @@ export interface RoomPayload {
     cleaningStatus?: string;
 }
 
+export interface BulkCreateRoomsPayload {
+    rooms: RoomPayload[];
+}
+
 function normalizeRoom(dto: RoomDto): Room {
     return {
         id: Number(dto.id ?? dto.Id ?? 0),
@@ -59,6 +63,11 @@ export const roomsApi = {
     async create(payload: RoomPayload) {
         const { data } = await httpClient.post('rooms', payload);
         return data;
+    },
+
+    async bulkCreate(payload: RoomPayload[]) {
+        const { data } = await httpClient.post('rooms/bulk-create', payload);
+        return data as { message?: string; createdCount?: number };
     },
 
     async update(id: number, payload: RoomPayload) {
