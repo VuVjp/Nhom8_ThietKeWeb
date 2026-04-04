@@ -98,6 +98,7 @@ function toCreateFormData(payload: CreateEquipmentPayload): FormData {
 }
 
 export interface UpdateEquipmentPayload {
+    itemCode?: string;
     name?: string;
     category?: string;
     unit?: string;
@@ -109,6 +110,7 @@ export interface UpdateEquipmentPayload {
     defaultPriceIfLost?: number;
     supplier?: string;
     isActive?: boolean;
+    file?: File | null;
 }
 
 export const equipmentsApi = {
@@ -126,7 +128,26 @@ export const equipmentsApi = {
     },
 
     async update(id: number, payload: UpdateEquipmentPayload) {
-        await httpClient.put(`equipments/${id}`, payload);
+        const form = new FormData();
+        if (payload.itemCode) form.append('ItemCode', payload.itemCode);
+        if (payload.name) form.append('Name', payload.name);
+        if (payload.category) form.append('Category', payload.category);
+        if (payload.unit) form.append('Unit', payload.unit);
+        if (payload.totalQuantity !== undefined) form.append('TotalQuantity', String(payload.totalQuantity));
+        if (payload.inUseQuantity !== undefined) form.append('InUseQuantity', String(payload.inUseQuantity));
+        if (payload.damagedQuantity !== undefined) form.append('DamagedQuantity', String(payload.damagedQuantity));
+        if (payload.liquidatedQuantity !== undefined) form.append('LiquidatedQuantity', String(payload.liquidatedQuantity));
+        if (payload.basePrice !== undefined) form.append('BasePrice', String(payload.basePrice));
+        if (payload.defaultPriceIfLost !== undefined) form.append('DefaultPriceIfLost', String(payload.defaultPriceIfLost));
+        if (payload.supplier) form.append('Supplier', payload.supplier);
+        if (payload.isActive !== undefined) form.append('IsActive', String(payload.isActive));
+        if (payload.file) form.append('File', payload.file);
+
+        await httpClient.put(`equipments/${id}`, form, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
     },
 
     async toggleActive(id: number) {

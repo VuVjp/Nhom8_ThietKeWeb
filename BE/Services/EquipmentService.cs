@@ -164,6 +164,11 @@ public class EquipmentService : IEquipmentService
         if (dto.IsActive.HasValue)
             entity.IsActive = dto.IsActive.Value;
 
+        if (dto.File != null)
+        {
+            entity.ImageUrl = await _cloudinary.UploadImageAsync(dto.File, "equipments", NormalizeCodeKey(entity.ItemCode));
+        }
+
         entity.UpdatedAt = DateTime.UtcNow;
 
         _repo.Update(entity);

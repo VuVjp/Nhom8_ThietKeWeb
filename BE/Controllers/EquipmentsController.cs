@@ -33,15 +33,15 @@ public class EquipmentsController : ControllerBase
         {
             return BadRequest();
         }
-
         return Ok();
     }
 
     [Permission(PermissionNames.ManageEquipments)]
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(int id, [FromBody] UpdateEquipmentDto dto)
+    public async Task<IActionResult> Update(int id, [FromForm] UpdateEquipmentDto dto)
     {
         var ok = await _service.UpdateAsync(id, dto);
+        
         if (!ok)
         {
             return NotFound();

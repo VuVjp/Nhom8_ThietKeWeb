@@ -420,7 +420,7 @@ export function RoomsPage() {
                                 roomInventoriesApi.create({
                                     roomId: room.id,
                                     amenityId: item.id,
-                                    itemName: `[Amenity] ${item.name}`,
+                                    itemName: `${item.name}`,
                                     quantity: 1,
                                     priceIfLost: 0,
                                 }),

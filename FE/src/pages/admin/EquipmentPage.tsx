@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
-import { PlusIcon } from '@heroicons/react/24/outline';
+import { PencilSquareIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { Input } from '../../components/Input';
 import { Table } from '../../components/Table';
 import { Pagination } from '../../components/Pagination';
@@ -32,6 +32,12 @@ export function EquipmentPage() {
     const [page, setPage] = useState(1);
     const [form, setForm] = useState(initialForm);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+    const [editing, setEditing] = useState<EquipmentItem | null>(null);
+    const [editForm, setEditForm] = useState(initialForm);
+    const [editFile, setEditFile] = useState<File | null>(null);
+    const [isSavingEdit, setIsSavingEdit] = useState(false);
+
     const [openAddQuantity, setOpenAddQuantity] = useState(false);
     const [selectedEquipmentForQuantity, setSelectedEquipmentForQuantity] = useState<EquipmentItem | null>(null);
     const [quantityToAdd, setQuantityToAdd] = useState('0');
@@ -82,7 +88,6 @@ export function EquipmentPage() {
         setIsAddingQuantity(true);
         try {
             await equipmentsApi.update(selectedEquipmentForQuantity.id, {
-
                 totalQuantity: selectedEquipmentForQuantity.totalQuantity + qtyToAdd,
             });
             toast.success(`Added ${qtyToAdd} units to ${selectedEquipmentForQuantity.name}`);
@@ -93,6 +98,41 @@ export function EquipmentPage() {
             toast.error(apiError.message || 'Failed to add quantity');
         } finally {
             setIsAddingQuantity(false);
+        }
+    };
+
+    const saveEdit = async () => {
+        if (!editing) return;
+        if (!ensure('MANAGE_EQUIPMENTS', 'update equipment')) return;
+
+        if (!editForm.itemCode.trim() || !editForm.name.trim() || !editForm.category.trim() || !editForm.unit.trim()) {
+            toast.error('Item code, name, category and unit are required');
+            return;
+        }
+
+        setIsSavingEdit(true);
+        try {
+            await equipmentsApi.update(editing.id, {
+                itemCode: editForm.itemCode.trim(),
+                name: editForm.name.trim(),
+                category: editForm.category.trim(),
+                unit: editForm.unit.trim(),
+                totalQuantity: Number(editForm.totalQuantity),
+                basePrice: Number(editForm.basePrice),
+                defaultPriceIfLost: Number(editForm.defaultPriceIfLost),
+                supplier: editForm.supplier.trim(),
+                file: editFile,
+            });
+
+            toast.success('Equipment updated');
+            setEditing(null);
+            setEditFile(null);
+            await loadEquipments();
+        } catch (error) {
+            const apiError = toApiError(error);
+            toast.error(apiError.message || 'Failed to update equipment');
+        } finally {
+            setIsSavingEdit(false);
         }
     };
 
@@ -146,6 +186,26 @@ export function EquipmentPage() {
             label: 'Actions',
             render: (row: EquipmentItem) => (
                 <div className="flex gap-2">
+                    <button
+                        type="button"
+                        className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-xs"
+                        onClick={() => {
+                            setEditing(row);
+                            setEditForm({
+                                itemCode: row.itemCode,
+                                name: row.name,
+                                category: row.category,
+                                unit: row.unit,
+                                totalQuantity: String(row.totalQuantity),
+                                basePrice: String(row.basePrice),
+                                defaultPriceIfLost: String(row.defaultPriceIfLost),
+                                supplier: row.supplier,
+                            });
+                            setEditFile(null);
+                        }}
+                    >
+                        <PencilSquareIcon className="h-4 w-4" /> Edit
+                    </button>
                     <button
                         type="button"
                         className="rounded-lg border border-cyan-200 px-2 py-1 text-xs text-cyan-600 hover:bg-cyan-50"
@@ -363,6 +423,112 @@ export function EquipmentPage() {
                             disabled={isCreating}
                         >
                             {isCreating ? 'Saving...' : 'Save Equipment'}
+                        </button>
+                    </div>
+                </div>
+            </Modal>
+
+            <Modal
+                open={Boolean(editing)}
+                title={editing ? `Edit Equipment: ${editing.name}` : 'Edit Equipment'}
+                onClose={() => {
+                    setEditing(null);
+                    setEditForm(initialForm);
+                    setEditFile(null);
+                }}
+            >
+                <div className="space-y-5">
+                    <section className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <div>
+                            <h3 className="text-sm font-semibold text-slate-900">Equipment details</h3>
+                            <p className="text-xs text-slate-500">Update the identifying information for the equipment item.</p>
+                        </div>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-slate-700">Item code</label>
+                                <Input placeholder="Example: EQ-001" value={editForm.itemCode} onChange={(e) => setEditForm((prev) => ({ ...prev, itemCode: e.target.value }))} />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-slate-700">Name</label>
+                                <Input placeholder="Example: Hair Dryer" value={editForm.name} onChange={(e) => setEditForm((prev) => ({ ...prev, name: e.target.value }))} />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-slate-700">Category</label>
+                                <Input placeholder="Example: Electronics" value={editForm.category} onChange={(e) => setEditForm((prev) => ({ ...prev, category: e.target.value }))} />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-slate-700">Unit</label>
+                                <Input placeholder="Example: piece" value={editForm.unit} onChange={(e) => setEditForm((prev) => ({ ...prev, unit: e.target.value }))} />
+                            </div>
+                        </div>
+                    </section>
+
+                    <section className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <div>
+                            <h3 className="text-sm font-semibold text-slate-900">Quantity and price</h3>
+                            <p className="text-xs text-slate-500">Set inventory count and compensation values.</p>
+                        </div>
+                        <div className="grid gap-3 sm:grid-cols-3">
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-slate-700">Total quantity</label>
+                                <Input type="number" min={0} value={editForm.totalQuantity} onChange={(e) => setEditForm((prev) => ({ ...prev, totalQuantity: e.target.value }))} />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-slate-700">Base price</label>
+                                <Input type="number" min={0} value={editForm.basePrice} onChange={(e) => setEditForm((prev) => ({ ...prev, basePrice: e.target.value }))} />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-slate-700">Default price if lost</label>
+                                <Input type="number" min={0} value={editForm.defaultPriceIfLost} onChange={(e) => setEditForm((prev) => ({ ...prev, defaultPriceIfLost: e.target.value }))} />
+                            </div>
+                        </div>
+                    </section>
+
+                    <section className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <div>
+                            <h3 className="text-sm font-semibold text-slate-900">Additional info</h3>
+                            <p className="text-xs text-slate-500">Update supplier and image for this item.</p>
+                        </div>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-slate-700">Supplier</label>
+                                <Input placeholder="Example: LG / Panasonic" value={editForm.supplier} onChange={(e) => setEditForm((prev) => ({ ...prev, supplier: e.target.value }))} />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-slate-700">Current image</label>
+                                {editing?.imageUrl ? (
+                                    <img src={editing.imageUrl} alt={editing.name} className="h-16 w-16 rounded-lg border border-slate-200 object-cover" />
+                                ) : (
+                                    <div className="h-16 w-16 rounded-lg border border-dashed border-slate-300 bg-white" />
+                                )}
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-slate-700">Replace image</label>
+                            <Input type="file" accept="image/*" onChange={(e) => setEditFile(e.target.files?.[0] ?? null)} />
+                            <p className="text-xs text-slate-500">Upload only when you want to change the existing image.</p>
+                        </div>
+                    </section>
+
+                    <div className="flex justify-end gap-2">
+                        <button
+                            type="button"
+                            className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                            onClick={() => {
+                                setEditing(null);
+                                setEditForm(initialForm);
+                                setEditFile(null);
+                            }}
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="button"
+                            className="rounded-lg bg-cyan-700 px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                            onClick={() => void saveEdit()}
+                            disabled={isSavingEdit}
+                        >
+                            {isSavingEdit ? 'Saving...' : 'Save Changes'}
                         </button>
                     </div>
                 </div>

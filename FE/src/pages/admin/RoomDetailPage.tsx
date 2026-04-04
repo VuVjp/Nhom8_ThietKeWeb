@@ -350,7 +350,7 @@ export function RoomDetailPage() {
     void (async () => {
       setIsAdding(true);
       try {
-        const itemName = addMode === 'amenity' ? `[Amenity] ${selectedAmenity?.name ?? ''}` : selectedEquipment?.name ?? '';
+        const itemName = addMode === 'amenity' ? `${selectedAmenity?.name ?? ''}` : selectedEquipment?.name ?? '';
         const quantity = Number(draft.quantity ?? 1);
         const priceIfLost =
           addMode === 'amenity'
@@ -418,7 +418,7 @@ export function RoomDetailPage() {
         );
 
         for (const amenity of eligibleRoomTypeAmenities) {
-          const itemName = `[Amenity] ${amenity.name}`;
+          const itemName = `${amenity.name}`;
           await roomInventoriesApi.create({
             roomId: roomIdNumber,
             amenityId: amenity.id,
@@ -533,7 +533,7 @@ export function RoomDetailPage() {
     void (async () => {
       setIsSavingEdit(true);
       try {
-        const itemName = editMode === 'amenity' ? `[Amenity] ${selectedEditAmenity?.name ?? ''}` : selectedEditEquipment?.name ?? '';
+        const itemName = editMode === 'amenity' ? `${selectedEditAmenity?.name ?? ''}` : selectedEditEquipment?.name ?? '';
         const quantity = Number(editDraft.quantity ?? 1);
         const priceIfLost =
           editMode === 'amenity'
