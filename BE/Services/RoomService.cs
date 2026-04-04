@@ -126,7 +126,7 @@ public class RoomService : IRoomService
 	{
 		var room = await _repository.GetByIdAsync(id);
 		if (room == null) throw new NotFoundException("Room not found.");
-		if (newStatus.Equals(room.Status, StringComparison.OrdinalIgnoreCase)) throw new ArgumentException("New status must be different from current status.");
+		if (newStatus.Equals(room.Status, StringComparison.OrdinalIgnoreCase)) return;
 		var targetStatus = newStatus.Trim();
 		if (string.Equals(targetStatus.ToLower(), "available", StringComparison.OrdinalIgnoreCase))
 		{
@@ -180,7 +180,7 @@ public class RoomService : IRoomService
 	{
 		var room = await _repository.GetByIdAsync(id);
 		if (room == null) throw new NotFoundException("Room not found.");
-		if (newCleaningStatus.Equals(room.CleaningStatus, StringComparison.OrdinalIgnoreCase)) throw new ArgumentException("New cleaning status must be different from current cleaning status.");
+		if (newCleaningStatus.Equals(room.CleaningStatus, StringComparison.OrdinalIgnoreCase)) return;
 		room.CleaningStatus = newCleaningStatus;
 		_repository.Update(room);
 		await _repository.SaveChangesAsync();
