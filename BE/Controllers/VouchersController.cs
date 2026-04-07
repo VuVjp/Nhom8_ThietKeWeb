@@ -1,5 +1,8 @@
 using HotelManagement.Dtos;
+using HotelManagement.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+
+namespace HotelManagement.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]

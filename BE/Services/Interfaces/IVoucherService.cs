@@ -1,5 +1,7 @@
 using HotelManagement.Dtos;
 
+namespace HotelManagement.Services.Interfaces;
+
 public interface IVoucherService
 {
     Task<IEnumerable<VoucherDto>> GetAllAsync();

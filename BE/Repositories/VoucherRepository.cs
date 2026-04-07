@@ -1,6 +1,9 @@
 using HotelManagement.Data;
 using HotelManagement.Entities;
+using HotelManagement.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
+
+namespace HotelManagement.Repositories.Implementations;
 
 public class VoucherRepository : Repository<Voucher>, IVoucherRepository
 {

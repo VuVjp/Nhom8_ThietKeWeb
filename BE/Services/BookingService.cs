@@ -1,8 +1,7 @@
-using HotelManagement.Data;
 using HotelManagement.Dtos;
 using HotelManagement.Entities;
+using HotelManagement.Repositories.Interfaces;
 using HotelManagement.Services.Interfaces;
-using Microsoft.EntityFrameworkCore;
 
 namespace HotelManagement.Services.Implementations;
 
@@ -17,35 +16,20 @@ public class BookingService : IBookingService
         "Cancelled",
     };
 
-    private readonly AppDbContext _context;
+    private readonly IBookingRepository _repository;
 
-    public BookingService(AppDbContext context)
+    public BookingService(IBookingRepository repository)
     {
-        _context = context;
+        _repository = repository;
     }
 
     public async Task<IEnumerable<RoomAvailabilityDto>> GetAvailableRoomsAsync(DateTime checkIn, DateTime checkOut, int? excludeBookingId = null)
     {
         ValidateDateRange(checkIn, checkOut);
 
-        var bookedRoomIds = await _context.BookingDetails
-            .AsNoTracking()
-            .Include(detail => detail.Booking)
-            .Where(detail => detail.RoomId.HasValue
-                && detail.CheckInDate < checkOut
-                && detail.CheckOutDate > checkIn
-                && (!excludeBookingId.HasValue || detail.BookingId != excludeBookingId.Value)
-                && detail.Booking != null
-                && detail.Booking.Status != null
-                && detail.Booking.Status != "Cancelled"
-                && detail.Booking.Status != "CheckedOut")
-            .Select(detail => detail.RoomId!.Value)
-            .Distinct()
-            .ToListAsync();
+        var bookedRoomIds = await _repository.GetBookedRoomIdsAsync(checkIn, checkOut, excludeBookingId);
 
-        var rooms = await _context.Rooms
-            .AsNoTracking()
-            .Include(room => room.RoomType)
+        var rooms = (await _repository.GetAllRoomsWithRoomTypeAsync())
             .Where(room => !bookedRoomIds.Contains(room.Id))
             .Where(room => room.RoomTypeId.HasValue && room.RoomType != null)
             .Where(room => room.Status == null || room.Status != "Maintenance")
@@ -57,7 +41,7 @@ public class BookingService : IBookingService
                 RoomTypeName = room.RoomType!.Name,
                 PricePerNight = room.RoomType.BasePrice,
             })
-            .ToListAsync();
+            .ToList();
 
         return rooms;
     }
@@ -111,10 +95,7 @@ public class BookingService : IBookingService
             throw new ConflictException($"Room(s) unavailable: {string.Join(", ", unavailableRoomIds)}");
         }
 
-        var rooms = await _context.Rooms
-            .Include(room => room.RoomType)
-            .Where(room => roomIds.Contains(room.Id) && room.RoomType != null)
-            .ToListAsync();
+        var rooms = await _repository.GetRoomsWithRoomTypeByIdsAsync(roomIds);
 
         if (rooms.Count != roomIds.Count)
         {
@@ -138,8 +119,8 @@ public class BookingService : IBookingService
             }).ToList(),
         };
 
-        await _context.Bookings.AddAsync(booking);
-        await _context.SaveChangesAsync();
+        await _repository.AddBookingAsync(booking);
+        await _repository.SaveChangesAsync();
 
         return MapToSummaryDto(booking);
     }
@@ -151,9 +132,7 @@ public class BookingService : IBookingService
             throw new ArgumentException("Booking payload is required.");
         }
 
-        var booking = await _context.Bookings
-            .Include(item => item.BookingDetails)
-            .FirstOrDefaultAsync(item => item.Id == id);
+        var booking = await _repository.GetBookingByIdWithDetailsAsync(id);
 
         if (booking == null)
         {
@@ -179,19 +158,7 @@ public class BookingService : IBookingService
 
         var currentDetailIds = booking.BookingDetails.Select(detail => detail.Id).ToList();
 
-        var bookedRoomIds = await _context.BookingDetails
-            .AsNoTracking()
-            .Include(detail => detail.Booking)
-            .Where(detail => detail.RoomId.HasValue)
-            .Where(detail => !currentDetailIds.Contains(detail.Id))
-            .Where(detail => detail.CheckInDate < dto.CheckOutDate && detail.CheckOutDate > dto.CheckInDate)
-            .Where(detail => detail.Booking != null
-                && detail.Booking.Status != null
-                && detail.Booking.Status != "Cancelled"
-                && detail.Booking.Status != "CheckedOut")
-            .Select(detail => detail.RoomId!.Value)
-            .Distinct()
-            .ToListAsync();
+        var bookedRoomIds = await _repository.GetBookedRoomIdsAsync(dto.CheckInDate, dto.CheckOutDate, null, currentDetailIds);
 
         var unavailableRoomIds = roomIds.Where(roomId => bookedRoomIds.Contains(roomId)).ToList();
         if (unavailableRoomIds.Count > 0)
@@ -199,10 +166,7 @@ public class BookingService : IBookingService
             throw new ConflictException($"Room(s) unavailable: {string.Join(", ", unavailableRoomIds)}");
         }
 
-        var rooms = await _context.Rooms
-            .Include(room => room.RoomType)
-            .Where(room => roomIds.Contains(room.Id) && room.RoomTypeId.HasValue && room.RoomType != null)
-            .ToListAsync();
+        var rooms = await _repository.GetRoomsWithRoomTypeByIdsAsync(roomIds);
 
         if (rooms.Count != roomIds.Count)
         {
@@ -213,7 +177,7 @@ public class BookingService : IBookingService
         booking.GuestPhone = dto.GuestPhone!.Trim() ?? booking.GuestPhone;
         booking.GuestEmail = string.IsNullOrWhiteSpace(dto.GuestEmail) ? null : dto.GuestEmail.Trim();
 
-        _context.BookingDetails.RemoveRange(booking.BookingDetails);
+        _repository.RemoveBookingDetails(booking.BookingDetails);
 
         booking.BookingDetails = rooms.Select(room => new BookingDetail
         {
@@ -224,7 +188,7 @@ public class BookingService : IBookingService
             PricePerNight = room.RoomType!.BasePrice,
         }).ToList();
 
-        await _context.SaveChangesAsync();
+        await _repository.SaveChangesAsync();
 
         return MapToSummaryDto(booking);
     }
@@ -233,36 +197,21 @@ public class BookingService : IBookingService
     {
         var today = DateTime.Today;
 
-        var bookings = await _context.Bookings
-            .AsNoTracking()
-            .Include(booking => booking.BookingDetails)
-            .Where(booking => booking.BookingDetails.Any(detail => detail.CheckInDate.Date == today))
-            .Where(booking => booking.Status == "Pending" || booking.Status == "Confirmed")
-            .OrderBy(booking => booking.Id)
-            .ToListAsync();
+        var bookings = await _repository.GetArrivalsTodayAsync(today);
 
         return bookings.Select(MapToSummaryDto);
     }
 
     public async Task<IEnumerable<BookingSummaryDto>> GetInHouseGuestsAsync()
     {
-        var bookings = await _context.Bookings
-            .AsNoTracking()
-            .Include(booking => booking.BookingDetails)
-            .Where(booking => booking.Status == "CheckedIn")
-            .OrderBy(booking => booking.Id)
-            .ToListAsync();
+        var bookings = await _repository.GetInHouseGuestsAsync();
 
         return bookings.Select(MapToSummaryDto);
     }
 
     public async Task<IEnumerable<BookingSummaryDto>> GetAllBookingsAsync()
     {
-        var bookings = await _context.Bookings
-            .AsNoTracking()
-            .Include(booking => booking.BookingDetails)
-            .OrderByDescending(booking => booking.Id)
-            .ToListAsync();
+        var bookings = await _repository.GetAllWithDetailsAsync();
 
         return bookings.Select(MapToSummaryDto);
     }
@@ -279,10 +228,7 @@ public class BookingService : IBookingService
             throw new ArgumentException("Invalid booking status.");
         }
 
-        var booking = await _context.Bookings
-            .Include(item => item.BookingDetails)
-                .ThenInclude(detail => detail.Room)
-            .FirstOrDefaultAsync(item => item.Id == id);
+        var booking = await _repository.GetBookingByIdWithDetailsAsync(id, includeRoom: true);
 
         if (booking == null)
         {
@@ -344,7 +290,7 @@ public class BookingService : IBookingService
             }
         }
 
-        await _context.SaveChangesAsync();
+        await _repository.SaveChangesAsync();
         return true;
     }
 

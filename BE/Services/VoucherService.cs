@@ -1,5 +1,9 @@
 using HotelManagement.Dtos;
 using HotelManagement.Entities;
+using HotelManagement.Repositories.Interfaces;
+using HotelManagement.Services.Interfaces;
+
+namespace HotelManagement.Services.Implementations;
 
 public class VoucherService : IVoucherService
 {
