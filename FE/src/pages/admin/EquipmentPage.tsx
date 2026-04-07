@@ -9,6 +9,7 @@ import { toApiError } from '../../api/httpClient';
 import { equipmentsApi, type EquipmentItem } from '../../api/equipmentsApi';
 import { paginate, queryIncludes, sortBy } from '../../utils/table';
 import { usePermissionCheck } from '../../hooks/usePermissionCheck';
+import { Badge } from '../../components/Badge';
 
 const initialForm = {
     itemCode: '',
@@ -164,60 +165,10 @@ export function EquipmentPage() {
             key: 'status',
             label: 'Status',
             render: (row: EquipmentItem) => (
-                <span className={`rounded-full px-2 py-1 text-xs font-medium ${row.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
-                    {row.isActive ? 'ON' : 'OFF'}
-                </span>
-            ),
-        },
-        {
-            key: 'image',
-            label: 'Image',
-            render: (row: EquipmentItem) =>
-                row.imageUrl ? (
-                    <a className="text-cyan-700 underline" href={row.imageUrl} target="_blank" rel="noreferrer">
-                        View
-                    </a>
-                ) : (
-                    <span className="text-slate-400">-</span>
-                ),
-        },
-        {
-            key: 'actions',
-            label: 'Actions',
-            render: (row: EquipmentItem) => (
-                <div className="flex gap-2">
-                    <button
-                        type="button"
-                        className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-xs"
-                        onClick={() => {
-                            setEditing(row);
-                            setEditForm({
-                                itemCode: row.itemCode,
-                                name: row.name,
-                                category: row.category,
-                                unit: row.unit,
-                                totalQuantity: String(row.totalQuantity),
-                                basePrice: String(row.basePrice),
-                                defaultPriceIfLost: String(row.defaultPriceIfLost),
-                                supplier: row.supplier,
-                            });
-                            setEditFile(null);
-                        }}
-                    >
-                        <PencilSquareIcon className="h-4 w-4" /> Edit
-                    </button>
-                    <button
-                        type="button"
-                        className="rounded-lg border border-cyan-200 px-2 py-1 text-xs text-cyan-600 hover:bg-cyan-50"
-                        onClick={() => handleAddQuantity(row)}
-                        disabled={!row.isActive}
-                    >
-                        Add Quantity
-                    </button>
-                    <button
-                        type="button"
-                        className={`rounded-lg border px-2 py-1 text-xs ${row.isActive ? 'border-amber-200 text-amber-700' : 'border-emerald-200 text-emerald-700'}`}
-                        onClick={() => {
+                <button
+                    style={{ cursor: 'pointer' }}
+                    onClick={
+                        () => {
                             if (!ensure('MANAGE_EQUIPMENTS', 'toggle equipment active status')) {
                                 return;
                             }
@@ -241,10 +192,63 @@ export function EquipmentPage() {
                                     toast.error(apiError.message || 'Failed to toggle equipment status');
                                 }
                             })();
+                        }}>
+                    <Badge value={row.isActive ? 'Active' : 'Inactive'} />
+                </button >
+            ),
+        },
+        {
+            key: 'image',
+            label: 'Image',
+            render: (row: EquipmentItem) =>
+                row.imageUrl ? (
+                    <a className="text-cyan-700 underline" href={row.imageUrl} target="_blank" rel="noreferrer">
+                        View
+                    </a>
+                ) : (
+                    <span className="text-slate-400">-</span>
+                ),
+        },
+        {
+            key: 'actions',
+            label: 'Actions',
+            render: (row: EquipmentItem) => (
+                <div className="flex gap-2">
+                    <button
+                        type="button"
+                        className="rounded-lg border border-cyan-200 px-2 py-1 text-xs text-cyan-600 hover:bg-cyan-50"
+                        onClick={() => handleAddQuantity(row)}
+                        disabled={!row.isActive}
+                    >
+                        Add Quantity
+                    </button>
+                    <button
+                        type="button"
+                        className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-xs"
+                        onClick={() => {
+                            setEditing(row);
+                            setEditForm({
+                                itemCode: row.itemCode,
+                                name: row.name,
+                                category: row.category,
+                                unit: row.unit,
+                                totalQuantity: String(row.totalQuantity),
+                                basePrice: String(row.basePrice),
+                                defaultPriceIfLost: String(row.defaultPriceIfLost),
+                                supplier: row.supplier,
+                            });
+                            setEditFile(null);
                         }}
                     >
-                        {row.isActive ? 'Set OFF' : 'Set ON'}
+                        <PencilSquareIcon className="h-4 w-4" /> Edit
                     </button>
+                    {/* <button
+                        type="button"
+                        className={`rounded-lg border px-2 py-1 text-xs ${row.isActive ? 'border-amber-200 text-amber-700' : 'border-emerald-200 text-emerald-700'}`}
+
+                    >
+                        {row.isActive ? 'Set OFF' : 'Set ON'}
+                    </button> */}
                 </div>
             ),
         },

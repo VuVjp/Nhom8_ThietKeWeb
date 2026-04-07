@@ -7,6 +7,7 @@ import { Input } from '../../components/Input';
 import { Table } from '../../components/Table';
 import { Modal } from '../../components/Modal';
 import { usePermissionCheck } from '../../hooks/usePermissionCheck';
+import { Badge } from '../../components/Badge';
 
 export function AmenitiesPage() {
     const { ensure } = usePermissionCheck();
@@ -144,9 +145,14 @@ export function AmenitiesPage() {
             key: 'status',
             label: 'Status',
             render: (row: AmenityItem) => (
-                <span className={`rounded-full px-2 py-1 text-xs font-medium ${row.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
-                    {row.isActive ? 'ON' : 'OFF'}
-                </span>
+                <button
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => {
+                        void toggleAmenityActive(row);
+                    }}
+                >
+                    <Badge value={row.isActive ? 'Active' : 'Inactive'} />
+                </button>
             ),
         },
         {
@@ -165,7 +171,7 @@ export function AmenitiesPage() {
                     >
                         <PencilSquareIcon className="h-4 w-4" /> Edit
                     </button>
-                    <button
+                    {/* <button
                         type="button"
                         className={`inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-xs ${row.isActive ? 'border-amber-200 text-amber-700' : 'border-emerald-200 text-emerald-700'}`}
                         onClick={() => {
@@ -173,7 +179,7 @@ export function AmenitiesPage() {
                         }}
                     >
                         {row.isActive ? 'Set OFF' : 'Set ON'}
-                    </button>
+                    </button> */}
                 </div>
             ),
         },

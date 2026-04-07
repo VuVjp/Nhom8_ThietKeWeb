@@ -8,6 +8,7 @@ import { Input } from '../../components/Input';
 import { Table } from '../../components/Table';
 import { Modal } from '../../components/Modal';
 import { usePermissionCheck } from '../../hooks/usePermissionCheck';
+import { Badge } from '../../components/Badge';
 
 const emptyDraft: RoomTypePayload = {
     name: '',
@@ -159,9 +160,15 @@ export function RoomTypesPage() {
             key: 'status',
             label: 'Status',
             render: (row: RoomTypeItem) => (
-                <span className={`rounded-full px-2 py-1 text-xs font-medium ${row.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
-                    {row.isActive ? 'ON' : 'OFF'}
-                </span>
+                <button
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => {
+                        void toggleRoomTypeActive(row);
+                    }}
+                >
+                    <Badge value={row.isActive ? 'Active' : 'Inactive'} color={row.isActive ? 'green' : 'red'} />
+                </button>
+
             ),
         },
         {
@@ -192,7 +199,7 @@ export function RoomTypesPage() {
                     >
                         <PencilSquareIcon className="h-4 w-4" /> Edit
                     </button>
-                    <button
+                    {/* <button
                         type="button"
                         className={`inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-xs ${row.isActive ? 'border-amber-200 text-amber-700' : 'border-emerald-200 text-emerald-700'}`}
                         onClick={() => {
@@ -200,7 +207,7 @@ export function RoomTypesPage() {
                         }}
                     >
                         {row.isActive ? 'Set OFF' : 'Set ON'}
-                    </button>
+                    </button> */}
                 </div>
             ),
         },
