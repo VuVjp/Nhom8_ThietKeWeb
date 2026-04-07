@@ -67,3 +67,25 @@ export interface RoleItem {
   name: string;
   permissions: string[];
 }
+
+export type BookingStatus = 'Pending' | 'Confirmed' | 'CheckedIn' | 'CheckedOut' | 'Cancelled';
+
+export interface Booking {
+  id: number;
+  IsExistingGuest: boolean;
+  guestName: string;
+  guestPhone: string;
+  guestEmail: string;
+  checkInDate: string;
+  checkOutDate: string;
+  status: BookingStatus;
+  totalAmount: number;
+  roomIds: number[];
+}
+
+export interface RoomAvailability {
+  roomId: number;
+  roomNumber: string;
+  roomTypeName: string;
+  pricePerNight: number;
+}

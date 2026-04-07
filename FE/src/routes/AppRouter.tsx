@@ -14,6 +14,10 @@ import { EquipmentPage } from '../pages/admin/EquipmentPage';
 import { AmenitiesPage } from '../pages/admin/AmenitiesPage';
 import { RoomTypesPage } from '../pages/admin/RoomTypesPage';
 import { ForbiddenPage } from '../pages/ForbiddenPage';
+import { CreateBookingPage } from '../pages/admin/reception/CreateBookingPage';
+import { ArrivalsPage } from '../pages/admin/reception/ArrivalsPage';
+import { InHousePage } from '../pages/admin/reception/InHousePage';
+import { BookingsListPage } from '../pages/admin/reception/BookingsListPage';
 import { RequireAuth, RequireAnyPermission, RequirePermission } from './RouteGuards';
 import { useAppAuth } from '../auth/useAppAuth';
 
@@ -88,6 +92,13 @@ export const AppRouter = () => {
 
                     <Route element={<RequireAnyPermission permissions={['MANAGE_EQUIPMENTS']} />}>
                         <Route path="admin/equipments" element={<EquipmentPage />} />
+                    </Route>
+
+                    <Route element={<RequireAnyPermission permissions={['MANAGE_BOOKINGS']} />}>
+                        <Route path="admin/reception/create-booking" element={<CreateBookingPage />} />
+                        <Route path="admin/reception/arrivals" element={<ArrivalsPage />} />
+                        <Route path="admin/reception/in-house" element={<InHousePage />} />
+                        <Route path="admin/reception/bookings" element={<BookingsListPage />} />
                     </Route>
                 </Route>
             </Route>

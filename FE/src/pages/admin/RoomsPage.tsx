@@ -203,6 +203,7 @@ export function RoomsPage() {
             render: (row: Room) => (
                 <Select
                     value={row.status}
+                    style={{ minWidth: '130px' }}
                     onChange={(event) => {
                         if (!ensure('MANAGE_ROOMS', 'update room status')) {
                             return;
@@ -234,6 +235,7 @@ export function RoomsPage() {
             render: (row: Room) => (
                 <Select
                     value={row.cleaningStatus}
+                    style={{ minWidth: '130px' }}
                     onChange={(event) => {
                         if (!ensure('UPDATE_CLEANING', 'update room condition')) {
                             return;

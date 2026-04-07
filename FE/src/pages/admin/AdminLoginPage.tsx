@@ -60,7 +60,7 @@ export function AdminLoginPage() {
             <div className="relative z-10 w-full max-w-5xl overflow-hidden rounded-3xl border border-slate-700/60 bg-slate-900/90 shadow-2xl shadow-cyan-900/20 backdrop-blur-xl lg:grid lg:grid-cols-[1.15fr_0.85fr]">
                 <div className="space-y-5 border-b border-slate-700/60 p-8 lg:border-b-0 lg:border-r lg:p-10">
                     <p className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-cyan-200">
-                        Celestia Grand
+                        Admin Access Only
                     </p>
                     <h1 className="text-3xl font-semibold leading-tight text-white">Admin Command Center</h1>
                     <p className="max-w-md text-sm text-slate-300">

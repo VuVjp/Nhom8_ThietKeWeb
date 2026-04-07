@@ -34,6 +34,7 @@ public class NotificationService : INotificationService
     {
         var users = await _userRepository.GetUsersByRoleAsync(role.ToString());
         var notifications = new List<Notification>();
+        var targetGroups = new List<string>();
 
         foreach (var user in users)
         {
@@ -46,12 +47,19 @@ public class NotificationService : INotificationService
                 ReferenceLink = dto.ReferenceLink,
                 CreatedAt = DateTime.UtcNow
             });
+
+            targetGroups.Add($"user_{user.Id}");
         }
 
         await _repo.AddRangeAsync(notifications);
 
+        if (targetGroups.Count == 0)
+        {
+            return;
+        }
+
         await _hub.Clients
-            .Group($"role_{role}")
+            .Groups(targetGroups)
             .SendAsync("ReceiveNotification", new
             {
                 dto.Title,
