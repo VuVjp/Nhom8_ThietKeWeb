@@ -89,3 +89,17 @@ export interface RoomAvailability {
   roomTypeName: string;
   pricePerNight: number;
 }
+
+export interface Voucher {
+  id: number;
+  code: string;
+  discountType: 'Percentage' | 'Fixed' | string;
+  discountValue: number;
+  minBookingValue: number;
+  usageLimit: number;
+  usageCount: number;
+  validFrom: string;
+  validTo: string;
+  isActive: boolean;
+}
+

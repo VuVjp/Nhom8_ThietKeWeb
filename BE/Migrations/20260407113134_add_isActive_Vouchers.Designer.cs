@@ -4,6 +4,7 @@ using HotelManagement.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BE.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260407113134_add_isActive_Vouchers")]
+    partial class add_isActive_Vouchers
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1109,10 +1112,6 @@ namespace BE.Migrations
                     b.Property<decimal?>("MinBookingValue")
                         .HasColumnType("decimal(18,2)")
                         .HasColumnName("min_booking_value");
-
-                    b.Property<int>("UsageCount")
-                        .HasColumnType("int")
-                        .HasColumnName("usage_count");
 
                     b.Property<int?>("UsageLimit")
                         .HasColumnType("int")

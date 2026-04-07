@@ -353,6 +353,8 @@ public class AppDbContext : DbContext
             e.Property(x => x.ValidFrom).HasColumnName("valid_from");
             e.Property(x => x.ValidTo).HasColumnName("valid_to");
             e.Property(x => x.UsageLimit).HasColumnName("usage_limit");
+            e.Property(x => x.UsageCount).HasColumnName("usage_count");
+            e.Property(x => x.IsActive).HasColumnName("is_active");
             e.HasIndex(x => x.Code).IsUnique();
         });
 
