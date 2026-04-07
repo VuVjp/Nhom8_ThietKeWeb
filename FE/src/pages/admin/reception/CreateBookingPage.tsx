@@ -11,7 +11,7 @@ import { useNavigate } from 'react-router-dom';
 
 export function CreateBookingPage() {
     const navigate = useNavigate();
-    const [step, setStep] = useState(3);
+    const [step, setStep] = useState(1);
 
     // Step 1 State
     const [bookingType, setBookingType] = useState<'daily' | 'hourly'>('daily');
