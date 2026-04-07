@@ -21,6 +21,7 @@ public class VouchersController : ControllerBase
         return Ok(await _service.GetAllAsync());
     }
 
+    [Permission(PermissionNames.ManageVouchers)]
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(int id)
     {
@@ -33,6 +34,20 @@ public class VouchersController : ControllerBase
         return Ok(data);
     }
 
+    [HttpGet("validate")]
+    public async Task<IActionResult> ValidateCode([FromQuery] string code)
+    {
+        try
+        {
+            await _service.ValidateCodeAsync(code);
+            return Ok("Voucher code is valid.");
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
     [Permission(PermissionNames.ManageVouchers)]
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateVoucherDto dto)
@@ -40,7 +55,7 @@ public class VouchersController : ControllerBase
         var ok = await _service.CreateAsync(dto);
         if (!ok)
         {
-            return BadRequest();
+            return BadRequest(new { message = "Failed to create voucher." });
         }
 
         return Ok();
@@ -69,6 +84,6 @@ public class VouchersController : ControllerBase
             return NotFound();
         }
 
-        return Ok("Voucher active status toggled successfully.");
+        return Ok(new { message = "Voucher active status toggled successfully." });
     }
 }

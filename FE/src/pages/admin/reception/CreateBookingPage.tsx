@@ -4,13 +4,14 @@ import { Input } from '../../../components/Input';
 import { toApiError } from '../../../api/httpClient';
 import { receptionApi } from '../../../api/receptionApi';
 import { usersApi } from '../../../api/usersApi';
-import type { RoomAvailability } from '../../../types/models';
-import { SparklesIcon, CheckCircleIcon, ArrowRightIcon, UserIcon, IdentificationIcon } from '@heroicons/react/24/outline';
+import { vouchersApi } from '../../../api/vouchersApi';
+import type { RoomAvailability, Voucher } from '../../../types/models';
+import { SparklesIcon, CheckCircleIcon, ArrowRightIcon, UserIcon, IdentificationIcon, TicketIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { useNavigate } from 'react-router-dom';
 
 export function CreateBookingPage() {
     const navigate = useNavigate();
-    const [step, setStep] = useState(1);
+    const [step, setStep] = useState(3);
 
     // Step 1 State
     const [bookingType, setBookingType] = useState<'daily' | 'hourly'>('daily');
@@ -36,6 +37,11 @@ export function CreateBookingPage() {
     const [guestEmail, setGuestEmail] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [guestVerified, setGuestVerified] = useState(false);
+
+    // Voucher State
+    const [voucherCode, setVoucherCode] = useState('');
+    const [isCheckingVoucher, setIsCheckingVoucher] = useState(false);
+    const [appliedVoucher, setAppliedVoucher] = useState<Voucher | null>(null);
 
     const getCalculatedDates = () => {
         if (bookingType === 'daily') return { start: checkInDate, end: checkOutDate };
@@ -65,24 +71,61 @@ export function CreateBookingPage() {
         const selectedRoomsData = availableRooms.filter(r => selectedRoomIds.includes(r.roomId));
         const dailyRate = selectedRoomsData.reduce((acc, curr) => acc + curr.pricePerNight, 0);
 
+        let total = 0;
         if (bookingType === 'daily') {
-            return duration * dailyRate;
+            total = duration * dailyRate;
         } else {
-            // Assume hourly rate is 1/24 of daily rate for generic fallback
             const hourlyRate = Math.ceil(dailyRate / 24);
-            return duration * hourlyRate;
+            total = duration * hourlyRate;
+        }
+        return total;
+    };
+
+    const getDiscountAmount = (baseTotal: number) => {
+        if (!appliedVoucher) return 0;
+        if (appliedVoucher.discountType === 'Percentage') {
+            return (baseTotal * appliedVoucher.discountValue) / 100;
+        }
+        return appliedVoucher.discountValue;
+    };
+
+    const handleCheckVoucher = async () => {
+        if (!voucherCode.trim()) {
+            toast.error('Please enter a voucher code.');
+            return;
+        }
+
+        const baseTotal = calculatedTotal();
+        setIsCheckingVoucher(true);
+        try {
+            const voucher = await vouchersApi.validate(voucherCode.trim());
+
+            if (baseTotal < voucher.minBookingValue) {
+                toast.error(`The minimum booking value to use this voucher is $${voucher.minBookingValue}`);
+                setAppliedVoucher(null);
+                return;
+            }
+
+            setAppliedVoucher(voucher);
+            toast.success('Voucher applied successfully!');
+        } catch (error) {
+            const apiError = toApiError(error);
+            toast.error(apiError.message || 'Invalid or expired voucher code.');
+            setAppliedVoucher(null);
+        } finally {
+            setIsCheckingVoucher(false);
         }
     };
 
     const handleSearchRooms = async () => {
         const { start, end } = getCalculatedDates();
         if (!start || !end) {
-            toast.error('Please assign all date/time fields appropriately.');
+            toast.error('Please fill in all date and time fields.');
             return;
         }
 
         if (new Date(end) <= new Date(start)) {
-            toast.error('Check-out time must be after check-in time.');
+            toast.error('The check-out date must be after the check-in date.');
             return;
         }
 
@@ -93,7 +136,7 @@ export function CreateBookingPage() {
             setStep(2);
         } catch (error) {
             const apiError = toApiError(error);
-            toast.error(apiError.message || 'Failed to search rooms');
+            toast.error(apiError.message || 'Error occurred while searching for rooms.');
         } finally {
             setIsSearching(false);
         }
@@ -107,7 +150,7 @@ export function CreateBookingPage() {
 
     const handleCheckEmail = async () => {
         if (!checkEmail.trim()) {
-            toast.error('Vui lòng nhập email.');
+            toast.error('Enter an email to check.');
             return;
         }
         setIsCheckingEmail(true);
@@ -117,10 +160,10 @@ export function CreateBookingPage() {
             setGuestPhone(info.phone);
             setGuestEmail(info.email);
             setGuestVerified(true);
-            toast.success('Email is valid and guest information has been pre-filled.');
+            toast.success('Email is valid and guest information has been automatically filled.');
         } catch (error) {
             const apiError = toApiError(error);
-            toast.error(apiError.message || 'Email không tồn tại hoặc không khả dụng.');
+            toast.error(apiError.message || 'Email does not exist.');
             setGuestVerified(false);
         } finally {
             setIsCheckingEmail(false);
@@ -128,20 +171,23 @@ export function CreateBookingPage() {
     };
 
     const handleConfirmBooking = async () => {
-        if (guestVerified === false) {
+        if (!guestVerified) {
             if (guestType === 'existing') {
-                toast.error('Please verify the guest email before confirming.');
+                toast.error('Please check the guest email before confirming.');
                 return;
             }
-
             if (!guestName || !guestPhone) {
-                toast.error('Guest name and phone are required.');
+                toast.error('Guest name and phone number are required.');
                 return;
             }
         }
+
         setIsSubmitting(true);
         try {
             const { start, end } = getCalculatedDates();
+            const baseTotal = calculatedTotal();
+            const discount = getDiscountAmount(baseTotal);
+
             await receptionApi.createBooking({
                 IsExistingGuest: guestType === 'existing',
                 guestName,
@@ -150,13 +196,14 @@ export function CreateBookingPage() {
                 checkInDate: start,
                 checkOutDate: end,
                 roomIds: selectedRoomIds,
-                totalAmount: calculatedTotal()
+                totalAmount: baseTotal - discount,
+                voucherCode: appliedVoucher?.code
             });
-            toast.success('Booking created successfully!');
+            toast.success('Created booking successfully!');
             navigate('/admin/reception/bookings');
         } catch (error) {
             const apiError = toApiError(error);
-            toast.error(apiError.message || 'Failed to create booking');
+            toast.error(apiError.message || 'Error occurred while creating booking.');
         } finally {
             setIsSubmitting(false);
         }
@@ -181,7 +228,6 @@ export function CreateBookingPage() {
             <div className={`rounded-xl border border-slate-200 bg-white p-6 shadow-sm ${step === 1 ? 'max-w-[500px]' : ''}`}>
                 {step === 1 && (
                     <div className="space-y-6 max-w-md">
-                        {/* Booking Type Toggle */}
                         <div className="flex gap-2 p-1 bg-slate-100 rounded-lg">
                             <button
                                 onClick={() => setBookingType('daily')}
@@ -266,7 +312,7 @@ export function CreateBookingPage() {
                                 )
                             })}
                             {availableRooms.length === 0 && (
-                                <div className="col-span-full py-8 text-center text-slate-500">No rooms available for the selected time. Please go back and try differently.</div>
+                                <div className="col-span-full py-8 text-center text-slate-500">No rooms available for the selected time.</div>
                             )}
                         </div>
 
@@ -275,7 +321,7 @@ export function CreateBookingPage() {
                             <button
                                 onClick={() => {
                                     if (selectedRoomIds.length === 0) {
-                                        toast.error("Please select at least one room.");
+                                        toast.error("Vui lòng chọn ít nhất một phòng.");
                                         return;
                                     }
                                     setStep(3);
@@ -290,13 +336,15 @@ export function CreateBookingPage() {
 
                 {step === 3 && (() => {
                     const { start, end } = getCalculatedDates();
+                    const baseTotal = calculatedTotal();
+                    const discount = getDiscountAmount(baseTotal);
+
                     return (
                         <div className="grid gap-8 md:grid-cols-2">
                             {/* Guest Form */}
                             <div className="space-y-5">
                                 <h3 className="font-semibold text-slate-800">Guest Information</h3>
 
-                                {/* Guest type toggle */}
                                 <div className="flex gap-3">
                                     <button
                                         onClick={() => { setGuestType('walkin'); setGuestVerified(false); setGuestName(''); setGuestPhone(''); setGuestEmail(''); setCheckEmail(''); }}
@@ -320,7 +368,6 @@ export function CreateBookingPage() {
                                     </button>
                                 </div>
 
-                                {/* Email lookup for existing account */}
                                 {guestType === 'existing' && (
                                     <div className="space-y-2">
                                         <label className="text-sm font-medium text-slate-700">Account Email</label>
@@ -343,76 +390,128 @@ export function CreateBookingPage() {
                                         {guestVerified && (
                                             <p className="flex items-center gap-1 text-xs text-emerald-600 mt-1">
                                                 <CheckCircleIcon className="h-3.5 w-3.5" />
-                                                Account is valid — information has been pre-filled
+                                                Account is valid — information pre-filled
                                             </p>
                                         )}
                                     </div>
                                 )}
 
-                                {/* Guest info fields - always shown, auto-filled when existing */}
                                 <div className="space-y-2">
-                                    <label className={`text-sm font-medium text-slate-700`}>Full Name</label>
+                                    <label className="text-sm font-medium text-slate-700">Full Name</label>
                                     <Input
                                         placeholder="John Doe"
                                         value={guestName}
                                         onChange={e => setGuestName(e.target.value)}
                                         readOnly={guestType === 'existing'}
-                                        style={{ cursor: 'not-allowed' }}
+                                        className={guestType === 'existing' ? 'cursor-not-allowed bg-slate-950' : ''}
                                     />
                                 </div>
-                                <div className={`space-y-2`}>
-                                    <label className={`text-sm font-medium text-slate-700 `}>Phone Number</label>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-slate-700">Phone Number</label>
                                     <Input
-                                        placeholder="0901 234 567 (e.g. Vietnam format)"
+                                        placeholder="0901 234 567"
                                         value={guestPhone}
                                         onChange={e => setGuestPhone(e.target.value)}
                                         readOnly={guestType === 'existing'}
-                                        style={{ cursor: 'not-allowed' }}
+                                        className={guestType === 'existing' ? 'cursor-not-allowed bg-slate-950' : ''}
                                     />
                                 </div>
                                 <div className={`space-y-2 ${guestType === 'walkin' ? '' : 'hidden'}`}>
-                                    <label className={`text-sm font-medium text-slate-700`}>Email {guestType === 'walkin' ? '(Optional)' : ''}</label>
+                                    <label className="text-sm font-medium text-slate-700">Email (Optional)</label>
                                     <Input
                                         placeholder="email@example.com"
                                         type="email"
                                         value={guestEmail}
                                         onChange={e => setGuestEmail(e.target.value)}
-                                        readOnly={guestType === 'existing' && guestVerified}
                                     />
                                 </div>
                             </div>
 
-                            {/* Summary */}
-                            <div className="rounded-xl bg-slate-50 p-6 space-y-4 border border-slate-100">
-                                <h3 className="font-semibold text-slate-800">Booking Summary</h3>
-                                <div className="space-y-2 text-sm">
-                                    <div className="flex justify-between border-b border-slate-200 pb-2">
-                                        <span className="text-slate-500">Dates</span>
-                                        <span className="font-medium text-right">{start} <br /> to {end} <br /> <span className="text-cyan-700 font-bold">({calculateDuration()} {bookingType === 'daily' ? 'nights' : 'hours'})</span></span>
+                            {/* Summary & Voucher */}
+                            <div className="space-y-4">
+                                <div className="rounded-xl border border-dashed border-slate-300 p-4 bg-white">
+                                    <h4 className="text-sm font-semibold text-slate-800 mb-3 flex items-center gap-2">
+                                        <TicketIcon className="h-4 w-4 text-cyan-700" />
+                                        Apply Discount Code
+                                    </h4>
+                                    <div className="flex gap-2">
+                                        <Input
+                                            placeholder="GIFT2024"
+                                            value={voucherCode}
+                                            onChange={e => setVoucherCode(e.target.value.toUpperCase())}
+                                            disabled={!!appliedVoucher}
+                                            className="uppercase font-mono"
+                                        />
+                                        {appliedVoucher ? (
+                                            <button
+                                                onClick={() => { setAppliedVoucher(null); setVoucherCode(''); }}
+                                                className="p-2 text-slate-400 hover:text-red-600 transition"
+                                            >
+                                                <XMarkIcon className="h-5 w-5" />
+                                            </button>
+                                        ) : (
+                                            <button
+                                                onClick={handleCheckVoucher}
+                                                disabled={isCheckingVoucher}
+                                                className="shrink-0 rounded-lg bg-slate-800 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-900 disabled:opacity-50 transition"
+                                            >
+                                                {isCheckingVoucher ? 'Checking...' : 'Check'}
+                                            </button>
+                                        )}
                                     </div>
-                                    <div className="flex justify-between border-b border-slate-200 py-2">
-                                        <span className="text-slate-500">Rooms Selected</span>
-                                        <span className="font-medium">{selectedRoomIds.length} rooms</span>
-                                    </div>
-                                    <div className="flex justify-between pt-2 text-lg">
-                                        <span className="font-bold text-slate-800">Provisional Total</span>
-                                        <span className="font-bold text-cyan-700">${calculatedTotal().toLocaleString()}</span>
-                                    </div>
+                                    {appliedVoucher && (
+                                        <p className="mt-2 text-xs text-emerald-600 font-medium flex items-center gap-1">
+                                            <CheckCircleIcon className="h-3.5 w-3.5" />
+                                            Voucher applied: {appliedVoucher.discountType === 'Percentage' ? `${appliedVoucher.discountValue}%` : `$${appliedVoucher.discountValue}`} off
+                                        </p>
+                                    )}
                                 </div>
 
-                                <div className="mt-8 flex justify-between gap-3">
-                                    <button onClick={() => setStep(2)} className="rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-600 flex-1">Back</button>
-                                    <button
-                                        disabled={isSubmitting}
-                                        onClick={handleConfirmBooking}
-                                        className="inline-flex flex-1 justify-center items-center gap-2 rounded-lg bg-cyan-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 hover:bg-cyan-800"
-                                    >
-                                        {isSubmitting ? 'Confirming...' : 'Confirm Bookings'} <SparklesIcon className="h-4 w-4" />
-                                    </button>
+                                <div className="rounded-xl bg-slate-50 p-6 space-y-4 border border-slate-100">
+                                    <h3 className="font-semibold text-slate-800">Booking Summary</h3>
+                                    <div className="space-y-2 text-sm">
+                                        <div className="flex justify-between border-b border-slate-200 pb-2">
+                                            <span className="text-slate-500">Dates</span>
+                                            <span className="font-medium text-right">{start} <br /> to {end} <br /> <span className="text-cyan-700 font-bold">({calculateDuration()} {bookingType === 'daily' ? 'nights' : 'hours'})</span></span>
+                                        </div>
+                                        <div className="flex justify-between border-b border-slate-200 py-2">
+                                            <span className="text-slate-500">Rooms Selected</span>
+                                            <span className="font-medium">{selectedRoomIds.length} rooms</span>
+                                        </div>
+
+                                        {appliedVoucher && (
+                                            <>
+                                                <div className="flex justify-between border-b border-slate-200 py-2">
+                                                    <span className="text-slate-500">Base Total</span>
+                                                    <span className="font-medium">${baseTotal.toLocaleString()}</span>
+                                                </div>
+                                                <div className="flex justify-between border-b border-slate-200 py-2">
+                                                    <span className="text-slate-500">Discount ({voucherCode})</span>
+                                                    <span className="font-medium text-emerald-600">-${discount.toLocaleString()}</span>
+                                                </div>
+                                            </>
+                                        )}
+
+                                        <div className="flex justify-between pt-2 text-lg">
+                                            <span className="font-bold text-slate-800">Total Price</span>
+                                            <span className="font-bold text-cyan-700">${(baseTotal - discount).toLocaleString()}</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-8 flex justify-between gap-3">
+                                        <button onClick={() => setStep(2)} className="rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-600 flex-1">Back</button>
+                                        <button
+                                            disabled={isSubmitting}
+                                            onClick={handleConfirmBooking}
+                                            className="inline-flex flex-1 justify-center items-center gap-2 rounded-lg bg-cyan-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 hover:bg-cyan-800"
+                                        >
+                                            {isSubmitting ? 'Confirming...' : 'Confirm Bookings'} <SparklesIcon className="h-4 w-4" />
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    )
+                    );
                 })()}
             </div>
         </div>
