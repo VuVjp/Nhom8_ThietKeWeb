@@ -141,6 +141,7 @@ public class AppDbContext : DbContext
             e.Property(x => x.CheckInDate).HasColumnName("check_in_date");
             e.Property(x => x.CheckOutDate).HasColumnName("check_out_date");
             e.Property(x => x.PricePerNight).HasColumnName("price_per_night").HasColumnType("decimal(18,2)");
+            e.HasIndex(x => new { x.RoomId, x.CheckInDate, x.CheckOutDate });
         });
 
         modelBuilder.Entity<Booking>(e =>
