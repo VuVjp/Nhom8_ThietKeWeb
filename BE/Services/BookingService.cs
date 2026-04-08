@@ -28,7 +28,7 @@ public class BookingService : IBookingService
         ValidateDateRange(checkIn, checkOut);
 
         var bookedRoomIds = await _repository.GetBookedRoomIdsAsync(checkIn, checkOut, excludeBookingId);
-
+        
         var rooms = (await _repository.GetAllRoomsWithRoomTypeAsync())
             .Where(room => !bookedRoomIds.Contains(room.Id))
             .Where(room => room.RoomTypeId.HasValue && room.RoomType != null)
