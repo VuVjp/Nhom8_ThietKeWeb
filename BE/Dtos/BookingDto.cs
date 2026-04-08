@@ -10,7 +10,7 @@ public class RoomAvailabilityDto
 
 public class CreateBookingDto
 {
-    public string? VoucherCode { get; set; }
+    public string? VoucherId { get; set; }
     public bool IsExistingGuest { get; set; }
     public string GuestName { get; set; } = string.Empty;
     public string GuestPhone { get; set; } = string.Empty;

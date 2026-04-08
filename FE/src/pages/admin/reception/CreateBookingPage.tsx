@@ -197,7 +197,7 @@ export function CreateBookingPage() {
                 checkOutDate: end,
                 roomIds: selectedRoomIds,
                 totalAmount: baseTotal - discount,
-                voucherCode: appliedVoucher?.code
+                voucherId: appliedVoucher?.id + "",
             });
             toast.success('Created booking successfully!');
             navigate('/admin/reception/bookings');

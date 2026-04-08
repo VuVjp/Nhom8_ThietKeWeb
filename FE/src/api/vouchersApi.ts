@@ -40,8 +40,8 @@ export const vouchersApi = {
     await httpClient.delete(`vouchers/${id}`);
   },
 
-  async validate(code: string) {
-    const { data } = await httpClient.get<Voucher>(`vouchers/validate?code=${code}`);
+  async validate(code: string, bookingAmount?: number) {
+    const { data } = await httpClient.get<Voucher>(`vouchers/validate?code=${code}${bookingAmount !== undefined ? `&bookingAmount=${bookingAmount}` : ''}`);
     return data;
   }
 };

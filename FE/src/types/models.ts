@@ -71,6 +71,7 @@ export interface RoleItem {
 export type BookingStatus = 'Pending' | 'Confirmed' | 'CheckedIn' | 'CheckedOut' | 'Cancelled';
 
 export interface Booking {
+  voucherId?: string;
   id: number;
   IsExistingGuest: boolean;
   guestName: string;
