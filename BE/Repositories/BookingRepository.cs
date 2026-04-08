@@ -112,6 +112,16 @@ public class BookingRepository : IBookingRepository
             .ToListAsync();
     }
 
+    public async Task<List<int>> GetOverdueCheckInBookingIdsAsync(DateTime cutoffTime)
+    {
+        return await _context.Bookings
+            .AsNoTracking()
+            .Where(booking => booking.Status == "Pending" || booking.Status == "Confirmed")
+            .Where(booking => booking.BookingDetails.Any(detail => detail.CheckInDate <= cutoffTime))
+            .Select(booking => booking.Id)
+            .ToListAsync();
+    }
+
     public async Task SaveChangesAsync()
     {
         await _context.SaveChangesAsync();
