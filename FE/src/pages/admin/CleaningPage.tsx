@@ -495,7 +495,7 @@ export function CleaningPage() {
                     </div>
 
                     <div className="mt-4 grid items-start gap-3 md:grid-cols-[280px_minmax(0,1fr)]">
-                        <div className="space-y-2 max-h-[560px] overflow-y-auto pr-1">
+                        <div className="space-y-2 max-h-140 overflow-y-auto pr-1">
                             {inspectingRooms.map((room) => (
                                 <button
                                     type="button"
@@ -509,7 +509,7 @@ export function CleaningPage() {
                             {!isLoading && inspectingRooms.length === 0 ? <p className="text-xs text-slate-400">No rooms are currently inspecting.</p> : null}
                         </div>
 
-                        <div className="min-w-0 space-y-4 min-h-[420px]">
+                        <div className="min-w-0 space-y-4 min-h-105">
                             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                                 <h4 className="text-sm font-semibold text-slate-900">Selected Room</h4>
                                 <p className="mt-1 text-sm text-slate-600">Room: {selectedInspectingRoom?.roomNumber ?? '-'}</p>
@@ -556,7 +556,7 @@ export function CleaningPage() {
                             <div className="min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white p-4">
                                 <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                                     <h4 className="text-sm font-semibold text-slate-900">Pending Reports (RAM)</h4>
-                                    <span className="break-words text-xs text-slate-500">{pendingLossReports.length} pending, total penalty ${pendingPenaltyTotal}</span>
+                                    <span className="wrap-break-word text-xs text-slate-500">{pendingLossReports.length} pending, total penalty ${pendingPenaltyTotal}</span>
                                 </div>
                                 <div className="mb-3 flex flex-wrap items-center gap-2">
                                     <button
@@ -585,7 +585,7 @@ export function CleaningPage() {
                                                         <p className="font-medium">
                                                             {item.noIssue ? 'No loss/damage reported' : item.itemName}
                                                         </p>
-                                                        <p className="break-words text-xs">
+                                                        <p className="wrap-break-word text-xs">
                                                             Qty: {item.quantity} | Penalty: ${item.penaltyAmount}
                                                             {item.evidenceFile ? ` | Evidence: ${item.evidenceFile.name}` : ''}
                                                         </p>
@@ -639,7 +639,7 @@ export function CleaningPage() {
                     </div>
 
                     <div className="mt-4 grid items-start gap-3 md:grid-cols-[280px_minmax(0,1fr)]">
-                        <div className="space-y-2 max-h-[560px] overflow-y-auto pr-1">
+                        <div className="space-y-2 max-h-140 overflow-y-auto pr-1">
                             {cleaningRooms.map((room) => (
                                 <button
                                     type="button"

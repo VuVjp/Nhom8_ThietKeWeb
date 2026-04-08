@@ -2,7 +2,7 @@ import { createContext, useEffect, useMemo, useState, type PropsWithChildren } f
 import { authApi } from '../api/authApi';
 import { rolesApi } from '../api/rolesApi';
 import { getAccessToken } from '../api/httpClient';
-import { appPermissions, type AppPermission, type AppRole, type AppUser } from './auth.types';
+import { appPermissions, type AppPermission, type AppUser } from './auth.types';
 import { subscribeAuthRefresh } from '../api/httpClient';
 
 const PERMISSIONS_STORAGE_KEY = 'permissions';

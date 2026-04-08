@@ -225,7 +225,7 @@ export function CreateBookingPage() {
                 <span className={`font-semibold ${step >= 3 ? 'text-cyan-700' : 'text-slate-400'}`}>3. Confirmation</span>
             </div>
 
-            <div className={`rounded-xl border border-slate-200 bg-white p-6 shadow-sm ${step === 1 ? 'max-w-[500px]' : ''}`}>
+            <div className={`rounded-xl border border-slate-200 bg-white p-6 shadow-sm ${step === 1 ? 'max-w-125' : ''}`}>
                 {step === 1 && (
                     <div className="space-y-6 max-w-md">
                         <div className="flex gap-2 p-1 bg-slate-100 rounded-lg">
