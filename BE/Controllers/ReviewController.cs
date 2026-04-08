@@ -14,10 +14,8 @@ public class ReviewsController : ControllerBase
         => Ok(await _service.GetByRoomIdAsync(roomId));
 
     [HttpPost]
-    // [Authorize] // Mở ra nếu bạn đã có Auth
     public async Task<IActionResult> Create(CreateReviewDto dto)
     {
-        // Giả định lấy UserId từ Token
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         int userId = string.IsNullOrEmpty(userIdClaim) ? 1 : int.Parse(userIdClaim); 
 
