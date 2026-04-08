@@ -34,17 +34,6 @@ function parseJwtPayload(token: string): Record<string, unknown> | null {
     }
 }
 
-function normalizeRole(rawRole: unknown): AppRole {
-    const role = String(rawRole ?? '').toLowerCase();
-    if (role.includes('manager')) {
-        return 'Manager';
-    }
-    if (role.includes('staff')) {
-        return 'Staff';
-    }
-    return 'Admin';
-}
-
 function toKnownPermissions(items: string[] | null | undefined): AppPermission[] {
     if (!items?.length) {
         return [];
@@ -79,7 +68,7 @@ function getUserBaseFromToken(): Omit<AppUser, 'permissions'> | null {
     const roleClaim =
         payload?.role ??
         payload?.['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
-    const role = normalizeRole(roleClaim);
+    const role = roleClaim ?? 'Guest';
 
     const idClaim =
         payload?.nameid ??
@@ -188,17 +177,11 @@ export function AppAuthProvider({ children }: PropsWithChildren) {
                 if (!user) {
                     return false;
                 }
-                if (user.role === 'Admin') {
-                    return true;
-                }
                 return user.permissions.includes(permission.toUpperCase() as AppPermission);
             },
             hasAnyPermission: (permissions: AppPermission[]) => {
                 if (!user) {
                     return false;
-                }
-                if (user.role === 'Admin') {
-                    return true;
                 }
                 return permissions.some((permission) => user.permissions.includes(permission.toUpperCase() as AppPermission));
             },

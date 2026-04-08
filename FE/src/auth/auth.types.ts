@@ -48,12 +48,12 @@ export type LegacyAppPermission =
     | 'assign_role';
 
 export type AppPermission = (typeof appPermissions)[number] | LegacyAppPermission;
-export type AppRole = 'Admin' | 'Manager' | 'Staff';
+export type AppRole = 'Admin' | 'Manager' | 'Receptionist' | 'Accountant' | 'Housekeeping' | 'Guest' | 'Maintenance' | 'Security';
 
 export interface AppUser {
     id: number;
     name: string;
     email: string;
-    role: AppRole;
+    role: AppRole | string;
     permissions: AppPermission[];
 }

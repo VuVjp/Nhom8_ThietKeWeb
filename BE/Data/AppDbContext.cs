@@ -153,6 +153,9 @@ public class AppDbContext : DbContext
             e.Property(x => x.BookingCode).HasColumnName("booking_code");
             e.Property(x => x.VoucherId).HasColumnName("voucher_id");
             e.Property(x => x.Status).HasColumnName("status");
+            e.Property(x => x.TotalPrice).HasColumnName("total_price").HasColumnType("decimal(18,2)");
+            e.Property(x => x.Discount).HasColumnName("discount").HasColumnType("decimal(18,2)");
+            e.Property(x => x.FinalPrice).HasColumnName("final_price").HasColumnType("decimal(18,2)");
             e.HasIndex(x => x.BookingCode).IsUnique();
         });
 
