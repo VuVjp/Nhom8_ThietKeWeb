@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { HomeIcon, BuildingOffice2Icon, ArchiveBoxIcon, ExclamationTriangleIcon, SparklesIcon, UsersIcon, ShieldCheckIcon, WrenchScrewdriverIcon, Squares2X2Icon, RectangleStackIcon, ChevronDownIcon, CalendarDaysIcon, TicketIcon } from '@heroicons/react/24/outline';
+import { useState, useEffect } from 'react';
+import { HomeIcon, BuildingOffice2Icon, ArchiveBoxIcon, ExclamationTriangleIcon, SparklesIcon, UsersIcon, ShieldCheckIcon, WrenchScrewdriverIcon, Squares2X2Icon, RectangleStackIcon, ChevronDownIcon, CalendarDaysIcon, TicketIcon, NewspaperIcon } from '@heroicons/react/24/outline';
 import { NavLink, useLocation } from 'react-router-dom';
 import type { AppPermission } from '../auth/auth.types';
 import { useAppAuth } from '../auth/useAppAuth';
@@ -43,6 +43,15 @@ const navItems: SidebarNavItem[] = [
   { to: '/admin/loss', label: 'Loss & Compensation', icon: ExclamationTriangleIcon, permissions: ['APPROVE_LOSS'] as AppPermission[] },
   { to: '/admin/cleaning', label: 'Inspecting & Cleaning', icon: SparklesIcon, permissions: ['UPDATE_CLEANING'] as AppPermission[] },
   { to: '/admin/vouchers', label: 'Vouchers', icon: TicketIcon, permissions: ['MANAGE_VOUCHERS'] as AppPermission[] },
+  {
+    label: 'Articles',
+    icon: NewspaperIcon,
+    permissions: ['MANAGE_ARTICLES', 'MANAGE_ARTICLE_CATEGORY'] as AppPermission[],
+    children: [
+      { to: '/admin/articles', label: 'Article Management', permissions: ['MANAGE_ARTICLES'] as AppPermission[] },
+      { to: '/admin/article-categories', label: 'Article Categories', permissions: ['MANAGE_ARTICLE_CATEGORY'] as AppPermission[] },
+    ],
+  },
   { to: '/admin/users', label: 'Users', icon: UsersIcon, permissions: ['MANAGE_USERS'] as AppPermission[] },
   { to: '/admin/roles', label: 'Roles', icon: ShieldCheckIcon, permissions: ['MANAGE_ROLES'] as AppPermission[] },
 ];
@@ -51,6 +60,25 @@ export function Sidebar({ collapsed, mobileOpen, onCloseMobile }: SidebarProps) 
   const { hasPermission } = useAppAuth();
   const location = useLocation();
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({ 'Reception': true });
+
+  useEffect(() => {
+    let changed = false;
+    const nextOpen = { ...openGroups };
+    
+    navItems.forEach((item) => {
+      if (item.children && !nextOpen[item.label]) {
+        const hasActiveChild = item.children.some((child) => location.pathname.startsWith(child.to));
+        if (hasActiveChild) {
+          nextOpen[item.label] = true;
+          changed = true;
+        }
+      }
+    });
+
+    if (changed) {
+      setOpenGroups(nextOpen);
+    }
+  }, [location.pathname]); // omit openGroups to avoid forcing it open if user closes it manually while staying on the page
 
   const toggleGroup = (label: string) => {
     if (collapsed) return;
