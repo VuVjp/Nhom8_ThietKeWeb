@@ -130,6 +130,10 @@ public class AppDbContext : DbContext
             e.Property(x => x.OldValue).HasColumnName("old_value");
             e.Property(x => x.NewValue).HasColumnName("new_value");
             e.Property(x => x.CreatedAt).HasColumnName("created_at");
+
+            e.HasIndex(x => x.CreatedAt);
+            e.HasIndex(x => x.UserId);
+            e.HasIndex(x => new { x.TableName, x.RecordId });
         });
 
         modelBuilder.Entity<BookingDetail>(e =>
