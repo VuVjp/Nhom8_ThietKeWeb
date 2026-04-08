@@ -1,54 +1,27 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
-[Route("api/[controller]")]
 [ApiController]
-public class ReviewController : ControllerBase
+[Route("api/[controller]")]
+public class ReviewsController : ControllerBase
 {
-    private readonly MyDbContext _context;
+    private readonly IReviewService _service;
 
-    public ReviewController(MyDbContext context)
-    {
-        _context = context;
-    }
+    public ReviewsController(IReviewService service) => _service = service;
 
-    // 1. Gửi đánh giá mới
-    [HttpPost("submit")]
-    public async Task<IActionResult> SubmitReview([FromBody] ReviewRequest req)
-    {
-        try 
-        {
-            // Khi thực hiện INSERT, Trigger trg_validate_review trong SQL sẽ tự chạy
-            var sql = @"INSERT INTO reviews (booking_id, user_id, room_id, rating_overall, comment, status) 
-                        VALUES ({0}, {1}, {2}, {3}, {4}, 'approved')";
-            
-            await _context.Database.ExecuteSqlRawAsync(sql, req.BookingId, req.UserId, req.RoomId, req.Rating, req.Comment);
-            return Ok(new { Message = "Cảm ơn bạn đã đánh giá!" });
-        }
-        catch (Exception ex)
-        {
-            // Nếu Trigger SIGNAL SQLSTATE '45000' thì lỗi sẽ được bắt ở đây
-            return BadRequest(new { Message = "Không thể đánh giá: " + ex.Message });
-        }
-    }
+    [HttpGet("room/{roomId}")]
+    public async Task<IActionResult> GetByRoom(int roomId) 
+        => Ok(await _service.GetByRoomIdAsync(roomId));
 
-    // 2. Lấy điểm sao trung bình của phòng (Lấy từ View view_room_ratings)
-    [HttpGet("room-ratings")]
-    public async Task<IActionResult> GetRoomRatings()
+    [HttpPost]
+    // [Authorize] // Mở ra nếu bạn đã có Auth
+    public async Task<IActionResult> Create(CreateReviewDto dto)
     {
-        // view_room_ratings là View bạn đã tạo trong SQL
-        var ratings = await _context.Database.SqlQueryRaw<RoomRatingDTO>(
-            "SELECT * FROM view_room_ratings").ToListAsync();
-            
-        return Ok(ratings);
-    }
+        // Giả định lấy UserId từ Token
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        int userId = string.IsNullOrEmpty(userIdClaim) ? 1 : int.Parse(userIdClaim); 
 
-    // 3. Admin ẩn/hiện đánh giá
-    [HttpPut("{id}/status")]
-    public async Task<IActionResult> UpdateStatus(int id, [FromBody] string status)
-    {
-        await _context.Database.ExecuteSqlRawAsync(
-            "UPDATE reviews SET status = {0} WHERE id = {1}", status, id);
-        return Ok(new { Message = "Đã cập nhật trạng thái đánh giá" });
+        var result = await _service.CreateAsync(userId, dto);
+        return Ok(result);
     }
 }
