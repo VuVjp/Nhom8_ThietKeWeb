@@ -104,3 +104,50 @@ export interface Voucher {
   isActive: boolean;
 }
 
+export interface ServiceCategory {
+  id: number;
+  name: string;
+  isActive: boolean;
+}
+
+export interface Service {
+  id: number;
+  categoryId?: number;
+  categoryName?: string;
+  name: string;
+  price: number;
+  unit: string;
+  isActive: boolean;
+}
+
+export type OrderServiceStatus = 'Pending' | 'Completed' | 'Cancelled';
+
+export interface OrderServiceDetail {
+  id: number;
+  serviceId: number;
+  serviceName: string;
+  quantity: number;
+  unitPrice: number;
+  unit: string;
+  subTotal: number;
+}
+
+export interface OrderService {
+  id: number;
+  bookingDetailId?: number;
+  roomNumber?: string;
+  guestName?: string;
+  bookingStatus?: BookingStatus;
+  orderDate: string;
+  totalAmount: number;
+  status: OrderServiceStatus;
+  details?: OrderServiceDetail[];
+}
+
+export interface PaginatedResult<T> {
+  items: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+

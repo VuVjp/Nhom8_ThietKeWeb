@@ -353,6 +353,33 @@ public class BookingService : IBookingService
         return true;
     }
 
+    public async Task<IEnumerable<ActiveRoomDto>> GetActiveRoomsAsync()
+    {
+        var bookings = (await _repository.GetAllWithDetailsAsync(includeRoom: true))
+            .Where(b => b.Status == "CheckedIn")
+            .ToList();
+
+        var result = new List<ActiveRoomDto>();
+        foreach (var b in bookings)
+        {
+            foreach (var detail in b.BookingDetails)
+            {
+                if (detail.Room != null)
+                {
+                    result.Add(new ActiveRoomDto
+                    {
+                        BookingDetailId = detail.Id,
+                        RoomNumber = detail.Room.RoomNumber,
+                        GuestName = b.GuestName ?? "Unknown",
+                        BookingId = b.Id
+                    });
+                }
+            }
+        }
+
+        return result;
+    }
+
     private static BookingSummaryDto MapToSummaryDto(Booking booking)
     {
         var orderedDetails = booking.BookingDetails

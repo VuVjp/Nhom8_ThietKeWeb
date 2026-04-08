@@ -103,10 +103,20 @@ public class BookingRepository : IBookingRepository
             .ToListAsync();
     }
 
-    public async Task<List<Booking>> GetAllWithDetailsAsync()
+    public async Task<List<Booking>> GetAllWithDetailsAsync(bool includeRoom = false)
     {
-        return await _context.Bookings
-            .AsNoTracking()
+        var query = _context.Bookings.AsNoTracking();
+
+        if (includeRoom)
+        {
+            return await query
+                .Include(booking => booking.BookingDetails)
+                .ThenInclude(detail => detail.Room)
+                .OrderByDescending(booking => booking.Id)
+                .ToListAsync();
+        }
+
+        return await query
             .Include(booking => booking.BookingDetails)
             .OrderByDescending(booking => booking.Id)
             .ToListAsync();

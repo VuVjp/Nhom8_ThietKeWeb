@@ -31,6 +31,14 @@ public class UpdateBookingDto
     public List<int> RoomIds { get; set; } = new();
 }
 
+public class ActiveRoomDto
+{
+    public int BookingDetailId { get; set; }
+    public string RoomNumber { get; set; } = string.Empty;
+    public string GuestName { get; set; } = string.Empty;
+    public int BookingId { get; set; }
+}
+
 public class BookingSummaryDto
 {
     public int Id { get; set; }
