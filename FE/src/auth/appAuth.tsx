@@ -98,6 +98,18 @@ async function resolveCurrentUser(emailOverride?: string): Promise<AppUser | nul
     }
 
     try {
+        // This is a fallback in case the permissions are not in localStorage for some reason (e.g. cleared, or user logged in from another tab)
+
+        // const permissions = localStorage.getItem(PERMISSIONS_STORAGE_KEY);
+        // if (permissions) {
+        //     const parsed = JSON.parse(permissions) as string[];
+        //     const normalized = toKnownPermissions(parsed);
+        //     return {
+        //         ...baseUser,
+        //         email: emailOverride?.trim().toLowerCase() || baseUser.email,
+        //         permissions: normalized,
+        //     };
+        // }
         const apiPermissions = await rolesApi.getMyPermissions();
         const normalizedPermissions = toKnownPermissions(apiPermissions);
         localStorage.setItem(PERMISSIONS_STORAGE_KEY, JSON.stringify(normalizedPermissions));

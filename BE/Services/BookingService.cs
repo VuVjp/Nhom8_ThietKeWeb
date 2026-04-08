@@ -119,6 +119,8 @@ public class BookingService : IBookingService
             }).ToList(),
         };
 
+        booking.TotalPrice = CalculateTotalAmount(booking.BookingDetails);
+
         await _repository.AddBookingAsync(booking);
         await _repository.SaveChangesAsync();
 
@@ -251,7 +253,7 @@ public class BookingService : IBookingService
         if (string.Equals(status, "CheckedOut", StringComparison.OrdinalIgnoreCase))
         {
             var now = DateTime.Now;
-            var hasFutureStay = booking.BookingDetails.Any(detail => detail.CheckOutDate > now);
+            var hasFutureStay = booking.BookingDetails.Any(detail => detail.CheckInDate > now);
             if (hasFutureStay)
             {
                 throw new InvalidOperationException("Cannot change status of a checked-out booking with future stay.");
@@ -285,8 +287,25 @@ public class BookingService : IBookingService
                     continue;
                 }
 
-                detail.Room.Status = "Cleaning";
+                detail.Room.Status = "Inspecting";
                 detail.Room.CleaningStatus = "Dirty";
+            }
+        }
+        else if (status.Equals("Cancelled", StringComparison.OrdinalIgnoreCase))
+        {
+            if (booking.Status != "Confirmed" && booking.Status != "Pending")
+            {
+                throw new InvalidOperationException("Only pending or confirmed bookings can be cancelled.");
+            }
+            foreach (var detail in booking.BookingDetails)
+            {
+                if (detail.Room == null)
+                {
+                    continue;
+                }
+
+                detail.Room.Status = "Available";
+                detail.Room.CleaningStatus = "Clean";
             }
         }
 
@@ -312,7 +331,7 @@ public class BookingService : IBookingService
             CheckInDate = firstCheckIn,
             CheckOutDate = lastCheckOut,
             Status = string.IsNullOrWhiteSpace(booking.Status) ? "Pending" : booking.Status,
-            TotalAmount = CalculateTotalAmount(orderedDetails),
+            TotalAmount = booking.TotalPrice,
             RoomIds = orderedDetails.Where(item => item.RoomId.HasValue).Select(item => item.RoomId!.Value).Distinct().ToList(),
         };
     }
