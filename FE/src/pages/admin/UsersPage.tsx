@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
-import { KeyIcon, PencilSquareIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { KeyIcon, PencilSquareIcon, PlusIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import type { UserItem } from '../../types/models';
 import { toApiError } from '../../api/httpClient';
 import { toRoleId, usersApi } from '../../api/usersApi';
@@ -171,18 +171,27 @@ export function UsersPage() {
           <h2 className="text-2xl font-bold text-slate-900">Users</h2>
           <p className="text-sm text-slate-500">Manage identity, roles and account status.</p>
         </div>
-        <button
-          type="button"
-          className="inline-flex items-center gap-2 rounded-xl bg-cyan-700 px-4 py-2 text-sm font-semibold text-white"
-          onClick={() => {
-            if (!ensure('MANAGE_USERS', 'open create user form')) {
-              return;
-            }
-            setOpenAdd(true);
-          }}
-        >
-          <PlusIcon className="h-4 w-4" /> Add User
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => void loadUsers()}
+            className="p-2 text-slate-500 hover:text-cyan-600 transition bg-white border border-slate-200 rounded-xl"
+            title="Refresh"
+          >
+            <ArrowPathIcon className={`h-5 w-5 ${isLoading ? 'animate-spin' : ''}`} />
+          </button>
+          <button
+            type="button"
+            className="inline-flex items-center gap-2 rounded-xl bg-cyan-700 px-4 py-2 text-sm font-semibold text-white"
+            onClick={() => {
+              if (!ensure('MANAGE_USERS', 'open create user form')) {
+                return;
+              }
+              setOpenAdd(true);
+            }}
+          >
+            <PlusIcon className="h-4 w-4" /> Add User
+          </button>
+        </div>
       </div>
 
       <div className="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-3">

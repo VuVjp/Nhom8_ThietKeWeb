@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
-import { PencilSquareIcon, CheckCircleIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import { PencilSquareIcon, CheckCircleIcon, ExclamationTriangleIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import type { InventoryItem, LossRecord, Room } from '../../types/models';
 import { Select } from '../../components/Select';
 import { Modal } from '../../components/Modal';
@@ -445,9 +445,19 @@ export function CleaningPage() {
 
     return (
         <div className="space-y-6">
-            <div>
-                <h2 className="text-2xl font-bold text-slate-900">Cleaning Workflow</h2>
-                <p className="text-sm text-slate-500">Only supports Inspecting to Cleaning and Cleaning to Available.</p>
+            <div className="flex items-center justify-between">
+                <div>
+                    <h2 className="text-2xl font-bold text-slate-900">Cleaning Workflow</h2>
+                    <p className="text-sm text-slate-500">Only supports Inspecting to Cleaning and Cleaning to Available.</p>
+                </div>
+                <button
+                    type="button"
+                    onClick={() => void loadBoards()}
+                    className="p-2 text-slate-500 hover:text-cyan-600 transition bg-white border border-slate-200 rounded-xl"
+                    title="Refresh"
+                >
+                    <ArrowPathIcon className={`h-5 w-5 ${isLoading ? 'animate-spin' : ''}`} />
+                </button>
             </div>
 
             <div className="rounded-xl border border-slate-200 bg-white p-2 shadow-sm">

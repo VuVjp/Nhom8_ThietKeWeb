@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { PencilIcon, PlusIcon, DocumentDuplicateIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
+import { PencilIcon, PlusIcon, DocumentDuplicateIcon, ArrowLeftIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+import { Badge } from '../../components/Badge';
 import { Table } from '../../components/Table';
 import { Modal } from '../../components/Modal';
 import { Input } from '../../components/Input';
@@ -43,6 +44,7 @@ export function RoomDetailPage() {
   const [selectedEditEquipmentId, setSelectedEditEquipmentId] = useState<number | ''>('');
   const [selectedEditAmenityId, setSelectedEditAmenityId] = useState<number | ''>('');
   const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const roomIdNumber = Number(roomId ?? 0);
 
@@ -81,6 +83,15 @@ export function RoomDetailPage() {
   useEffect(() => {
     void loadInventory();
   }, [loadInventory]);
+
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      await Promise.all([loadRoom(), loadInventory()]);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [loadRoom, loadInventory]);
 
   useEffect(() => {
     void (async () => {
@@ -308,7 +319,7 @@ export function RoomDetailPage() {
                 })();
               }}
             >
-              {row.isActive ? 'OFF' : 'ON'}
+              <Badge value={row.isActive ? 'Active' : 'Inactive'} />
             </button>
           </div>
         ),
@@ -590,13 +601,22 @@ export function RoomDetailPage() {
           <h2 className="text-2xl font-bold text-slate-900">Room {room?.roomNumber ?? roomId} Details</h2>
           <p className="text-sm text-slate-500">Detailed room profile with equipment and amenity controls in one place.</p>
         </div>
-        <button
-          type="button"
-          onClick={() => navigate('/admin/rooms')}
-          className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-        >
-          <ArrowLeftIcon className="h-4 w-4" /> Back to Rooms
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleRefresh}
+            className="p-2 text-slate-500 hover:text-cyan-600 transition bg-white border border-slate-200 rounded-xl"
+            title="Refresh"
+          >
+            <ArrowPathIcon className={`h-5 w-5 ${isRefreshing ? 'animate-spin' : ''}`} />
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate('/admin/rooms')}
+            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
+            <ArrowLeftIcon className="h-4 w-4" /> Back to Rooms
+          </button>
+        </div>
       </div>
 
       <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">

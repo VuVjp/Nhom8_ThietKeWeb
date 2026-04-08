@@ -1,12 +1,29 @@
-import { ChartBarIcon, HomeModernIcon, BanknotesIcon } from '@heroicons/react/24/outline';
+import { ChartBarIcon, HomeModernIcon, BanknotesIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import { StatCard } from '../../components/StatCard';
+import { useState } from 'react';
 
 export function DashboardPage() {
+    const [isReloading, setIsReloading] = useState(false);
+
+    const handleReload = () => {
+        setIsReloading(true);
+        setTimeout(() => setIsReloading(false), 500);
+    };
+
     return (
         <div className="space-y-5">
-            <div>
-                <h2 className="text-2xl font-bold text-slate-900">Dashboard</h2>
-                <p className="text-sm text-slate-500">Luxury operations overview with live-ready widgets.</p>
+            <div className="flex items-center justify-between">
+                <div>
+                    <h2 className="text-2xl font-bold text-slate-900">Dashboard</h2>
+                    <p className="text-sm text-slate-500">Luxury operations overview with live-ready widgets.</p>
+                </div>
+                <button
+                    onClick={handleReload}
+                    className="p-2 text-slate-500 hover:text-cyan-600 transition bg-white border border-slate-200 rounded-xl"
+                    title="Refresh"
+                >
+                    <ArrowPathIcon className={`h-5 w-5 ${isReloading ? 'animate-spin' : ''}`} />
+                </button>
             </div>
 
             <div className="grid gap-4 md:grid-cols-3">

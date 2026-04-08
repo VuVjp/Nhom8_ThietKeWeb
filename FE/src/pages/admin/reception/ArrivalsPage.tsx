@@ -5,7 +5,7 @@ import { Pagination } from '../../../components/Pagination';
 import { toApiError } from '../../../api/httpClient';
 import { receptionApi } from '../../../api/receptionApi';
 import type { Booking } from '../../../types/models';
-import { CheckCircleIcon } from '@heroicons/react/24/outline';
+import { CheckCircleIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import { formatDate } from '../../../utils/format';
 
 export function ArrivalsPage() {
@@ -71,9 +71,18 @@ export function ArrivalsPage() {
 
     return (
         <div className="space-y-4">
-            <div>
-                <h2 className="text-2xl font-bold text-slate-900">Arrivals Today</h2>
-                <p className="text-sm text-slate-500">Guests expected to check-in today.</p>
+            <div className="flex items-center justify-between">
+                <div>
+                    <h2 className="text-2xl font-bold text-slate-900">Arrivals Today</h2>
+                    <p className="text-sm text-slate-500">Guests expected to check-in today.</p>
+                </div>
+                <button
+                    onClick={() => void loadArrivals()}
+                    className="p-2 text-slate-500 hover:text-cyan-600 transition bg-white border border-slate-200 rounded-xl"
+                    title="Refresh"
+                >
+                    <ArrowPathIcon className={`h-5 w-5 ${isLoading ? 'animate-spin' : ''}`} />
+                </button>
             </div>
 
             {isLoading ? (

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
-import { PlusIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, PencilSquareIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import type { RoleItem } from '../../types/models';
 import { toApiError } from '../../api/httpClient';
 import { rolesApi } from '../../api/rolesApi';
@@ -87,18 +87,27 @@ export function RolesPage() {
           <h2 className="text-2xl font-bold text-slate-900">Roles</h2>
           <p className="text-sm text-slate-500">Permission matrix for each role profile.</p>
         </div>
-        <button
-          type="button"
-          className="inline-flex items-center gap-2 rounded-xl bg-cyan-700 px-4 py-2 text-sm font-semibold text-white"
-          onClick={() => {
-            if (!ensure('MANAGE_ROLES', 'open create role form')) {
-              return;
-            }
-            setOpenAdd(true);
-          }}
-        >
-          <PlusIcon className="h-4 w-4" /> Add Role
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => void loadRoles()}
+            className="p-2 text-slate-500 hover:text-cyan-600 transition bg-white border border-slate-200 rounded-xl"
+            title="Refresh"
+          >
+            <ArrowPathIcon className={`h-5 w-5 ${isLoading ? 'animate-spin' : ''}`} />
+          </button>
+          <button
+            type="button"
+            className="inline-flex items-center gap-2 rounded-xl bg-cyan-700 px-4 py-2 text-sm font-semibold text-white"
+            onClick={() => {
+              if (!ensure('MANAGE_ROLES', 'open create role form')) {
+                return;
+              }
+              setOpenAdd(true);
+            }}
+          >
+            <PlusIcon className="h-4 w-4" /> Add Role
+          </button>
+        </div>
       </div>
 
       <Table columns={columns} rows={isLoading ? [] : roles} />

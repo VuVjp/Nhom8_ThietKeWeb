@@ -219,7 +219,7 @@ export function InventoryPage() {
                         void toggleInventoryActive(row);
                     }}
                 >
-                    <Badge value={row.isActive ? 'Active' : 'Inactive'} color={row.isActive ? 'green' : 'red'} />
+                    <Badge value={row.isActive ? 'Active' : 'Inactive'} />
                 </button>
 
             ),

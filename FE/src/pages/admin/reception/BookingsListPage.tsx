@@ -8,7 +8,7 @@ import { Pagination } from '../../../components/Pagination';
 import { toApiError } from '../../../api/httpClient';
 import { receptionApi } from '../../../api/receptionApi';
 import type { Booking, BookingStatus, RoomAvailability } from '../../../types/models';
-import { PencilSquareIcon } from '@heroicons/react/24/outline';
+import { PencilSquareIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import { formatDate } from '../../../utils/format';
 
 export function BookingsListPage() {
@@ -226,18 +226,6 @@ export function BookingsListPage() {
         return filteredBookings.slice(start, start + pageSize);
     }, [filteredBookings, currentPage, pageSize]);
 
-    const getRoomByFloor = (booking: Booking) => {
-        const floorMap: Record<number, number[]> = {};
-        booking.roomIds?.forEach((roomId) => {
-            const floor = Math.floor(roomId / 100);
-            if (!floorMap[floor]) {
-                floorMap[floor] = [];
-            }
-            floorMap[floor].push(roomId);
-        });
-        return floorMap;
-    };
-
     const columns = [
         { key: 'id', label: 'Booking ID', render: (row: Booking) => `#${row.id}` },
         { key: 'guestName', label: 'Guest Name', render: (row: Booking) => row.guestName },
@@ -299,9 +287,18 @@ export function BookingsListPage() {
 
     return (
         <div className="space-y-4">
-            <div>
-                <h2 className="text-2xl font-bold text-slate-900">All Bookings</h2>
-                <p className="text-sm text-slate-500">History and active reservations.</p>
+            <div className="flex items-center justify-between">
+                <div>
+                    <h2 className="text-2xl font-bold text-slate-900">All Bookings</h2>
+                    <p className="text-sm text-slate-500">History and active reservations.</p>
+                </div>
+                <button
+                    onClick={() => void loadBookings()}
+                    className="p-2 text-slate-500 hover:text-cyan-600 transition bg-white border border-slate-200 rounded-xl"
+                    title="Refresh"
+                >
+                    <ArrowPathIcon className={`h-5 w-5 ${isLoading ? 'animate-spin' : ''}`} />
+                </button>
             </div>
 
             <div className="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-2 xl:grid-cols-3">

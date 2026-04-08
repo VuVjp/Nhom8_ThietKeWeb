@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { PencilSquareIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { PencilSquareIcon, PlusIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import { roomTypesApi, type RoomTypeItem, type RoomTypePayload } from '../../api/roomTypesApi';
 import { amenitiesApi, type AmenityItem } from '../../api/amenitiesApi';
 import { toApiError } from '../../api/httpClient';
@@ -166,9 +166,8 @@ export function RoomTypesPage() {
                         void toggleRoomTypeActive(row);
                     }}
                 >
-                    <Badge value={row.isActive ? 'Active' : 'Inactive'} color={row.isActive ? 'green' : 'red'} />
+                    <Badge value={row.isActive ? 'Active' : 'Inactive'} />
                 </button>
-
             ),
         },
         {
@@ -220,13 +219,22 @@ export function RoomTypesPage() {
                     <h2 className="text-2xl font-bold text-slate-900">Room Types</h2>
                     <p className="text-sm text-slate-500">Add and manage room type definitions for room creation.</p>
                 </div>
-                <button
-                    type="button"
-                    className="inline-flex items-center gap-2 rounded-lg bg-cyan-700 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-800 disabled:opacity-60"
-                    onClick={() => setOpenCreate(true)}
-                >
-                    <PlusIcon className="h-4 w-4" /> Add Room Type
-                </button>
+                <div className="flex gap-2">
+                    <button
+                        onClick={() => void loadRoomTypes()}
+                        className="p-2 text-slate-500 hover:text-cyan-600 transition bg-white border border-slate-200 rounded-xl"
+                        title="Refresh"
+                    >
+                        <ArrowPathIcon className={`h-5 w-5 ${isLoading ? 'animate-spin' : ''}`} />
+                    </button>
+                    <button
+                        type="button"
+                        className="inline-flex items-center gap-2 rounded-lg bg-cyan-700 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-800 disabled:opacity-60"
+                        onClick={() => setOpenCreate(true)}
+                    >
+                        <PlusIcon className="h-4 w-4" /> Add Room Type
+                    </button>
+                </div>
             </div>
 
             <Table columns={columns} rows={isLoading ? [] : rows} />
