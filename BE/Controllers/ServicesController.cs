@@ -78,4 +78,13 @@ public class ServicesController : ControllerBase
         if (!ok) return NotFound();
         return Ok(new { message = "Service active status toggled successfully." });
     }
+
+    [Permission(PermissionNames.ManageServices)]
+    [HttpPatch("{id}/restore")]
+    public async Task<IActionResult> Restore(int id)
+    {
+        var ok = await _service.RestoreAsync(id);
+        if (!ok) return NotFound();
+        return Ok(new { message = "Service restored successfully." });
+    }
 }

@@ -114,4 +114,15 @@ public class ServiceService : IServiceService
         await _repository.SaveChangesAsync();
         return true;
     }
+
+    public async Task<bool> RestoreAsync(int id)
+    {
+        var service = await _repository.GetByIdAsync(id);
+        if (service == null) return false;
+
+        service.IsActive = true;
+        _repository.Update(service);
+        await _repository.SaveChangesAsync();
+        return true;
+    }
 }

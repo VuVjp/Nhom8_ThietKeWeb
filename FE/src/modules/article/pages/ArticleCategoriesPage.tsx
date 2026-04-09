@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { PencilSquareIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { PencilSquareIcon, PlusIcon, TrashIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import { Table } from '../../../components/Table';
 import { Modal } from '../../../components/Modal';
 import { Input } from '../../../components/Input';
@@ -179,27 +179,34 @@ export function ArticleCategoriesPage() {
                         <>
                             <button
                                 type="button"
+                                title="Edit Category"
                                 onClick={() => {
                                     setEditing(row);
                                     setEditName(row.name);
                                 }}
-                                className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-xs hover:bg-slate-50"
+                                className="p-1 hover:text-cyan-600 transition"
                             >
-                                <PencilSquareIcon className="h-4 w-4" />
-                                Edit
+                                <PencilSquareIcon className="h-5 w-5" />
                             </button>
-                            <button
-                                type="button"
-                                onClick={() => setStatusTarget(row)}
-                                className={`inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-xs ${
-                                    row.isActive 
-                                    ? 'border-rose-200 text-rose-600 hover:bg-rose-50' 
-                                    : 'border-emerald-200 text-emerald-600 hover:bg-emerald-50'
-                                }`}
-                            >
-                                <TrashIcon className="h-4 w-4" />
-                                {row.isActive ? 'Deactivate' : 'Activate'}
-                            </button>
+                            {row.isActive ? (
+                                <button
+                                    type="button"
+                                    title="Deactivate Category"
+                                    onClick={() => setStatusTarget(row)}
+                                    className="p-1 hover:text-red-600 transition"
+                                >
+                                    <TrashIcon className="h-5 w-5" />
+                                </button>
+                            ) : (
+                                <button
+                                    type="button"
+                                    title="Activate Category"
+                                    onClick={() => setStatusTarget(row)}
+                                    className="p-1 hover:text-emerald-600 transition"
+                                >
+                                    <ArrowPathIcon className="h-5 w-5" />
+                                </button>
+                            )}
                         </>
                     )}
                 </div>
@@ -257,14 +264,15 @@ export function ArticleCategoriesPage() {
 
                 <button
                     type="button"
+                    title="Reset Filters"
                     onClick={() => {
                         setSearch('');
                         setSortBy('id');
                         setSortDir('desc');
                     }}
-                    className="h-9 rounded-lg border border-slate-200 px-3 text-sm text-slate-600 transition hover:bg-slate-50"
+                    className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:bg-slate-50"
                 >
-                    Reset
+                    <ArrowPathIcon className="h-4 w-4" />
                 </button>
             </div>
 

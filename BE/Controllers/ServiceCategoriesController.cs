@@ -21,6 +21,12 @@ public class ServiceCategoriesController : ControllerBase
         return Ok(await _service.GetAllAsync());
     }
 
+    [HttpGet("paged")]
+    public async Task<IActionResult> GetPaged([FromQuery] ServiceCategoryQueryDto query)
+    {
+        return Ok(await _service.GetPagedAsync(query));
+    }
+
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(int id)
     {
@@ -70,5 +76,14 @@ public class ServiceCategoriesController : ControllerBase
         var ok = await _service.ToggleActiveAsync(id);
         if (!ok) return NotFound();
         return Ok(new { message = "Category active status toggled successfully." });
+    }
+
+    [Permission(PermissionNames.ManageServices)]
+    [HttpPatch("{id}/restore")]
+    public async Task<IActionResult> Restore(int id)
+    {
+        var ok = await _service.RestoreAsync(id);
+        if (!ok) return NotFound();
+        return Ok(new { message = "Category restored successfully." });
     }
 }

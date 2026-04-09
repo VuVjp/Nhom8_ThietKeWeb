@@ -11,10 +11,24 @@ export interface ServiceQuery {
   isActive?: boolean;
 }
 
+export interface ServiceCategoryQuery {
+  search?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+  page: number;
+  pageSize: number;
+  isActive?: boolean;
+}
+
 export const servicesApi = {
   // Service Categories
   async getCategories() {
     const { data } = await httpClient.get<ServiceCategory[]>('servicecategories');
+    return data;
+  },
+
+  async getCategoriesPaged(query: ServiceCategoryQuery) {
+    const { data } = await httpClient.get<PaginatedResult<ServiceCategory>>('servicecategories/paged', { params: query });
     return data;
   },
 
@@ -32,6 +46,11 @@ export const servicesApi = {
 
   async toggleCategoryActive(id: number) {
     const { data } = await httpClient.patch(`servicecategories/${id}/toggle-active`);
+    return data;
+  },
+
+  async restoreCategory(id: number) {
+    const { data } = await httpClient.patch(`servicecategories/${id}/restore`);
     return data;
   },
 
@@ -60,6 +79,11 @@ export const servicesApi = {
 
   async toggleServiceActive(id: number) {
     const { data } = await httpClient.patch(`services/${id}/toggle-active`);
+    return data;
+  },
+
+  async restoreService(id: number) {
+    const { data } = await httpClient.patch(`services/${id}/restore`);
     return data;
   },
 };

@@ -6,17 +6,12 @@ import {
     PlusIcon, 
     TrashIcon, 
     CheckCircleIcon,
-    XCircleIcon,
-    MagnifyingGlassIcon 
+    XCircleIcon
 } from '@heroicons/react/24/outline';
 import { orderServicesApi } from '../../../api/orderServicesApi';
-import { servicesApi } from '../../../api/servicesApi';
-import type { OrderService, Service, OrderServiceDetail } from '../../../types/models';
+import type { OrderService, OrderServiceDetail } from '../../../types/models';
 import { toApiError } from '../../../api/httpClient';
 import { Table } from '../../../components/Table';
-import { Modal } from '../../../components/Modal';
-import { Input } from '../../../components/Input';
-import { useDebounce } from '../../../hooks/useDebounce';
 import { Badge } from '../../../components/Badge';
 
 export function OrderServiceDetailPage() {
@@ -26,12 +21,6 @@ export function OrderServiceDetailPage() {
 
     const [order, setOrder] = useState<OrderService | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-
-    const [isAdding, setIsAdding] = useState(false);
-    const [search, setSearch] = useState('');
-    const debouncedSearch = useDebounce(search, 500);
-    const [availableServices, setAvailableServices] = useState<Service[]>([]);
-    const [isSearching, setIsSearching] = useState(false);
 
     const isLocked = order?.bookingStatus === 'CheckedOut';
 
@@ -53,44 +42,6 @@ export function OrderServiceDetailPage() {
         void loadOrder();
     }, [loadOrder]);
 
-    const searchServices = useCallback(async (val: string) => {
-        setIsSearching(true);
-        try {
-            const result = await servicesApi.getPaged({
-                search: val,
-                isActive: true,
-                page: 1,
-                pageSize: 20 // Increase page size for better selection
-            });
-            setAvailableServices(result.items);
-        } catch (error) {
-            console.error('Search failed', error);
-        } finally {
-            setIsSearching(false);
-        }
-    }, []);
-
-    useEffect(() => {
-        if (isAdding) {
-            void searchServices(debouncedSearch);
-        }
-    }, [debouncedSearch, isAdding, searchServices]);
-
-    const addService = async (service: Service) => {
-        try {
-            await orderServicesApi.addItem(orderId, {
-                serviceId: service.id,
-                quantity: 1
-            });
-            toast.success(`${service.name} added to order`);
-            await loadOrder();
-            setIsAdding(false);
-        } catch (error) {
-            const apiError = toApiError(error);
-            toast.error(apiError.message || 'Failed to add service');
-        }
-    };
-
     const updateQuantity = async (serviceId: number, delta: number, current: number) => {
         const newQty = current + delta;
         if (newQty <= 0) return;
@@ -101,7 +52,6 @@ export function OrderServiceDetailPage() {
                 ...prev,
                 details: prev.details?.map(d => d.serviceId === serviceId ? { ...d, quantity: newQty } : d)
             } : null);
-            // We should really reload for total amount, or calc locally
             await loadOrder(); 
         } catch (error) {
             const apiError = toApiError(error);
@@ -226,7 +176,7 @@ export function OrderServiceDetailPage() {
                             <h3 className="font-bold text-slate-900">Order Items</h3>
                             {!isLocked && (
                                 <button 
-                                    onClick={() => setIsAdding(true)}
+                                    onClick={() => navigate(`/admin/reception/order-services/${orderId}/add-service`)}
                                     className="inline-flex items-center gap-1 text-cyan-700 hover:text-cyan-800 font-semibold text-sm"
                                 >
                                     <PlusIcon className="h-4 w-4" /> Add Service
@@ -293,48 +243,6 @@ export function OrderServiceDetailPage() {
                     </div>
                 </div>
             </div>
-
-            <Modal open={isAdding} title="Add Service to Order" onClose={() => {
-                setIsAdding(false);
-                setSearch('');
-            }}>
-                <div className="space-y-4">
-                    <div className="relative">
-                        <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                        <Input 
-                            className="pl-9" 
-                            placeholder="Find service..." 
-                            value={search} 
-                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)} 
-                        />
-                    </div>
-                    
-                    <div className="max-h-60 overflow-y-auto space-y-2 pr-1">
-                        {isSearching ? (
-                            <div className="p-4 text-center text-xs text-slate-400">Searching...</div>
-                        ) : availableServices.length > 0 ? (
-                            availableServices.map(s => (
-                                <button
-                                    key={s.id}
-                                    onClick={() => void addService(s)}
-                                    className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-cyan-50 border border-slate-100 transition group"
-                                >
-                                    <div className="text-left">
-                                        <p className="font-semibold text-slate-900 text-sm">{s.name}</p>
-                                        <p className="text-xs text-slate-500">{s.categoryName}</p>
-                                    </div>
-                                    <div className="text-right group-hover:text-cyan-700">
-                                        <p className="font-bold text-sm">${s.price.toLocaleString()}</p>
-                                        <p className="text-[10px] uppercase font-bold text-slate-400">Add +</p>
-                                    </div>
-                                </button>
-                            ))
-                        ) : (
-                            <div className="p-4 text-center text-xs text-slate-400">No services found</div>
-                        )}
-                    </div>
-                </div>
-            </Modal>
         </div>
     );
 }

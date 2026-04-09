@@ -24,6 +24,7 @@ import { ServiceCategoriesPage } from '../pages/admin/ServiceCategoriesPage';
 import { ServicesPage } from '../pages/admin/ServicesPage';
 import { OrderServicesListPage } from '../pages/admin/reception/OrderServicesListPage';
 import { OrderServiceDetailPage } from '../pages/admin/reception/OrderServiceDetailPage';
+import { AddServiceToOrderPage } from '../pages/admin/reception/AddServiceToOrderPage';
 import { RequireAuth, RequireAnyPermission, RequirePermission } from './RouteGuards';
 import { useAppAuth } from '../auth/useAppAuth';
 import { ArticlesPage } from '../modules/article/pages/ArticlesPage';
@@ -134,6 +135,7 @@ export const AppRouter = () => {
                         <Route path="admin/services" element={<ServicesPage />} />
                         <Route path="admin/reception/order-services" element={<OrderServicesListPage />} />
                         <Route path="admin/reception/order-services/:id" element={<OrderServiceDetailPage />} />
+                        <Route path="admin/reception/order-services/:id/add-service" element={<AddServiceToOrderPage />} />
                     </Route>
                 </Route>
             </Route>

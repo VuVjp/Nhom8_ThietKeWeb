@@ -31,6 +31,16 @@ export function OrderServicesListPage() {
     const [selectedDetailId, setSelectedDetailId] = useState<number | undefined>(undefined);
     const [isCreating, setIsCreating] = useState(false);
 
+    const resetFilters = () => {
+        setSearch('');
+        setStartDate('');
+        setEndDate('');
+        setStatus('');
+        setSortBy('date');
+        setSortOrder('desc');
+        setPage(1);
+    };
+
     const loadOrders = useCallback(async () => {
         setIsLoading(true);
         try {
@@ -173,13 +183,6 @@ export function OrderServicesListPage() {
                 </div>
                 <div className="flex gap-2">
                     <button 
-                        onClick={() => void loadOrders()} 
-                        className="p-2 border rounded-xl hover:bg-slate-50 transition bg-white shadow-sm"
-                        title="Refresh"
-                    >
-                        <ArrowPathIcon className={`h-5 w-5 text-slate-500 ${isLoading ? 'animate-spin' : ''}`} />
-                    </button>
-                    <button 
                         onClick={() => setOpenCreate(true)}
                         className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-cyan-700 text-white hover:bg-cyan-800 transition shadow-sm font-semibold text-sm"
                     >
@@ -206,12 +209,12 @@ export function OrderServicesListPage() {
                             />
                         </div>
                     </div>
-                    <div className="lg:col-span-5 space-y-1.5">
+                    <div className="lg:col-span-4 space-y-1.5">
                         <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Date Range</label>
                         <div className="flex gap-2">
                             <Input 
                                 type="date" 
-                                className="min-w-0 flex-1"
+                                className="min-w-0 flex-1 px-2"
                                 value={startDate} 
                                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                                     setStartDate(e.target.value);
@@ -220,7 +223,7 @@ export function OrderServicesListPage() {
                             />
                             <Input 
                                 type="date"
-                                className="min-w-0 flex-1"
+                                className="min-w-0 flex-1 px-2"
                                 value={endDate} 
                                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                                     setEndDate(e.target.value);
@@ -264,6 +267,15 @@ export function OrderServicesListPage() {
                             <option value="id-desc">Order ID: Max to Min</option>
                             <option value="id-asc">Order ID: Min to Max</option>
                         </select>
+                    </div>
+                    <div className="lg:col-span-1">
+                        <button
+                            onClick={resetFilters}
+                            title="Reset Filters"
+                            className="flex h-[38px] w-full items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:bg-slate-50 bg-slate-50"
+                        >
+                            <ArrowPathIcon className="h-4 w-4" />
+                        </button>
                     </div>
                 </div>
             </div>

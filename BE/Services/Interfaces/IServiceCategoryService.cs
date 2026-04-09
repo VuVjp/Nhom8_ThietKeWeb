@@ -10,4 +10,6 @@ public interface IServiceCategoryService
     Task<bool> UpdateAsync(int id, UpdateServiceCategoryDto dto);
     Task<bool> DeleteAsync(int id);
     Task<bool> ToggleActiveAsync(int id);
+    Task<bool> RestoreAsync(int id);
+    Task<PaginatedResultDto<ServiceCategoryDto>> GetPagedAsync(ServiceCategoryQueryDto query);
 }

@@ -1,19 +1,29 @@
 import { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { PencilSquareIcon, PlusIcon, ArrowPathIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { PencilSquareIcon, PlusIcon, ArrowPathIcon, TrashIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { servicesApi } from '../../api/servicesApi';
 import type { ServiceCategory } from '../../types/models';
 import { toApiError } from '../../api/httpClient';
 import { Input } from '../../components/Input';
 import { Table } from '../../components/Table';
 import { Modal } from '../../components/Modal';
+import { Select } from '../../components/Select';
+import { Pagination } from '../../components/Pagination';
 import { usePermissionCheck } from '../../hooks/usePermissionCheck';
+import { useDebounce } from '../../hooks/useDebounce';
 import { Badge } from '../../components/Badge';
 
 export function ServiceCategoriesPage() {
     const { ensure } = usePermissionCheck();
+    const [page, setPage] = useState(1);
+    const [total, setTotal] = useState(0);
     const [rows, setRows] = useState<ServiceCategory[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+
+    const [search, setSearch] = useState('');
+    const debouncedSearch = useDebounce(search, 500);
+    const [sortBy, setSortBy] = useState('id');
+    const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
     const [createName, setCreateName] = useState('');
     const [isCreating, setIsCreating] = useState(false);
@@ -26,15 +36,22 @@ export function ServiceCategoriesPage() {
     const loadCategories = useCallback(async () => {
         setIsLoading(true);
         try {
-            const data = await servicesApi.getCategories();
-            setRows(data);
+            const result = await servicesApi.getCategoriesPaged({
+                search: debouncedSearch,
+                sortBy,
+                sortOrder,
+                page,
+                pageSize: 10
+            });
+            setRows(result.items);
+            setTotal(result.total);
         } catch (error) {
             const apiError = toApiError(error);
             toast.error(apiError.message || 'Failed to load categories');
         } finally {
             setIsLoading(false);
         }
-    }, []);
+    }, [debouncedSearch, sortBy, sortOrder, page]);
 
     useEffect(() => {
         void loadCategories();
@@ -104,15 +121,29 @@ export function ServiceCategoriesPage() {
 
     const deleteCategory = async (id: number) => {
         if (!ensure('MANAGE_SERVICES', 'delete category')) return;
-        if (!window.confirm('Are you sure you want to delete this category?')) return;
+        if (!window.confirm('Are you sure you want to deactivate this category?')) return;
 
         try {
             await servicesApi.deleteCategory(id);
-            toast.success('Category deleted');
+            toast.success('Category deactivated');
             await loadCategories();
         } catch (error) {
             const apiError = toApiError(error);
             toast.error(apiError.message || 'Failed to delete category');
+        }
+    };
+
+    const restoreCategory = async (id: number) => {
+        if (!ensure('MANAGE_SERVICES', 'restore category')) return;
+        if (!window.confirm('Are you sure you want to restore this category?')) return;
+
+        try {
+            await servicesApi.restoreCategory(id);
+            toast.success('Category restored');
+            await loadCategories();
+        } catch (error) {
+            const apiError = toApiError(error);
+            toast.error(apiError.message || 'Failed to restore category');
         }
     };
 
@@ -142,13 +173,26 @@ export function ServiceCategoriesPage() {
                     >
                         <PencilSquareIcon className="h-5 w-5" />
                     </button>
-                    <button className="p-1 hover:text-red-600" onClick={() => void deleteCategory(row.id)}>
-                        <TrashIcon className="h-5 w-5" />
-                    </button>
+                    {row.isActive ? (
+                        <button className="p-1 hover:text-red-600" onClick={() => void deleteCategory(row.id)}>
+                            <TrashIcon className="h-5 w-5" />
+                        </button>
+                    ) : (
+                        <button className="p-1 hover:text-emerald-600" onClick={() => void restoreCategory(row.id)} title="Restore Category">
+                            <ArrowPathIcon className="h-5 w-5" />
+                        </button>
+                    )}
                 </div>
             ),
         },
     ];
+
+    const resetFilters = () => {
+        setSearch('');
+        setSortBy('id');
+        setSortOrder('asc');
+        setPage(1);
+    };
 
     return (
         <div className="space-y-4">
@@ -158,9 +202,6 @@ export function ServiceCategoriesPage() {
                     <p className="text-sm text-slate-500">Manage categories for hotel services.</p>
                 </div>
                 <div className="flex gap-2">
-                    <button onClick={() => void loadCategories()} className="p-2 border rounded-xl hover:bg-slate-50">
-                        <ArrowPathIcon className={`h-5 w-5 ${isLoading ? 'animate-spin' : ''}`} />
-                    </button>
                     <button
                         onClick={() => setOpenCreate(true)}
                         className="inline-flex items-center gap-2 rounded-lg bg-cyan-700 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-800"
@@ -170,7 +211,42 @@ export function ServiceCategoriesPage() {
                 </div>
             </div>
 
+            {/* Filters */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-white p-4 rounded-xl border border-slate-200">
+                <div className="relative">
+                    <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <Input 
+                        className="pl-9" 
+                        placeholder="Search ID, name..." 
+                        value={search} 
+                        onChange={(e) => setSearch(e.target.value)} 
+                    />
+                </div>
+                <Select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+                    <option value="id">Sort by ID</option>
+                    <option value="name">Sort by Name</option>
+                </Select>
+                <Select value={sortOrder} onChange={(e) => setSortOrder(e.target.value as 'asc' | 'desc')}>
+                    <option value="asc">Ascending</option>
+                    <option value="desc">Descending</option>
+                </Select>
+                <button
+                    onClick={resetFilters}
+                    title="Reset Filters"
+                    className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:bg-slate-50"
+                >
+                    <ArrowPathIcon className="h-5 w-5" />
+                </button>
+            </div>
+
             <Table columns={columns} rows={isLoading ? [] : rows} />
+
+            <Pagination 
+                page={page} 
+                pageSize={10} 
+                total={total} 
+                onPageChange={(p) => setPage(p)} 
+            />
 
             {/* Create Modal */}
             <Modal open={openCreate} title="Add Service Category" onClose={() => setOpenCreate(false)}>

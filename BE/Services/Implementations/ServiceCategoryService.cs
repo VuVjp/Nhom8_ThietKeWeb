@@ -86,4 +86,34 @@ public class ServiceCategoryService : IServiceCategoryService
         await _repository.SaveChangesAsync();
         return true;
     }
+
+    public async Task<bool> RestoreAsync(int id)
+    {
+        var category = await _repository.GetByIdAsync(id);
+        if (category == null) return false;
+
+        category.IsActive = true;
+        _repository.Update(category);
+        await _repository.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<PaginatedResultDto<ServiceCategoryDto>> GetPagedAsync(ServiceCategoryQueryDto query)
+    {
+        var (items, total) = await _repository.GetPagedAsync(
+            query.Search, query.SortBy, query.SortOrder, query.Page, query.PageSize, query.IsActive);
+
+        return new PaginatedResultDto<ServiceCategoryDto>
+        {
+            Items = items.Select(c => new ServiceCategoryDto
+            {
+                Id = c.Id,
+                Name = c.Name,
+                IsActive = c.IsActive
+            }).ToList(),
+            Total = total,
+            Page = query.Page,
+            PageSize = query.PageSize
+        };
+    }
 }

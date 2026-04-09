@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { PencilSquareIcon, PlusIcon, TrashIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { PencilSquareIcon, PlusIcon, TrashIcon, MagnifyingGlassIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import { servicesApi } from '../../api/servicesApi';
 import type { Service, ServiceCategory } from '../../types/models';
 import { toApiError } from '../../api/httpClient';
@@ -13,6 +13,8 @@ import { usePermissionCheck } from '../../hooks/usePermissionCheck';
 import { useDebounce } from '../../hooks/useDebounce';
 import { Badge } from '../../components/Badge';
 
+import { CategorySelect } from '../../components/CategorySelect';
+
 export function ServicesPage() {
     const { ensure } = usePermissionCheck();
     const [page, setPage] = useState(1);
@@ -23,7 +25,7 @@ export function ServicesPage() {
 
     const [search, setSearch] = useState('');
     const debouncedSearch = useDebounce(search, 500);
-    const [selectedCategory, setSelectedCategory] = useState<number | undefined>(undefined);
+    const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
     const [sortBy, setSortBy] = useState('id');
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
@@ -44,7 +46,7 @@ export function ServicesPage() {
         try {
             const result = await servicesApi.getPaged({
                 search: debouncedSearch,
-                categoryId: selectedCategory,
+                categoryId: selectedCategory || undefined,
                 sortBy,
                 sortOrder,
                 page,
@@ -109,11 +111,25 @@ export function ServicesPage() {
 
         try {
             await servicesApi.delete(id);
-            toast.success('Service deleted');
+            toast.success('Service deactivated');
             await loadData();
         } catch (error) {
             const apiError = toApiError(error);
             toast.error(apiError.message || 'Failed to delete service');
+        }
+    };
+
+    const restoreService = async (id: number) => {
+        if (!ensure('MANAGE_SERVICES', 'restore service')) return;
+        if (!window.confirm('Are you sure you want to restore this service?')) return;
+
+        try {
+            await servicesApi.restoreService(id);
+            toast.success('Service restored');
+            await loadData();
+        } catch (error) {
+            const apiError = toApiError(error);
+            toast.error(apiError.message || 'Failed to restore service');
         }
     };
 
@@ -173,13 +189,27 @@ export function ServicesPage() {
                     >
                         <PencilSquareIcon className="h-5 w-5" />
                     </button>
-                    <button className="p-1 hover:text-red-600" onClick={() => void deleteService(row.id)}>
-                        <TrashIcon className="h-5 w-5" />
-                    </button>
+                    {row.isActive ? (
+                        <button className="p-1 hover:text-red-600" onClick={() => void deleteService(row.id)}>
+                            <TrashIcon className="h-5 w-5" />
+                        </button>
+                    ) : (
+                        <button className="p-1 hover:text-emerald-600" onClick={() => void restoreService(row.id)} title="Restore Service">
+                            <ArrowPathIcon className="h-5 w-5" />
+                        </button>
+                    )}
                 </div>
             )
         }
     ];
+
+    const resetFilters = () => {
+        setSearch('');
+        setSelectedCategory(null);
+        setSortBy('id');
+        setSortOrder('asc');
+        setPage(1);
+    };
 
     return (
         <div className="space-y-4">
@@ -199,7 +229,7 @@ export function ServicesPage() {
             </div>
 
             {/* Filters */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-white p-4 rounded-xl border border-slate-200">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 bg-white p-4 rounded-xl border border-slate-200">
                 <div className="relative">
                     <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                     <Input 
@@ -209,13 +239,12 @@ export function ServicesPage() {
                         onChange={(e) => setSearch(e.target.value)} 
                     />
                 </div>
-                <Select 
-                    value={selectedCategory || ''} 
-                    onChange={(e) => setSelectedCategory(e.target.value ? Number(e.target.value) : undefined)}
-                >
-                    <option value="">All Categories</option>
-                    {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </Select>
+                <CategorySelect 
+                    categories={categories}
+                    selectedId={selectedCategory}
+                    onChange={(id) => setSelectedCategory(id)}
+                    placeholder="All Categories"
+                />
                 <Select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
                     <option value="id">Sort by ID</option>
                     <option value="price">Sort by Price</option>
@@ -225,6 +254,13 @@ export function ServicesPage() {
                     <option value="asc">Ascending</option>
                     <option value="desc">Descending</option>
                 </Select>
+                <button
+                    onClick={resetFilters}
+                    title="Reset Filters"
+                    className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:bg-slate-50"
+                >
+                    <ArrowPathIcon className="h-5 w-5" />
+                </button>
             </div>
 
             <Table columns={columns} rows={isLoading ? [] : rows} />

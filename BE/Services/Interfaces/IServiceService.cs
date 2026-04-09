@@ -10,4 +10,5 @@ public interface IServiceService
     Task<bool> UpdateAsync(int id, UpdateServiceDto dto);
     Task<bool> DeleteAsync(int id);
     Task<bool> ToggleActiveAsync(int id);
+    Task<bool> RestoreAsync(int id);
 }

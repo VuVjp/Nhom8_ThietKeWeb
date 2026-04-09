@@ -6,6 +6,7 @@ import {
     PlusIcon,
     TrashIcon,
     MagnifyingGlassIcon,
+    ArrowPathIcon,
 } from '@heroicons/react/24/outline';
 import { Table } from '../../../components/Table';
 import { Modal } from '../../../components/Modal';
@@ -16,7 +17,7 @@ import { useAppAuth } from '../../../auth/useAppAuth';
 import { articleService } from '../services/articleService';
 import { articleCategoryService } from '../services/articleCategoryService';
 import { useArticleStore } from '../hooks/useArticleStore';
-import { CategorySelect } from '../components/CategorySelect';
+import { CategorySelect } from '../../../components/CategorySelect';
 import { stripHtml } from '../utils/htmlUtils';
 import { toApiError } from '../../../api/httpClient';
 import type { ArticleCategory, ArticleItem } from '../types/article.types';
@@ -237,24 +238,31 @@ export function ArticlesPage() {
                         <>
                             <button
                                 type="button"
+                                title="Edit Article"
                                 onClick={() => navigate(`/admin/articles/${row.id}/edit`)}
-                                className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-xs hover:bg-slate-50"
+                                className="p-1 hover:text-cyan-600 transition"
                             >
-                                <PencilSquareIcon className="h-4 w-4" />
-                                Edit
+                                <PencilSquareIcon className="h-5 w-5" />
                             </button>
-                            <button
-                                type="button"
-                                onClick={() => setStatusTarget(row)}
-                                className={`inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-xs ${
-                                    row.isActive 
-                                    ? 'border-rose-200 text-rose-600 hover:bg-rose-50' 
-                                    : 'border-emerald-200 text-emerald-600 hover:bg-emerald-50'
-                                }`}
-                            >
-                                <TrashIcon className="h-4 w-4" />
-                                {row.isActive ? 'Deactivate' : 'Activate'}
-                            </button>
+                            {row.isActive ? (
+                                <button
+                                    type="button"
+                                    title="Deactivate Article"
+                                    onClick={() => setStatusTarget(row)}
+                                    className="p-1 hover:text-red-600 transition"
+                                >
+                                    <TrashIcon className="h-5 w-5" />
+                                </button>
+                            ) : (
+                                <button
+                                    type="button"
+                                    title="Activate Article"
+                                    onClick={() => setStatusTarget(row)}
+                                    className="p-1 hover:text-emerald-600 transition"
+                                >
+                                    <ArrowPathIcon className="h-5 w-5" />
+                                </button>
+                            )}
                         </>
                     )}
                 </div>
@@ -326,14 +334,15 @@ export function ArticlesPage() {
                 {/* Reset */}
                 <button
                     type="button"
+                    title="Reset Filters"
                     disabled={isLoading}
                     onClick={() => {
                         setSearchTerm('');
                         resetFilters();
                     }}
-                    className="h-9 rounded-lg border border-slate-200 px-3 text-sm text-slate-600 transition hover:bg-slate-50 disabled:bg-slate-50 disabled:text-slate-400"
+                    className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:bg-slate-50 disabled:bg-slate-50 disabled:text-slate-400"
                 >
-                    Reset
+                    <ArrowPathIcon className="h-4 w-4" />
                 </button>
             </div>
 
