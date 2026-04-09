@@ -126,6 +126,8 @@ export const AppRouter = () => {
 
                     <Route element={<RequireAnyPermission permissions={['MANAGE_ARTICLE_CATEGORY']} />}>
                         <Route path="admin/article-categories" element={<ArticleCategoriesPage />} />
+                    </Route>
+
                     {/* Service Module */}
                     <Route element={<RequireAnyPermission permissions={['MANAGE_SERVICES']} />}>
                         <Route path="admin/service-categories" element={<ServiceCategoriesPage />} />
