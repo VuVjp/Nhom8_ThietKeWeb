@@ -5,7 +5,7 @@ import { Pagination } from '../../../components/Pagination';
 import { toApiError } from '../../../api/httpClient';
 import { receptionApi } from '../../../api/receptionApi';
 import type { Booking } from '../../../types/models';
-import { ArrowRightOnRectangleIcon } from '@heroicons/react/24/outline';
+import { ArrowPathIcon, ArrowRightEndOnRectangleIcon } from '@heroicons/react/24/outline';
 
 export function InHousePage() {
     const [bookings, setBookings] = useState<Booking[]>([]);
@@ -51,21 +51,34 @@ export function InHousePage() {
         { key: 'guestName', label: 'Guest Name', render: (row: Booking) => row.guestName },
         { key: 'guestPhone', label: 'Phone', render: (row: Booking) => row.guestPhone },
         { key: 'roomIds', label: 'Rooms', render: (row: Booking) => row.roomIds?.join(', ') || 'Unassigned' },
-        { key: 'status', label: 'Status', render: (row: Booking) => (
-            <span className="rounded bg-green-100 px-2 py-1 text-xs font-semibold text-green-800">{row.status}</span>
-        ) },
-        { key: 'actions', label: 'Actions', render: (row: Booking) => (
-            <button type="button" className="inline-flex items-center gap-1 rounded border border-orange-600 px-2 py-1 text-xs text-orange-700 hover:bg-orange-50" onClick={() => handleCheckOut(row.id)}>
-                <ArrowRightOnRectangleIcon className="h-4 w-4" /> Check Out
-            </button>
-        ) },
+        {
+            key: 'status', label: 'Status', render: (row: Booking) => (
+                <span className="rounded bg-green-100 px-2 py-1 text-xs font-semibold text-green-800">{row.status}</span>
+            )
+        },
+        {
+            key: 'actions', label: 'Actions', render: (row: Booking) => (
+                <button type="button" className="inline-flex items-center gap-1 rounded border border-orange-600 px-2 py-1 text-xs text-orange-700 hover:bg-orange-50" onClick={() => handleCheckOut(row.id)}>
+                    <ArrowRightEndOnRectangleIcon className="h-4 w-4" /> Check Out
+                </button>
+            )
+        },
     ];
 
     return (
         <div className="space-y-4">
-            <div>
-                <h2 className="text-2xl font-bold text-slate-900">In-House Guests</h2>
-                <p className="text-sm text-slate-500">Currently staying at the hotel.</p>
+            <div className="flex items-center justify-between">
+                <div>
+                    <h2 className="text-2xl font-bold text-slate-900">In-House Guests</h2>
+                    <p className="text-sm text-slate-500">Currently staying at the hotel.</p>
+                </div>
+                <button
+                    onClick={() => void loadInHouse()}
+                    className="p-2 text-slate-500 hover:text-cyan-600 transition bg-white border border-slate-200 rounded-xl"
+                    title="Refresh"
+                >
+                    <ArrowPathIcon className={`h-5 w-5 ${isLoading ? 'animate-spin' : ''}`} />
+                </button>
             </div>
 
             {isLoading ? (

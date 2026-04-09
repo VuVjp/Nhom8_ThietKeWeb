@@ -51,4 +51,13 @@ public class ArticleCategoriesController : ControllerBase
         if (!ok) return NotFound();
         return NoContent();
     }
+
+    [Permission(PermissionNames.ManageArticleCategory)]
+    [HttpPut("{id}/restore")]
+    public async Task<IActionResult> Restore(int id)
+    {
+        var ok = await _service.RestoreAsync(id);
+        if (!ok) return NotFound();
+        return NoContent();
+    }
 }

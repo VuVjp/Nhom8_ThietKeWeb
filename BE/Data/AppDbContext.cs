@@ -10,6 +10,7 @@ public class AppDbContext : DbContext
     public DbSet<Amenity> Amenities { get; set; }
     public DbSet<ArticleCategory> ArticleCategories { get; set; }
     public DbSet<Article> Articles { get; set; }
+    public DbSet<ArticleCategoryMap> ArticleCategoryMaps { get; set; }
     public DbSet<Attraction> Attractions { get; set; }
     public DbSet<AuditLog> AuditLogs { get; set; }
     public DbSet<BookingDetail> BookingDetails { get; set; }
@@ -54,6 +55,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Amenity>().ToTable("Amenities");
         modelBuilder.Entity<ArticleCategory>().ToTable("Article_Categories");
         modelBuilder.Entity<Article>().ToTable("Articles");
+        modelBuilder.Entity<ArticleCategoryMap>().ToTable("Article_Category_Map");
         modelBuilder.Entity<Attraction>().ToTable("Attractions");
         modelBuilder.Entity<AuditLog>().ToTable("Audit_Logs");
         modelBuilder.Entity<BookingDetail>().ToTable("Booking_Details");
@@ -100,7 +102,6 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Article>(e =>
         {
             e.Property(x => x.Id).HasColumnName("id");
-            e.Property(x => x.CategoryId).HasColumnName("category_id");
             e.Property(x => x.AuthorId).HasColumnName("author_id");
             e.Property(x => x.Title).HasColumnName("title");
             e.Property(x => x.Slug).HasColumnName("slug");
@@ -109,6 +110,18 @@ public class AppDbContext : DbContext
             e.Property(x => x.PublishedAt).HasColumnName("published_at");
             e.Property(x => x.IsActive).HasColumnName("is_active");
             e.HasIndex(x => x.Slug).IsUnique();
+        });
+
+        // Junction table: Article_Category_Map
+        modelBuilder.Entity<ArticleCategoryMap>(e =>
+        {
+            // Composite PK prevents duplicate mappings
+            e.HasKey(x => new { x.ArticleId, x.CategoryId });
+            e.Property(x => x.ArticleId).HasColumnName("article_id");
+            e.Property(x => x.CategoryId).HasColumnName("category_id");
+            // Indexes for query performance
+            e.HasIndex(x => x.ArticleId).HasDatabaseName("IX_Article_Category_Map_ArticleId");
+            e.HasIndex(x => x.CategoryId).HasDatabaseName("IX_Article_Category_Map_CategoryId");
         });
 
         modelBuilder.Entity<Attraction>(e =>
@@ -134,6 +147,10 @@ public class AppDbContext : DbContext
             e.Property(x => x.OldValue).HasColumnName("old_value");
             e.Property(x => x.NewValue).HasColumnName("new_value");
             e.Property(x => x.CreatedAt).HasColumnName("created_at");
+
+            e.HasIndex(x => x.CreatedAt);
+            e.HasIndex(x => x.UserId);
+            e.HasIndex(x => new { x.TableName, x.RecordId });
         });
 
         modelBuilder.Entity<BookingDetail>(e =>
@@ -492,8 +509,18 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<AuditLog>()
             .HasOne(al => al.User).WithMany(u => u.AuditLogs).HasForeignKey(al => al.UserId).OnDelete(DeleteBehavior.SetNull);
 
-        modelBuilder.Entity<Article>()
-            .HasOne(a => a.Category).WithMany(ac => ac.Articles).HasForeignKey(a => a.CategoryId).OnDelete(DeleteBehavior.SetNull);
+        // Many-to-many: Article ↔ ArticleCategory via junction ArticleCategoryMap
+        modelBuilder.Entity<ArticleCategoryMap>()
+            .HasOne(m => m.Article)
+            .WithMany(a => a.ArticleCategoryMaps)
+            .HasForeignKey(m => m.ArticleId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<ArticleCategoryMap>()
+            .HasOne(m => m.Category)
+            .WithMany(ac => ac.ArticleCategoryMaps)
+            .HasForeignKey(m => m.CategoryId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         modelBuilder.Entity<Article>()
             .HasOne(a => a.Author).WithMany(u => u.Articles).HasForeignKey(a => a.AuthorId).OnDelete(DeleteBehavior.SetNull);

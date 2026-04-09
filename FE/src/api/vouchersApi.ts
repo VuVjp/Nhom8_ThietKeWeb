@@ -36,10 +36,6 @@ export const vouchersApi = {
     return data;
   },
 
-  async delete(id: number) {
-    await httpClient.delete(`vouchers/${id}`);
-  },
-
   async validate(code: string, bookingAmount?: number) {
     const { data } = await httpClient.get<Voucher>(`vouchers/validate?code=${code}${bookingAmount !== undefined ? `&bookingAmount=${bookingAmount}` : ''}`);
     return data;

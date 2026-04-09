@@ -11,5 +11,7 @@ public class Article
     public DateTime? PublishedAt { get; set; }
     public bool IsActive { get; set; } = true;
     public User? Author { get; set; }
+
+    /// <summary>Navigation for the many-to-many relationship with ArticleCategory.</summary>
     public ICollection<ArticleCategoryMap> ArticleCategoryMaps { get; set; } = new List<ArticleCategoryMap>();
 }

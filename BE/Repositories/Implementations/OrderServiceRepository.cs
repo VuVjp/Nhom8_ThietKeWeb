@@ -23,13 +23,13 @@ public class OrderServiceRepository : Repository<OrderService>, IOrderServiceRep
 
     public async Task<OrderService?> GetByIdWithDetailsAsync(int id)
     {
-        return await _dbSet
-            .Include(os => os.OrderServiceDetails)
-            .Include(os => os.BookingDetail)
-                .ThenInclude(bd => bd!.Room)
-            .Include(os => os.BookingDetail)
-                .ThenInclude(bd => bd!.Booking)
-            .FirstOrDefaultAsync(os => os.Id == id);
+        return await _context.OrderServices
+    .Include(os => os.BookingDetail)
+        .ThenInclude(bd => bd.Room)
+    .Include(os => os.BookingDetail)
+        .ThenInclude(bd => bd.Booking)
+    .Include(os => os.OrderServiceDetails)
+    .FirstOrDefaultAsync(os => os.Id == id);
     }
 
     public async Task<OrderService?> GetByIdWithBookingAsync(int id)

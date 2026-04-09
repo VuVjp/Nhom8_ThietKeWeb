@@ -26,6 +26,9 @@ import { OrderServicesListPage } from '../pages/admin/reception/OrderServicesLis
 import { OrderServiceDetailPage } from '../pages/admin/reception/OrderServiceDetailPage';
 import { RequireAuth, RequireAnyPermission, RequirePermission } from './RouteGuards';
 import { useAppAuth } from '../auth/useAppAuth';
+import { ArticlesPage } from '../modules/article/pages/ArticlesPage';
+import { ArticleFormPage } from '../modules/article/pages/ArticleFormPage';
+import { ArticleCategoriesPage } from '../modules/article/pages/ArticleCategoriesPage';
 
 function AdminEntryRedirect() {
     const { user, isAuthReady } = useAppAuth();
@@ -113,6 +116,16 @@ export const AppRouter = () => {
                         <Route path="admin/reception/arrivals" element={<ArrivalsPage />} />
                         <Route path="admin/reception/in-house" element={<InHousePage />} />
                         <Route path="admin/reception/bookings" element={<BookingsListPage />} />
+                    </Route>
+
+                    <Route element={<RequireAnyPermission permissions={['MANAGE_ARTICLES']} />}>
+                        <Route path="admin/articles" element={<ArticlesPage />} />
+                        <Route path="admin/articles/new" element={<ArticleFormPage />} />
+                        <Route path="admin/articles/:id/edit" element={<ArticleFormPage />} />
+                    </Route>
+
+                    <Route element={<RequireAnyPermission permissions={['MANAGE_ARTICLE_CATEGORY']} />}>
+                        <Route path="admin/article-categories" element={<ArticleCategoriesPage />} />
                     </Route>
 
                     {/* Service Module */}

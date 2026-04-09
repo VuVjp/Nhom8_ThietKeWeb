@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -29,6 +30,12 @@ public class ArticlesController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromForm] CreateArticleDto dto)
     {
+        var userId = User?.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (int.TryParse(userId, out int authorId))
+        {
+            dto.AuthorId = authorId;
+        }
+
         var ok = await _service.CreateAsync(dto);
         if (!ok) return BadRequest();
         return Ok();
@@ -53,11 +60,28 @@ public class ArticlesController : ControllerBase
     }
 
     [Permission(PermissionNames.ManageArticles)]
+    [HttpPut("{id}/restore")]
+    public async Task<IActionResult> Restore(int id)
+    {
+        var ok = await _service.RestoreAsync(id);
+        if (!ok) return NotFound();
+        return NoContent();
+    }
+
+    [Permission(PermissionNames.ManageArticles)]
     [HttpPost("{id}/thumbnail")]
     public async Task<IActionResult> UpdateThumbnail(int id, [FromForm] UpdateArticleThumbnailDto dto)
     {
         var ok = await _service.UpdateThumbnailAsync(id, dto);
         if (!ok) return NotFound();
         return NoContent();
+    }
+
+    [Permission(PermissionNames.ManageArticles)]
+    [HttpPost("upload")]
+    public async Task<IActionResult> UploadImage(IFormFile file)
+    {
+        var url = await _service.UploadImageAsync(file);
+        return Ok(new { url });
     }
 }

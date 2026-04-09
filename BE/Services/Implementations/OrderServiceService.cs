@@ -11,11 +11,16 @@ public class OrderServiceService : IOrderServiceService
 {
     private readonly IOrderServiceRepository _repository;
     private readonly IServiceRepository _serviceRepository;
+    private readonly IBookingRepository _bookingRepository;
 
-    public OrderServiceService(IOrderServiceRepository repository, IServiceRepository serviceRepository)
+    public OrderServiceService(
+        IOrderServiceRepository repository, 
+        IServiceRepository serviceRepository,
+        IBookingRepository bookingRepository)
     {
         _repository = repository;
         _serviceRepository = serviceRepository;
+        _bookingRepository = bookingRepository;
     }
 
     public async Task<PaginatedResultDto<OrderServiceSummaryDto>> GetPagedAsync(OrderServiceQueryDto query)
@@ -129,8 +134,14 @@ public class OrderServiceService : IOrderServiceService
 
     public async Task<int> CreateAsync(CreateOrderServiceDto dto)
     {
-        // Actually, we need to check if booking is checked out
-        // For simplicity in Create, we might need more context, but let's assume we fetch it
+        var bookingDetail = await _bookingRepository.GetBookingDetailWithBookingAsync(dto.BookingDetailId);
+        if (bookingDetail == null) throw new KeyNotFoundException("Booking detail not found.");
+
+        if (bookingDetail.Booking?.Status == "CheckedOut")
+        {
+            throw new InvalidOperationException("Cannot create order for a checked-out booking.");
+        }
+
         var order = new OrderService
         {
             BookingDetailId = dto.BookingDetailId,
@@ -159,14 +170,18 @@ public class OrderServiceService : IOrderServiceService
                 throw new InvalidOperationException("Cannot modify order after checkout.");
             }
 
+            if (order.Status == OrderServiceStatus.Completed || order.Status == OrderServiceStatus.Cancelled)
+            {
+                throw new InvalidOperationException($"Cannot add items to an order with status: {order.Status}");
+            }
+
             var service = await _serviceRepository.GetByIdAsync(dto.ServiceId);
             if (service == null) throw new KeyNotFoundException("Service not found.");
 
-            var existingDetail = await _repository.GetDetailByServiceIdAsync(id, dto.ServiceId);
+            var existingDetail = order.OrderServiceDetails.FirstOrDefault(d => d.ServiceId == dto.ServiceId);
             if (existingDetail != null)
             {
                 existingDetail.Quantity += dto.Quantity;
-                _repository.Update(order); // Mark order as updated
             }
             else
             {
@@ -211,6 +226,11 @@ public class OrderServiceService : IOrderServiceService
                 throw new InvalidOperationException("Cannot modify order after checkout.");
             }
 
+            if (order.Status == OrderServiceStatus.Completed || order.Status == OrderServiceStatus.Cancelled)
+            {
+                throw new InvalidOperationException($"Cannot update items in an order with status: {order.Status}");
+            }
+
             var detail = order.OrderServiceDetails.FirstOrDefault(d => d.ServiceId == serviceId);
             if (detail == null) return false;
 
@@ -242,12 +262,17 @@ public class OrderServiceService : IOrderServiceService
                 throw new InvalidOperationException("Cannot modify order after checkout.");
             }
 
+            if (order.Status == OrderServiceStatus.Completed || order.Status == OrderServiceStatus.Cancelled)
+            {
+                throw new InvalidOperationException($"Cannot remove items from an order with status: {order.Status}");
+            }
+
             var detail = order.OrderServiceDetails.FirstOrDefault(d => d.ServiceId == serviceId);
             if (detail == null) return false;
 
+            order.OrderServiceDetails.Remove(detail);
             _repository.RemoveDetail(detail);
             
-            // Recalculate after removal
             RecalculateTotal(order);
             order.UpdatedAt = DateTime.Now;
 
@@ -271,6 +296,11 @@ public class OrderServiceService : IOrderServiceService
 
         var order = await _repository.GetByIdAsync(id);
         if (order == null) return false;
+
+        if (order.Status == OrderServiceStatus.Cancelled && newStatus != OrderServiceStatus.Cancelled)
+        {
+            throw new InvalidOperationException("Cannot change status of a cancelled order.");
+        }
 
         order.Status = newStatus;
         order.UpdatedAt = DateTime.Now;

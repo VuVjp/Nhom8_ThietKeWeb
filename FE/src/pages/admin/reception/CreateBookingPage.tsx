@@ -197,7 +197,7 @@ export function CreateBookingPage() {
                 checkOutDate: end,
                 roomIds: selectedRoomIds,
                 totalAmount: baseTotal - discount,
-                voucherId: appliedVoucher?.id + "",
+                voucherId: appliedVoucher ? appliedVoucher?.id + "" : null,
             });
             toast.success('Created booking successfully!');
             navigate('/admin/reception/bookings');
@@ -285,16 +285,18 @@ export function CreateBookingPage() {
 
                 {step === 2 && (
                     <div className="space-y-4">
-                        <div className="mb-4 text-sm text-slate-600">
-                            Found <span className="font-bold text-cyan-700">{availableRooms.length}</span> rooms available.
+                        <div className="flex items-center justify-between">
+                            <div className="mb-4 text-sm text-slate-600">
+                                Found <span className="font-bold text-cyan-700">{availableRooms.length}</span> rooms available.
+                            </div>
+                            <button
+                                onClick={() => void handleSearchRooms()}
+                                className="p-2 text-slate-500 hover:text-cyan-600 transition bg-white border border-slate-200 rounded-xl"
+                                title="Refresh"
+                            >
+                                <ArrowPathIcon className={`h-5 w-5 ${isSearching ? 'animate-spin' : ''}`} />
+                            </button>
                         </div>
-                        <button
-                            onClick={() => void handleSearchRooms()}
-                            className="p-2 text-slate-500 hover:text-cyan-600 transition bg-white border border-slate-200 rounded-xl"
-                            title="Refresh"
-                        >
-                            <ArrowPathIcon className={`h-5 w-5 ${isSearching ? 'animate-spin' : ''}`} />
-                        </button>
 
                         <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
                             {availableRooms.map((room) => {
