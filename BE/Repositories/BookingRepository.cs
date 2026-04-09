@@ -103,24 +103,14 @@ public class BookingRepository : IBookingRepository
             .ToListAsync();
     }
 
-    public async Task<List<Booking>> GetAllWithDetailsAsync(bool includeRoom = false)
-    {
-        var query = _context.Bookings.AsNoTracking();
-
-        if (includeRoom)
-        {
-            return await query
-                .Include(booking => booking.BookingDetails)
-                .ThenInclude(detail => detail.Room)
-                .OrderByDescending(booking => booking.Id)
-                .ToListAsync();
-        }
-
-        return await query
-            .Include(booking => booking.BookingDetails)
-            .OrderByDescending(booking => booking.Id)
-            .ToListAsync();
-    }
+    public async Task<List<Booking>> GetAllWithDetailsAsync()
+{
+    return await _context.Bookings
+        .AsNoTracking()
+        .Include(booking => booking.BookingDetails)
+        .OrderByDescending(booking => booking.Id)
+        .ToListAsync();
+}
 
     public async Task<List<int>> GetOverdueCheckInBookingIdsAsync(DateTime cutoffTime)
     {
