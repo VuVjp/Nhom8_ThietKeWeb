@@ -47,6 +47,10 @@ public class AppDbContext : DbContext
         .Property(n => n.Type)
         .HasConversion<string>();
 
+        modelBuilder.Entity<OrderService>()
+        .Property(n => n.Status)
+        .HasConversion<string>();
+
         // Table name mappings
         modelBuilder.Entity<Amenity>().ToTable("Amenities");
         modelBuilder.Entity<ArticleCategory>().ToTable("Article_Categories");
@@ -143,6 +147,10 @@ public class AppDbContext : DbContext
             e.Property(x => x.OldValue).HasColumnName("old_value");
             e.Property(x => x.NewValue).HasColumnName("new_value");
             e.Property(x => x.CreatedAt).HasColumnName("created_at");
+
+            e.HasIndex(x => x.CreatedAt);
+            e.HasIndex(x => x.UserId);
+            e.HasIndex(x => new { x.TableName, x.RecordId });
         });
 
         modelBuilder.Entity<BookingDetail>(e =>
@@ -154,6 +162,7 @@ public class AppDbContext : DbContext
             e.Property(x => x.CheckInDate).HasColumnName("check_in_date");
             e.Property(x => x.CheckOutDate).HasColumnName("check_out_date");
             e.Property(x => x.PricePerNight).HasColumnName("price_per_night").HasColumnType("decimal(18,2)");
+            e.HasIndex(x => new { x.RoomId, x.CheckInDate, x.CheckOutDate });
         });
 
         modelBuilder.Entity<Booking>(e =>
@@ -166,6 +175,9 @@ public class AppDbContext : DbContext
             e.Property(x => x.BookingCode).HasColumnName("booking_code");
             e.Property(x => x.VoucherId).HasColumnName("voucher_id");
             e.Property(x => x.Status).HasColumnName("status");
+            e.Property(x => x.TotalPrice).HasColumnName("total_price").HasColumnType("decimal(18,2)");
+            e.Property(x => x.Discount).HasColumnName("discount").HasColumnType("decimal(18,2)");
+            e.Property(x => x.FinalPrice).HasColumnName("final_price").HasColumnType("decimal(18,2)");
             e.HasIndex(x => x.BookingCode).IsUnique();
         });
 
@@ -227,8 +239,10 @@ public class AppDbContext : DbContext
             e.Property(x => x.Id).HasColumnName("id");
             e.Property(x => x.OrderServiceId).HasColumnName("order_service_id");
             e.Property(x => x.ServiceId).HasColumnName("service_id");
+            e.Property(x => x.ServiceName).HasColumnName("service_name");
             e.Property(x => x.Quantity).HasColumnName("quantity");
             e.Property(x => x.UnitPrice).HasColumnName("unit_price").HasColumnType("decimal(18,2)");
+            e.Property(x => x.Unit).HasColumnName("unit");
         });
 
         modelBuilder.Entity<OrderService>(e =>
@@ -237,7 +251,9 @@ public class AppDbContext : DbContext
             e.Property(x => x.BookingDetailId).HasColumnName("booking_detail_id");
             e.Property(x => x.OrderDate).HasColumnName("order_date");
             e.Property(x => x.TotalAmount).HasColumnName("total_amount").HasColumnType("decimal(18,2)");
-            e.Property(x => x.Status).HasColumnName("status");
+            e.Property(x => x.Status).HasColumnName("status").HasColumnType("varchar(50)");
+            e.Property(x => x.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("GETDATE()");
+            e.Property(x => x.UpdatedAt).HasColumnName("updated_at");
         });
 
         modelBuilder.Entity<Notification>(e =>
@@ -330,6 +346,7 @@ public class AppDbContext : DbContext
         {
             e.Property(x => x.Id).HasColumnName("id");
             e.Property(x => x.Name).HasColumnName("name");
+            e.Property(x => x.IsActive).HasColumnName("is_active").HasDefaultValue(true);
         });
 
         modelBuilder.Entity<Service>(e =>
@@ -339,6 +356,7 @@ public class AppDbContext : DbContext
             e.Property(x => x.Name).HasColumnName("name");
             e.Property(x => x.Price).HasColumnName("price").HasColumnType("decimal(18,2)");
             e.Property(x => x.Unit).HasColumnName("unit");
+            e.Property(x => x.IsActive).HasColumnName("is_active").HasDefaultValue(true);
         });
 
         modelBuilder.Entity<User>(e =>

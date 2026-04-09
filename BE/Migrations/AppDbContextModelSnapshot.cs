@@ -219,7 +219,7 @@ namespace BE.Migrations
 
                     b.Property<string>("TableName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)")
+                        .HasColumnType("nvarchar(450)")
                         .HasColumnName("table_name");
 
                     b.Property<int?>("UserId")
@@ -228,7 +228,11 @@ namespace BE.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CreatedAt");
+
                     b.HasIndex("UserId");
+
+                    b.HasIndex("TableName", "RecordId");
 
                     b.ToTable("Audit_Logs", (string)null);
                 });
@@ -247,6 +251,14 @@ namespace BE.Migrations
                         .HasColumnType("nvarchar(450)")
                         .HasColumnName("booking_code");
 
+                    b.Property<decimal?>("Discount")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("discount");
+
+                    b.Property<decimal>("FinalPrice")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("final_price");
+
                     b.Property<string>("GuestEmail")
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("guest_email");
@@ -262,6 +274,10 @@ namespace BE.Migrations
                     b.Property<string>("Status")
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("status");
+
+                    b.Property<decimal>("TotalPrice")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("total_price");
 
                     b.Property<int?>("UserId")
                         .HasColumnType("int")
@@ -320,9 +336,9 @@ namespace BE.Migrations
 
                     b.HasIndex("BookingId");
 
-                    b.HasIndex("RoomId");
-
                     b.HasIndex("RoomTypeId");
+
+                    b.HasIndex("RoomId", "CheckInDate", "CheckOutDate");
 
                     b.ToTable("Booking_Details", (string)null);
                 });
@@ -590,17 +606,28 @@ namespace BE.Migrations
                         .HasColumnType("int")
                         .HasColumnName("booking_detail_id");
 
-                    b.Property<DateTime?>("OrderDate")
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("GETDATE()");
+
+                    b.Property<DateTime>("OrderDate")
                         .HasColumnType("datetime2")
                         .HasColumnName("order_date");
 
                     b.Property<string>("Status")
-                        .HasColumnType("nvarchar(max)")
+                        .IsRequired()
+                        .HasColumnType("varchar(50)")
                         .HasColumnName("status");
 
-                    b.Property<decimal?>("TotalAmount")
+                    b.Property<decimal>("TotalAmount")
                         .HasColumnType("decimal(18,2)")
                         .HasColumnName("total_amount");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("updated_at");
 
                     b.HasKey("Id");
 
@@ -629,6 +656,16 @@ namespace BE.Migrations
                     b.Property<int?>("ServiceId")
                         .HasColumnType("int")
                         .HasColumnName("service_id");
+
+                    b.Property<string>("ServiceName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("service_name");
+
+                    b.Property<string>("Unit")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("unit");
 
                     b.Property<decimal>("UnitPrice")
                         .HasColumnType("decimal(18,2)")
@@ -995,6 +1032,12 @@ namespace BE.Migrations
                         .HasColumnType("int")
                         .HasColumnName("category_id");
 
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)")
@@ -1023,6 +1066,12 @@ namespace BE.Migrations
                         .HasColumnName("id");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
 
                     b.Property<string>("Name")
                         .IsRequired()

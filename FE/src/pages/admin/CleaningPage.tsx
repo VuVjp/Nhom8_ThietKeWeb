@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
-import { PencilSquareIcon, CheckCircleIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import { PencilSquareIcon, CheckCircleIcon, ExclamationTriangleIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import type { InventoryItem, LossRecord, Room } from '../../types/models';
 import { Select } from '../../components/Select';
 import { Modal } from '../../components/Modal';
@@ -256,7 +256,7 @@ export function CleaningPage() {
             return;
         }
 
-        if (!ensure('MANAGE_CLEANING', 'move room to cleaning')) {
+        if (!ensure('UPDATE_CLEANING', 'move room to cleaning')) {
             return;
         }
 
@@ -296,7 +296,7 @@ export function CleaningPage() {
             return;
         }
 
-        if (!ensure('MANAGE_CLEANING', 'finish room cleaning')) {
+        if (!ensure('UPDATE_CLEANING', 'finish room cleaning')) {
             return;
         }
 
@@ -311,7 +311,6 @@ export function CleaningPage() {
                 //     toast.success(`Room ${selectedCleaningRoom.roomNumber} marked Available`);
                 // }
             } catch (error) {
-                await loadBoards();
                 const apiError = toApiError(error);
                 if (apiError.status === 400 && apiError.message?.toLowerCase().includes('room cannot be set to available')) {
                     toast.error(`Room ${selectedCleaningRoom.roomNumber} cannot be marked Available due to pending issues. It has been moved to Maintenance. Admin has been notified.`, { icon: '⚠️' });
@@ -319,6 +318,7 @@ export function CleaningPage() {
                 }
                 toast.error(apiError.message || 'Failed to finish cleaning');
             } finally {
+                await loadBoards();
                 setIsUpdatingStatus(false);
             }
         })();
@@ -445,9 +445,19 @@ export function CleaningPage() {
 
     return (
         <div className="space-y-6">
-            <div>
-                <h2 className="text-2xl font-bold text-slate-900">Cleaning Workflow</h2>
-                <p className="text-sm text-slate-500">Only supports Inspecting to Cleaning and Cleaning to Available.</p>
+            <div className="flex items-center justify-between">
+                <div>
+                    <h2 className="text-2xl font-bold text-slate-900">Cleaning Workflow</h2>
+                    <p className="text-sm text-slate-500">Only supports Inspecting to Cleaning and Cleaning to Available.</p>
+                </div>
+                <button
+                    type="button"
+                    onClick={() => void loadBoards()}
+                    className="p-2 text-slate-500 hover:text-cyan-600 transition bg-white border border-slate-200 rounded-xl"
+                    title="Refresh"
+                >
+                    <ArrowPathIcon className={`h-5 w-5 ${isLoading ? 'animate-spin' : ''}`} />
+                </button>
             </div>
 
             <div className="rounded-xl border border-slate-200 bg-white p-2 shadow-sm">
@@ -495,7 +505,7 @@ export function CleaningPage() {
                     </div>
 
                     <div className="mt-4 grid items-start gap-3 md:grid-cols-[280px_minmax(0,1fr)]">
-                        <div className="space-y-2 max-h-[560px] overflow-y-auto pr-1">
+                        <div className="space-y-2 max-h-140 overflow-y-auto pr-1">
                             {inspectingRooms.map((room) => (
                                 <button
                                     type="button"
@@ -509,7 +519,7 @@ export function CleaningPage() {
                             {!isLoading && inspectingRooms.length === 0 ? <p className="text-xs text-slate-400">No rooms are currently inspecting.</p> : null}
                         </div>
 
-                        <div className="min-w-0 space-y-4 min-h-[420px]">
+                        <div className="min-w-0 space-y-4 min-h-105">
                             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                                 <h4 className="text-sm font-semibold text-slate-900">Selected Room</h4>
                                 <p className="mt-1 text-sm text-slate-600">Room: {selectedInspectingRoom?.roomNumber ?? '-'}</p>
@@ -556,7 +566,7 @@ export function CleaningPage() {
                             <div className="min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white p-4">
                                 <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                                     <h4 className="text-sm font-semibold text-slate-900">Pending Reports (RAM)</h4>
-                                    <span className="break-words text-xs text-slate-500">{pendingLossReports.length} pending, total penalty ${pendingPenaltyTotal}</span>
+                                    <span className="wrap-break-word text-xs text-slate-500">{pendingLossReports.length} pending, total penalty ${pendingPenaltyTotal}</span>
                                 </div>
                                 <div className="mb-3 flex flex-wrap items-center gap-2">
                                     <button
@@ -585,7 +595,7 @@ export function CleaningPage() {
                                                         <p className="font-medium">
                                                             {item.noIssue ? 'No loss/damage reported' : item.itemName}
                                                         </p>
-                                                        <p className="break-words text-xs">
+                                                        <p className="wrap-break-word text-xs">
                                                             Qty: {item.quantity} | Penalty: ${item.penaltyAmount}
                                                             {item.evidenceFile ? ` | Evidence: ${item.evidenceFile.name}` : ''}
                                                         </p>
@@ -639,7 +649,7 @@ export function CleaningPage() {
                     </div>
 
                     <div className="mt-4 grid items-start gap-3 md:grid-cols-[280px_minmax(0,1fr)]">
-                        <div className="space-y-2 max-h-[560px] overflow-y-auto pr-1">
+                        <div className="space-y-2 max-h-140 overflow-y-auto pr-1">
                             {cleaningRooms.map((room) => (
                                 <button
                                     type="button"

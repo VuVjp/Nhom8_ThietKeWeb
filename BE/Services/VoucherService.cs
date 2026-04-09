@@ -184,42 +184,39 @@ public class VoucherService : IVoucherService
         }
     }
 
-    public async Task ValidateCodeAsync(string code)
+    public async Task<VoucherDto> ValidateCodeAsync(string code, decimal? bookingAmount)
+    {
+        return ToDto(await ValidateCodeAsync(code, bookingAmount, _repo));
+    }
+    private static async Task<Voucher> ValidateCodeAsync(string code, decimal? bookingAmount, IVoucherRepository repo)
     {
         var normalized = code.Trim().ToUpperInvariant();
-        var voucher = await _repo.GetByCodeAsync(normalized);
-        if (voucher == null)
+        var voucher = await repo.GetByCodeAsync(normalized);
+        if (voucher == null || !voucher.IsActive)
         {
             throw new ArgumentException("Invalid voucher code.");
         }
-        if (string.IsNullOrWhiteSpace(code))
-        {
-            throw new ArgumentException("Code is required.");
-        }
-        if (!voucher.IsActive)
-        {
-            throw new ArgumentException("Voucher is not active.");
-        }
+
         if (voucher.ValidFrom.HasValue && voucher.ValidFrom > DateTime.UtcNow)
         {
             throw new ArgumentException("Voucher is not valid yet.");
         }
+
         if (voucher.ValidTo.HasValue && voucher.ValidTo < DateTime.UtcNow)
         {
             throw new ArgumentException("Voucher has expired.");
         }
+
         if (voucher.UsageLimit.HasValue && voucher.UsageCount >= voucher.UsageLimit.Value)
         {
             throw new ArgumentException("Voucher usage limit has been reached.");
         }
-        if (voucher.MinBookingValue.HasValue)
+
+        if (bookingAmount.HasValue && voucher.MinBookingValue.HasValue && bookingAmount.Value < voucher.MinBookingValue.Value)
         {
-            throw new ArgumentException($"Voucher requires minimum booking value of {voucher.MinBookingValue.Value}.");
+            throw new ArgumentException($"Minimum booking amount for this voucher is {voucher.MinBookingValue.Value}.");
         }
-        if (voucher.UsageLimit <= voucher.UsageCount)
-        {
-            throw new ArgumentException("Voucher usage limit has been reached.");
-        }
+        return voucher;
     }
 
     private static void ValidateUpdate(UpdateVoucherDto dto, Voucher current)

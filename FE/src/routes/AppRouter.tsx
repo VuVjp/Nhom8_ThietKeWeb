@@ -14,11 +14,16 @@ import { EquipmentPage } from '../pages/admin/EquipmentPage';
 import { AmenitiesPage } from '../pages/admin/AmenitiesPage';
 import { RoomTypesPage } from '../pages/admin/RoomTypesPage';
 import { VouchersPage } from '../pages/admin/VouchersPage';
+import { AuditLogPage } from '../pages/admin/AuditLogPage';
 import { ForbiddenPage } from '../pages/ForbiddenPage';
 import { CreateBookingPage } from '../pages/admin/reception/CreateBookingPage';
 import { ArrivalsPage } from '../pages/admin/reception/ArrivalsPage';
 import { InHousePage } from '../pages/admin/reception/InHousePage';
 import { BookingsListPage } from '../pages/admin/reception/BookingsListPage';
+import { ServiceCategoriesPage } from '../pages/admin/ServiceCategoriesPage';
+import { ServicesPage } from '../pages/admin/ServicesPage';
+import { OrderServicesListPage } from '../pages/admin/reception/OrderServicesListPage';
+import { OrderServiceDetailPage } from '../pages/admin/reception/OrderServiceDetailPage';
 import { RequireAuth, RequireAnyPermission, RequirePermission } from './RouteGuards';
 import { useAppAuth } from '../auth/useAppAuth';
 import { ArticlesPage } from '../modules/article/pages/ArticlesPage';
@@ -102,6 +107,10 @@ export const AppRouter = () => {
                         <Route path="admin/vouchers" element={<VouchersPage />} />
                     </Route>
 
+                    <Route element={<RequirePermission permission="VIEW_DASHBOARD" />}>
+                        <Route path="admin/audit-log" element={<AuditLogPage />} />
+                    </Route>
+
                     <Route element={<RequireAnyPermission permissions={['MANAGE_BOOKINGS']} />}>
                         <Route path="admin/reception/create-booking" element={<CreateBookingPage />} />
                         <Route path="admin/reception/arrivals" element={<ArrivalsPage />} />
@@ -117,6 +126,12 @@ export const AppRouter = () => {
 
                     <Route element={<RequireAnyPermission permissions={['MANAGE_ARTICLE_CATEGORY']} />}>
                         <Route path="admin/article-categories" element={<ArticleCategoriesPage />} />
+                    {/* Service Module */}
+                    <Route element={<RequireAnyPermission permissions={['MANAGE_SERVICES']} />}>
+                        <Route path="admin/service-categories" element={<ServiceCategoriesPage />} />
+                        <Route path="admin/services" element={<ServicesPage />} />
+                        <Route path="admin/reception/order-services" element={<OrderServicesListPage />} />
+                        <Route path="admin/reception/order-services/:id" element={<OrderServiceDetailPage />} />
                     </Route>
                 </Route>
             </Route>

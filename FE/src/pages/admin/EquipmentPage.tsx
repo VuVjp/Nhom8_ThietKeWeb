@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
-import { PencilSquareIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { PencilSquareIcon, PlusIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import { Input } from '../../components/Input';
 import { Table } from '../../components/Table';
 import { Pagination } from '../../components/Pagination';
@@ -295,13 +295,23 @@ export function EquipmentPage() {
                     <h2 className="text-2xl font-bold text-slate-900">Equipments</h2>
                     <p className="text-sm text-slate-500">Add and manage amenity items used in rooms.</p>
                 </div>
-                <button
-                    type="button"
-                    className="inline-flex items-center gap-2 rounded-lg bg-cyan-700 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-800 disabled:opacity-60"
-                    onClick={() => setOpenCreate(true)}
-                >
-                    <PlusIcon className="h-4 w-4" /> Add Equipment
-                </button>
+                <div className="flex gap-2">
+                    <button
+                        onClick={() => void loadEquipments()}
+                        className="p-2 text-slate-500 hover:text-cyan-600 transition bg-white border border-slate-200 rounded-xl"
+                        title="Refresh"
+                    >
+                        <ArrowPathIcon className={`h-5 w-5 ${isLoading ? 'animate-spin' : ''}`} />
+                    </button>
+
+                    <button
+                        type="button"
+                        className="inline-flex items-center gap-2 rounded-lg bg-cyan-700 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-800 disabled:opacity-60"
+                        onClick={() => setOpenCreate(true)}
+                    >
+                        <PlusIcon className="h-4 w-4" /> Add Equipment
+                    </button>
+                </div>
             </div>
 
             <div className="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-2">

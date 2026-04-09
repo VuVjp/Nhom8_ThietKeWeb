@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { HomeIcon, BuildingOffice2Icon, ArchiveBoxIcon, ExclamationTriangleIcon, SparklesIcon, UsersIcon, ShieldCheckIcon, WrenchScrewdriverIcon, Squares2X2Icon, RectangleStackIcon, ChevronDownIcon, CalendarDaysIcon, TicketIcon, NewspaperIcon } from '@heroicons/react/24/outline';
+import { useState } from 'react';
+import { HomeIcon, BuildingOffice2Icon, ArchiveBoxIcon, ExclamationTriangleIcon, SparklesIcon, UsersIcon, ShieldCheckIcon, WrenchScrewdriverIcon, Squares2X2Icon, RectangleStackIcon, ChevronDownIcon, CalendarDaysIcon, TicketIcon, ClipboardDocumentListIcon, CubeIcon } from '@heroicons/react/24/outline';
 import { NavLink, useLocation } from 'react-router-dom';
 import type { AppPermission } from '../auth/auth.types';
 import { useAppAuth } from '../auth/useAppAuth';
@@ -33,6 +33,16 @@ const navItems: SidebarNavItem[] = [
       { to: '/admin/reception/arrivals', label: 'Arrivals Today', permissions: ['MANAGE_BOOKINGS'] as AppPermission[] },
       { to: '/admin/reception/in-house', label: 'In-House Guests', permissions: ['MANAGE_BOOKINGS'] as AppPermission[] },
       { to: '/admin/reception/bookings', label: 'All Bookings', permissions: ['MANAGE_BOOKINGS'] as AppPermission[] },
+      { to: '/admin/reception/order-services', label: 'Service Orders', permissions: ['MANAGE_SERVICES'] as AppPermission[] },
+    ]
+  },
+  {
+    label: 'Services',
+    icon: CubeIcon,
+    permissions: ['MANAGE_SERVICES'] as AppPermission[],
+    children: [
+      { to: '/admin/services', label: 'Service Catalog', permissions: ['MANAGE_SERVICES'] as AppPermission[] },
+      { to: '/admin/service-categories', label: 'Categories', permissions: ['MANAGE_SERVICES'] as AppPermission[] },
     ]
   },
   { to: '/admin/rooms', label: 'Rooms', icon: BuildingOffice2Icon, permissions: ['MANAGE_ROOMS'] as AppPermission[] },
@@ -43,42 +53,15 @@ const navItems: SidebarNavItem[] = [
   { to: '/admin/loss', label: 'Loss & Compensation', icon: ExclamationTriangleIcon, permissions: ['APPROVE_LOSS'] as AppPermission[] },
   { to: '/admin/cleaning', label: 'Inspecting & Cleaning', icon: SparklesIcon, permissions: ['UPDATE_CLEANING'] as AppPermission[] },
   { to: '/admin/vouchers', label: 'Vouchers', icon: TicketIcon, permissions: ['MANAGE_VOUCHERS'] as AppPermission[] },
-  {
-    label: 'Articles',
-    icon: NewspaperIcon,
-    permissions: ['MANAGE_ARTICLES', 'MANAGE_ARTICLE_CATEGORY'] as AppPermission[],
-    children: [
-      { to: '/admin/articles', label: 'Article Management', permissions: ['MANAGE_ARTICLES'] as AppPermission[] },
-      { to: '/admin/article-categories', label: 'Article Categories', permissions: ['MANAGE_ARTICLE_CATEGORY'] as AppPermission[] },
-    ],
-  },
   { to: '/admin/users', label: 'Users', icon: UsersIcon, permissions: ['MANAGE_USERS'] as AppPermission[] },
   { to: '/admin/roles', label: 'Roles', icon: ShieldCheckIcon, permissions: ['MANAGE_ROLES'] as AppPermission[] },
+  { to: '/admin/audit-log', label: 'Audit Log', icon: ClipboardDocumentListIcon, permissions: ['VIEW_DASHBOARD'] as AppPermission[] },
 ];
 
 export function Sidebar({ collapsed, mobileOpen, onCloseMobile }: SidebarProps) {
   const { hasPermission } = useAppAuth();
   const location = useLocation();
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({ 'Reception': true });
-
-  useEffect(() => {
-    let changed = false;
-    const nextOpen = { ...openGroups };
-    
-    navItems.forEach((item) => {
-      if (item.children && !nextOpen[item.label]) {
-        const hasActiveChild = item.children.some((child) => location.pathname.startsWith(child.to));
-        if (hasActiveChild) {
-          nextOpen[item.label] = true;
-          changed = true;
-        }
-      }
-    });
-
-    if (changed) {
-      setOpenGroups(nextOpen);
-    }
-  }, [location.pathname]); // omit openGroups to avoid forcing it open if user closes it manually while staying on the page
 
   const toggleGroup = (label: string) => {
     if (collapsed) return;

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { PencilSquareIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { PencilSquareIcon, PlusIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import { amenitiesApi, type AmenityItem } from '../../api/amenitiesApi';
 import { toApiError } from '../../api/httpClient';
 import { Input } from '../../components/Input';
@@ -192,13 +192,22 @@ export function AmenitiesPage() {
                     <h2 className="text-2xl font-bold text-slate-900">Amenities</h2>
                     <p className="text-sm text-slate-500">Manage amenity catalog and icon image for room setup.</p>
                 </div>
-                <button
-                    type="button"
-                    className="inline-flex items-center gap-2 rounded-lg bg-cyan-700 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-800 disabled:opacity-60"
-                    onClick={() => setOpenCreate(true)}
-                >
-                    <PlusIcon className="h-4 w-4" /> Add Amenity
-                </button>
+                <div className="flex gap-2">
+                    <button
+                        onClick={() => void loadAmenities()}
+                        className="p-2 text-slate-500 hover:text-cyan-600 transition bg-white border border-slate-200 rounded-xl"
+                        title="Refresh"
+                    >
+                        <ArrowPathIcon className={`h-5 w-5 ${isLoading ? 'animate-spin' : ''}`} />
+                    </button>
+                    <button
+                        type="button"
+                        className="inline-flex items-center gap-2 rounded-lg bg-cyan-700 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-800 disabled:opacity-60"
+                        onClick={() => setOpenCreate(true)}
+                    >
+                        <PlusIcon className="h-4 w-4" /> Add Amenity
+                    </button>
+                </div>
             </div>
 
             <Table columns={columns} rows={isLoading ? [] : rows} />

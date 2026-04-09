@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { EyeIcon, PlusIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
+import { EyeIcon, PlusIcon, PencilSquareIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { Input } from '../../components/Input';
@@ -464,6 +464,13 @@ export function RoomsPage() {
                     <p className="text-sm text-slate-500">Manage status, cleaning and room inventory operations.</p>
                 </div>
                 <div className="flex items-center gap-2">
+                    <button
+                        onClick={() => void loadRooms()}
+                        className="p-2 text-slate-500 hover:text-cyan-600 transition bg-white border border-slate-200 rounded-xl"
+                        title="Refresh"
+                    >
+                        <ArrowPathIcon className={`h-5 w-5 ${isLoading ? 'animate-spin' : ''}`} />
+                    </button>
                     <button
                         type="button"
                         onClick={() => {

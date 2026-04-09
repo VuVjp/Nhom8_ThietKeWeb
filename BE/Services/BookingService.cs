@@ -17,10 +17,14 @@ public class BookingService : IBookingService
     };
 
     private readonly IBookingRepository _repository;
+    private readonly IVoucherRepository _voucherRepository;
+    private readonly IVoucherService _voucherService;
 
-    public BookingService(IBookingRepository repository)
+    public BookingService(IBookingRepository repository, IVoucherRepository voucherRepository, IVoucherService voucherService)
     {
         _repository = repository;
+        _voucherRepository = voucherRepository;
+        _voucherService = voucherService;
     }
 
     public async Task<IEnumerable<RoomAvailabilityDto>> GetAvailableRoomsAsync(DateTime checkIn, DateTime checkOut, int? excludeBookingId = null)
@@ -118,6 +122,28 @@ public class BookingService : IBookingService
                 PricePerNight = room.RoomType!.BasePrice,
             }).ToList(),
         };
+
+        booking.TotalPrice = CalculateTotalAmount(booking.BookingDetails);
+        if (!string.IsNullOrWhiteSpace(dto.VoucherId))
+        {
+            booking.VoucherId = int.TryParse(dto.VoucherId, out var voucherId) ? voucherId : (int?)null;
+            var voucher = await _voucherRepository.GetByIdAsync(booking.VoucherId!.Value);
+            if (voucher != null)
+            {
+                await _voucherService.ValidateCodeAsync(voucher.Code, booking.TotalPrice);
+                if (voucher.DiscountType == "Percentage")
+                {
+                    booking.Discount = Math.Round(booking.TotalPrice * (voucher.DiscountValue / 100m), 2);
+                }
+                else if (voucher.DiscountType == "Fixed")
+                {
+                    booking.Discount = Math.Min(voucher.DiscountValue, booking.TotalPrice);
+                }
+                voucher.UsageCount += 1;
+                await _voucherRepository.SaveChangesAsync();
+            }
+        }
+        booking.FinalPrice = booking.TotalPrice - (booking.Discount ?? 0);
 
         await _repository.AddBookingAsync(booking);
         await _repository.SaveChangesAsync();
@@ -236,6 +262,14 @@ public class BookingService : IBookingService
         }
         if (string.Equals(status, "CheckedIn", StringComparison.OrdinalIgnoreCase))
         {
+            var maintenanceRooms = booking.BookingDetails
+                .Where(detail => detail.Room != null && detail.Room.Status == "Maintenance")
+                .Select(detail => detail.Room!.RoomNumber)
+                .ToList();
+            if (maintenanceRooms.Count > 0)
+            {
+                throw new InvalidOperationException($"Cannot check in booking because the following rooms are under maintenance: {string.Join(", ", maintenanceRooms)}");
+            }
             var now = DateTime.Now;
             var hasFutureStay = booking.BookingDetails.Any(detail => detail.CheckInDate > now);
             if (hasFutureStay)
@@ -251,7 +285,7 @@ public class BookingService : IBookingService
         if (string.Equals(status, "CheckedOut", StringComparison.OrdinalIgnoreCase))
         {
             var now = DateTime.Now;
-            var hasFutureStay = booking.BookingDetails.Any(detail => detail.CheckOutDate > now);
+            var hasFutureStay = booking.BookingDetails.Any(detail => detail.CheckInDate > now);
             if (hasFutureStay)
             {
                 throw new InvalidOperationException("Cannot change status of a checked-out booking with future stay.");
@@ -261,8 +295,6 @@ public class BookingService : IBookingService
                 throw new InvalidOperationException("Only checked-in bookings can be checked out.");
             }
         }
-
-        booking.Status = status;
 
         if (status.Equals("CheckedIn", StringComparison.OrdinalIgnoreCase))
         {
@@ -285,13 +317,65 @@ public class BookingService : IBookingService
                     continue;
                 }
 
-                detail.Room.Status = "Cleaning";
+                detail.Room.Status = "Inspecting";
                 detail.Room.CleaningStatus = "Dirty";
             }
         }
+        else if (status.Equals("Cancelled", StringComparison.OrdinalIgnoreCase))
+        {
+            if (booking.Status != "Confirmed" && booking.Status != "Pending")
+            {
+                throw new InvalidOperationException($"Only pending or confirmed bookings can be cancelled.");
+            }
+            foreach (var detail in booking.BookingDetails)
+            {
+                if (detail.Room == null)
+                {
+                    continue;
+                }
 
+                detail.Room.Status = "Available";
+                detail.Room.CleaningStatus = "Clean";
+            }
+            if (booking.VoucherId.HasValue)
+            {
+                var voucher = await _voucherRepository.GetByIdAsync(booking.VoucherId.Value);
+                if (voucher != null && voucher.UsageCount > 0)
+                {
+                    voucher.UsageCount -= 1;
+                    await _voucherRepository.SaveChangesAsync();
+                }
+            }
+        }
+
+        booking.Status = status;
         await _repository.SaveChangesAsync();
         return true;
+    }
+
+    public async Task<IEnumerable<ActiveRoomDto>> GetActiveRoomsAsync()
+    {
+        var bookings = await _repository.GetInHouseGuestsAsync();
+
+        var result = new List<ActiveRoomDto>();
+        foreach (var b in bookings)
+        {
+            foreach (var detail in b.BookingDetails)
+            {
+                if (detail.Room != null)
+                {
+                    result.Add(new ActiveRoomDto
+                    {
+                        BookingDetailId = detail.Id,
+                        RoomNumber = detail.Room.RoomNumber,
+                        GuestName = b.GuestName ?? "Unknown",
+                        BookingId = b.Id
+                    });
+                }
+            }
+        }
+
+        return result;
     }
 
     private static BookingSummaryDto MapToSummaryDto(Booking booking)
@@ -312,7 +396,7 @@ public class BookingService : IBookingService
             CheckInDate = firstCheckIn,
             CheckOutDate = lastCheckOut,
             Status = string.IsNullOrWhiteSpace(booking.Status) ? "Pending" : booking.Status,
-            TotalAmount = CalculateTotalAmount(orderedDetails),
+            TotalAmount = booking.FinalPrice,
             RoomIds = orderedDetails.Where(item => item.RoomId.HasValue).Select(item => item.RoomId!.Value).Distinct().ToList(),
         };
     }

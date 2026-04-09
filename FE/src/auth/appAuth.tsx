@@ -2,7 +2,7 @@ import { createContext, useEffect, useMemo, useState, type PropsWithChildren } f
 import { authApi } from '../api/authApi';
 import { rolesApi } from '../api/rolesApi';
 import { getAccessToken } from '../api/httpClient';
-import { appPermissions, type AppPermission, type AppRole, type AppUser } from './auth.types';
+import { appPermissions, type AppPermission, type AppUser } from './auth.types';
 import { subscribeAuthRefresh } from '../api/httpClient';
 
 const PERMISSIONS_STORAGE_KEY = 'permissions';
@@ -32,17 +32,6 @@ function parseJwtPayload(token: string): Record<string, unknown> | null {
     } catch {
         return null;
     }
-}
-
-function normalizeRole(rawRole: unknown): AppRole {
-    const role = String(rawRole ?? '').toLowerCase();
-    if (role.includes('manager')) {
-        return 'Manager';
-    }
-    if (role.includes('staff')) {
-        return 'Staff';
-    }
-    return 'Admin';
 }
 
 function toKnownPermissions(items: string[] | null | undefined): AppPermission[] {
@@ -79,7 +68,7 @@ function getUserBaseFromToken(): Omit<AppUser, 'permissions'> | null {
     const roleClaim =
         payload?.role ??
         payload?.['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
-    const role = normalizeRole(roleClaim);
+    const role = roleClaim ?? 'Guest';
 
     const idClaim =
         payload?.nameid ??
@@ -109,6 +98,18 @@ async function resolveCurrentUser(emailOverride?: string): Promise<AppUser | nul
     }
 
     try {
+        // This is a fallback in case the permissions are not in localStorage for some reason (e.g. cleared, or user logged in from another tab)
+
+        // const permissions = localStorage.getItem(PERMISSIONS_STORAGE_KEY);
+        // if (permissions) {
+        //     const parsed = JSON.parse(permissions) as string[];
+        //     const normalized = toKnownPermissions(parsed);
+        //     return {
+        //         ...baseUser,
+        //         email: emailOverride?.trim().toLowerCase() || baseUser.email,
+        //         permissions: normalized,
+        //     };
+        // }
         const apiPermissions = await rolesApi.getMyPermissions();
         const normalizedPermissions = toKnownPermissions(apiPermissions);
         localStorage.setItem(PERMISSIONS_STORAGE_KEY, JSON.stringify(normalizedPermissions));
@@ -188,17 +189,11 @@ export function AppAuthProvider({ children }: PropsWithChildren) {
                 if (!user) {
                     return false;
                 }
-                if (user.role === 'Admin') {
-                    return true;
-                }
                 return user.permissions.includes(permission.toUpperCase() as AppPermission);
             },
             hasAnyPermission: (permissions: AppPermission[]) => {
                 if (!user) {
                     return false;
-                }
-                if (user.role === 'Admin') {
-                    return true;
                 }
                 return permissions.some((permission) => user.permissions.includes(permission.toUpperCase() as AppPermission));
             },

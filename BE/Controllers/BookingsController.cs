@@ -39,18 +39,28 @@ public class BookingsController : ControllerBase
     }
 
     [HttpGet("arrivals")]
+    [Permission(PermissionNames.ManageBookings)]
     public async Task<IActionResult> GetArrivalsToday()
     {
         return Ok(await _service.GetArrivalsTodayAsync());
     }
 
     [HttpGet("in-house")]
+    [Permission(PermissionNames.ManageBookings)]
     public async Task<IActionResult> GetInHouseGuests()
     {
         return Ok(await _service.GetInHouseGuestsAsync());
     }
 
+    [HttpGet("active-rooms")]
+    [Permission(PermissionNames.ManageServices)]
+    public async Task<IActionResult> GetActiveRooms()
+    {
+        return Ok(await _service.GetActiveRoomsAsync());
+    }
+
     [HttpGet]
+    [Permission(PermissionNames.ManageBookings)]
     public async Task<IActionResult> GetAllBookings()
     {
         return Ok(await _service.GetAllBookingsAsync());
