@@ -124,7 +124,8 @@ export function ArticleFormPage() {
                 content: processedContent,
                 status,
                 categoryIds: selectedCategoryIds,
-                thumbnail: thumbnailFile ?? undefined,
+                // Only send the file if it hasn't been uploaded to cloud yet (e.g. if it's still a local blob/base64)
+                thumbnail: (thumbnailPreview && !thumbnailPreview.startsWith('http')) ? thumbnailFile ?? undefined : undefined,
                 thumbnailUrl: thumbnailPreview ?? '',
             };
 

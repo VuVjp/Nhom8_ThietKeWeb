@@ -129,7 +129,7 @@ public class ArticleService : IArticleService
 
         var thumbnailUrl = dto.ThumbnailUrl;
         if (dto.ThumbnailFile != null)
-            thumbnailUrl = await _cloudinaryService.UploadImageAsync(dto.ThumbnailFile, "articles/thumbnail", dto.Title);
+            thumbnailUrl = await _cloudinaryService.UploadImageAsync(dto.ThumbnailFile, "articles/thumbnail");
 
         var entity = new Article
         {
@@ -161,7 +161,7 @@ public class ArticleService : IArticleService
 
         var thumbnailUrl = entity.ThumbnailUrl;
         if (dto.ThumbnailFile != null)
-            thumbnailUrl = await _cloudinaryService.UploadImageAsync(dto.ThumbnailFile, "articles/thumbnail", dto.Title);
+            thumbnailUrl = await _cloudinaryService.UploadImageAsync(dto.ThumbnailFile, "articles/thumbnail");
         else if (dto.ThumbnailUrl != null)
             thumbnailUrl = string.IsNullOrWhiteSpace(dto.ThumbnailUrl) ? null : dto.ThumbnailUrl;
 
@@ -212,7 +212,7 @@ public class ArticleService : IArticleService
         if (entity == null) throw new NotFoundException($"Article with ID {id} not found.");
 
         if (dto.ThumbnailFile != null)
-            entity.ThumbnailUrl = await _cloudinaryService.UploadImageAsync(dto.ThumbnailFile, "articles/thumbnail", $"article-{id}");
+            entity.ThumbnailUrl = await _cloudinaryService.UploadImageAsync(dto.ThumbnailFile, "articles/thumbnail");
         else if (dto.ThumbnailUrl != null)
             entity.ThumbnailUrl = string.IsNullOrWhiteSpace(dto.ThumbnailUrl) ? null : dto.ThumbnailUrl;
 
