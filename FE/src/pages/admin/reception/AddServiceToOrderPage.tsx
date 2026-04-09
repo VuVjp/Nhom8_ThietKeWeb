@@ -39,8 +39,8 @@ export function AddServiceToOrderPage() {
     const [isLoadingServices, setIsLoadingServices] = useState(false);
     const [addingIds, setAddingIds] = useState<number[]>([]);
 
-    const loadOrder = useCallback(async (showLoading = true) => {
-        if (showLoading) setIsLoadingOrder(true);
+    const loadOrder = useCallback(async (isBackground = false) => {
+        if (!isBackground) setIsLoadingOrder(true);
         try {
             const data = await orderServicesApi.getById(orderId);
             setOrder(data);
@@ -49,10 +49,12 @@ export function AddServiceToOrderPage() {
                 navigate(`/admin/reception/order-services/${orderId}`);
             }
         } catch (error) {
-            toast.error('Failed to load order');
-            navigate('/admin/reception/order-services');
+            if (!isBackground) {
+                toast.error('Failed to load order');
+                navigate('/admin/reception/order-services');
+            }
         } finally {
-            if (showLoading) setIsLoadingOrder(false);
+            if (!isBackground) setIsLoadingOrder(false);
         }
     }, [orderId, navigate]);
 
@@ -106,8 +108,8 @@ export function AddServiceToOrderPage() {
                 quantity: 1
             });
             toast.success(`${service.name} added`);
-            // Refresh order to update counts without full page reload state
-            await loadOrder(false);
+            // Refresh order to update counts (silently)
+            await loadOrder(true);
         } catch (error) {
             const apiError = toApiError(error);
             toast.error(apiError.message || 'Failed to add service');
@@ -116,11 +118,17 @@ export function AddServiceToOrderPage() {
         }
     };
 
+    const resetFilters = () => {
+        setSearch('');
+        setSelectedCategory(null);
+        setPage(1);
+    };
+
     const getAddedQuantity = (serviceId: number) => {
         return order?.details?.find(d => d.serviceId === serviceId)?.quantity || 0;
     };
 
-    if (isLoadingOrder) {
+    if (isLoadingOrder && !order) {
         return <div className="p-10 text-center text-slate-500">Loading order info...</div>;
     }
 
@@ -150,8 +158,8 @@ export function AddServiceToOrderPage() {
             </div>
 
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-6">
-                <div className="flex flex-col md:flex-row gap-4 items-center">
-                    <div className="relative w-full md:w-80">
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+                    <div className="md:col-span-6 relative">
                         <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
                         <Input 
                             className="pl-10 h-10 border-slate-200 focus:border-cyan-500 rounded-xl" 
@@ -160,7 +168,7 @@ export function AddServiceToOrderPage() {
                             onChange={(e) => setSearch(e.target.value)} 
                         />
                     </div>
-                    <div className="w-full md:w-64">
+                    <div className="md:col-span-5">
                         <CategorySelect 
                             categories={categories}
                             selectedId={selectedCategory}
@@ -168,16 +176,15 @@ export function AddServiceToOrderPage() {
                             placeholder="All Categories"
                         />
                     </div>
-                    <button
-                        onClick={() => {
-                            setSearch('');
-                            setSelectedCategory(null);
-                        }}
-                        title="Reset Filters"
-                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:bg-slate-50 bg-slate-50"
-                    >
-                        <ArrowPathIcon className="h-5 w-5" />
-                    </button>
+                    <div className="md:col-span-1">
+                        <button
+                            onClick={resetFilters}
+                            title="Reset Filters"
+                            className="flex h-10 w-full items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:bg-slate-50 bg-slate-50"
+                        >
+                            <ArrowPathIcon className="h-4 w-4" />
+                        </button>
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -221,15 +228,13 @@ export function AddServiceToOrderPage() {
 
                                     <button
                                         onClick={() => void handleAddService(service)}
-                                        disabled={addingIds.length > 0}
+                                        disabled={addingIds.includes(service.id)}
                                         className={`w-full py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all ${
                                             addingIds.includes(service.id)
                                             ? 'bg-slate-100 text-slate-400'
-                                            : addingIds.length > 0
-                                                ? 'bg-slate-50 text-slate-300 pointer-events-none'
-                                                : isAdded 
-                                                    ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-md shadow-emerald-200'
-                                                    : 'bg-slate-900 text-white hover:bg-cyan-700 shadow-sm'
+                                            : isAdded 
+                                                ? 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-md shadow-emerald-200'
+                                                : 'bg-slate-900 text-white hover:bg-cyan-700 shadow-sm'
                                         }`}
                                     >
                                         {addingIds.includes(service.id) ? (
