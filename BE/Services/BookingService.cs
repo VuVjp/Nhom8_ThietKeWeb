@@ -355,7 +355,7 @@ public class BookingService : IBookingService
 
     public async Task<IEnumerable<ActiveRoomDto>> GetActiveRoomsAsync()
     {
-        var bookings = (await _repository.GetAllWithDetailsAsync(includeRoom: true))
+        var bookings = (await _repository.GetAllWithDetailsAsync())
             .Where(b => b.Status == "CheckedIn")
             .ToList();
 
