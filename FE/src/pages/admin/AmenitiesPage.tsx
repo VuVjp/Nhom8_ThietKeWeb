@@ -133,12 +133,10 @@ export function AmenitiesPage() {
         {
             key: 'icon',
             label: 'Icon',
-            render: (row: AmenityItem) =>
-                row.iconUrl ? (
-                    <img src={row.iconUrl} alt={row.name} className="h-10 w-10 rounded-lg border border-slate-200 object-cover" />
-                ) : (
-                    <div className="h-10 w-10 rounded-lg border border-dashed border-slate-300" />
-                ),
+            isImg: true,
+            src: (row: AmenityItem) => row.iconUrl ?? '',
+            render: () =>
+                <span className="text-xs text-slate-400">No image</span>
         },
         { key: 'name', label: 'Name', render: (row: AmenityItem) => row.name },
         {

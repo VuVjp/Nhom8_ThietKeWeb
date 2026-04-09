@@ -12,6 +12,13 @@ namespace HotelManagement.Services.Implementations;
 
 public class RoomService : IRoomService
 {
+	private static readonly HashSet<string> ValidStatuses = new(StringComparer.OrdinalIgnoreCase)
+	{ "Available", "Occupied", "Maintenance", "InsClean"
+	};
+	private static readonly HashSet<string> ValidCondition = new(StringComparer.OrdinalIgnoreCase)
+	 {
+		"Clean", "Dirty", "Inspecting","Cleaning"
+	 };
 	private readonly IRoomRepository _repository;
 	private readonly AppDbContext _context;
 	private readonly INotificationService _notificationService;
@@ -29,10 +36,42 @@ public class RoomService : IRoomService
 		return rooms.Select(MapToDto);
 	}
 
-	public async Task<IEnumerable<RoomDto>> GetByStatusAsync(string status)
+	public async Task ChangeCleaningRequestedAsync(int id, bool requested)
 	{
-		var rooms = await _repository.GetByStatusAsync(status);
+		var room = await _repository.GetByIdAsync(id);
+		if (room == null) throw new NotFoundException("Room not found.");
+
+		if (room.CleaningRequested == requested) return;
+		else if (!requested && room.Status!.Equals("InsClean", StringComparison.OrdinalIgnoreCase))
+		{
+			room.Status = "Available";
+		}
+		room.CleaningRequested = requested;
+		_repository.Update(room);
+		await _repository.SaveChangesAsync();
+	}
+
+	public async Task<IEnumerable<RoomDto>> GetByStatusAsync(string status, bool includeCleaningRequested = false)
+	{
+		var rooms = await _repository.GetByStatusAsync(status, includeCleaningRequested: includeCleaningRequested);
+
 		return rooms.Select(MapToDto);
+	}
+
+	public async Task<IEnumerable<RoomDto>> GetByCleaningStatusAsync(string cleaningStatus)
+	{
+		var rooms = await _repository.GetByCleaningStatusAsync(cleaningStatus);
+		return rooms.Select(MapToDto);
+	}
+
+	public async Task<bool> RequestCleaningAsync(int id)
+	{
+		var room = await _repository.GetByIdAsync(id);
+		if (room == null) return false;
+
+		room.CleaningRequested = true;
+		_repository.Update(room);
+		return await _repository.SaveChangesAsync();
 	}
 
 	public async Task<RoomDto?> GetDetailAsync(int id)
@@ -131,7 +170,7 @@ public class RoomService : IRoomService
 		if (string.Equals(targetStatus.ToLower(), "available", StringComparison.OrdinalIgnoreCase))
 		{
 			var validationMessage = await ValidateCleaningCompletionAsync(room.Id);
-			// validationMessage ??= await ValidateEquipmentAvailabilityForRoomAsync(room.Id);
+			validationMessage ??= await ValidateEquipmentAvailabilityForRoomAsync(room.Id);
 			if (validationMessage != null)
 			{
 				room.Status = "Maintenance";
@@ -150,26 +189,14 @@ public class RoomService : IRoomService
 				throw new InvalidOperationException($"Room cannot be set to Available: {validationMessage}");
 			}
 		}
-		if (string.Equals(targetStatus.ToLower(), "maintenance", StringComparison.OrdinalIgnoreCase))
-		{
-			room.CleaningStatus = "Inspecting";
-		}
 		if (string.Equals(targetStatus.ToLower(), "available", StringComparison.OrdinalIgnoreCase) && !string.Equals(room.CleaningStatus, "Completed", StringComparison.OrdinalIgnoreCase))
 		{
 			await EnsureActiveRoomTypeAsync(room.RoomTypeId);
 			room.CleaningStatus = "Clean";
 		}
-		if (string.Equals(targetStatus.ToLower(), "cleaning", StringComparison.OrdinalIgnoreCase))
-		{
-			room.CleaningStatus = "Dirty";
-		}
-		if (string.Equals(targetStatus.ToLower(), "inspecting", StringComparison.OrdinalIgnoreCase))
+		if (string.Equals(targetStatus.ToLower(), "InsClean", StringComparison.OrdinalIgnoreCase))
 		{
 			room.CleaningStatus = "Inspecting";
-		}
-		if (string.Equals(targetStatus.ToLower(), "occupied", StringComparison.OrdinalIgnoreCase) && string.Equals(room.CleaningStatus, "Completed", StringComparison.OrdinalIgnoreCase))
-		{
-			room.CleaningStatus = "Clean";
 		}
 		room.Status = targetStatus;
 		_repository.Update(room);
@@ -205,7 +232,8 @@ public class RoomService : IRoomService
 			Status = room.Status,
 			CleaningStatus = room.CleaningStatus,
 			RoomTypeId = room.RoomTypeId,
-			RoomTypeName = room.RoomType?.Name
+			RoomTypeName = room.RoomType?.Name,
+			CleaningRequested = room.CleaningRequested
 		};
 	}
 
@@ -244,19 +272,6 @@ public class RoomService : IRoomService
 
 		if (roomType == null)
 			throw new NotFoundException($"Room type with ID {roomTypeId.Value} not found.");
-
-		if (!roomType.IsActive)
-			throw new ArgumentException("Selected room type is inactive.");
-	}
-
-	private async Task EnsureActiveRoomTypeAsync(int roomTypeId)
-	{
-		var roomType = await _context.RoomTypes
-			.AsNoTracking()
-			.FirstOrDefaultAsync(item => item.Id == roomTypeId);
-
-		if (roomType == null)
-			throw new NotFoundException($"Room type with ID {roomTypeId} not found.");
 
 		if (!roomType.IsActive)
 			throw new ArgumentException("Selected room type is inactive.");

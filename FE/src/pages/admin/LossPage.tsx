@@ -41,7 +41,7 @@ export function LossPage() {
 
   const filtered = useMemo(() => {
     const nextRows = rows.filter((item) => {
-      const matchSearch = queryIncludes(item.id, search) || queryIncludes(item.item, search) || queryIncludes(item.room, search);
+      const matchSearch = queryIncludes(item.id, search) || queryIncludes(item.itemName, search) || queryIncludes(item.room, search);
       const matchFrom = !dateFrom || item.date >= dateFrom;
       const matchTo = !dateTo || item.date <= dateTo;
       const amount = item.penalty;
@@ -63,11 +63,13 @@ export function LossPage() {
     {
       key: 'evidence',
       label: 'Evidence',
-      render: (row: (typeof filtered)[number]) =>
-        row.evidence ? <img src={row.evidence} alt={row.id} className="h-14 w-20 rounded-lg object-cover" /> : <span className="text-xs text-slate-400">No image</span>,
+      isImg: true,
+      src: (row: (typeof filtered)[number]) => row.evidence ?? '',
+      render: () =>
+        <span className="text-xs text-slate-400">No image</span>
     },
     { key: 'room', label: 'Room', render: (row: (typeof filtered)[number]) => row.room },
-    { key: 'item', label: 'Item', render: (row: (typeof filtered)[number]) => row.item },
+    { key: 'item', label: 'Item', render: (row: (typeof filtered)[number]) => row.itemName },
     { key: 'quantity', label: 'Quantity', render: (row: (typeof filtered)[number]) => row.quantity },
     { key: 'penalty', label: 'Penalty', render: (row: (typeof filtered)[number]) => formatCurrency(row.penalty) },
     { key: 'description', label: 'Description', render: (row: (typeof filtered)[number]) => row.description },

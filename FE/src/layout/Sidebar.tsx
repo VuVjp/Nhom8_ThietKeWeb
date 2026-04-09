@@ -64,6 +64,7 @@ const navItems: SidebarNavItem[] = [
   },
   { to: '/admin/users', label: 'Users', icon: UsersIcon, permissions: ['MANAGE_USERS'] as AppPermission[] },
   { to: '/admin/roles', label: 'Roles', icon: ShieldCheckIcon, permissions: ['MANAGE_ROLES'] as AppPermission[] },
+  { to: '/admin/audit-log', label: 'Audit Logs', icon: Squares2X2Icon, permissions: ['VIEW_DASHBOARD'] as AppPermission[] },
 ];
 
 export function Sidebar({ collapsed, mobileOpen, onCloseMobile }: SidebarProps) {

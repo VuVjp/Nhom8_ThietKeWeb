@@ -200,14 +200,9 @@ export function EquipmentPage() {
         {
             key: 'image',
             label: 'Image',
-            render: (row: EquipmentItem) =>
-                row.imageUrl ? (
-                    <a className="text-cyan-700 underline" href={row.imageUrl} target="_blank" rel="noreferrer">
-                        View
-                    </a>
-                ) : (
-                    <span className="text-slate-400">-</span>
-                ),
+            isImg: true,
+            src: (row: EquipmentItem) => row.imageUrl ?? '',
+            render: () => <span className="text-xs text-slate-400">No image</span>,
         },
         {
             key: 'actions',

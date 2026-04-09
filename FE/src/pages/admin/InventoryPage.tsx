@@ -306,13 +306,21 @@ export function InventoryPage() {
                             setItemFilterId('all');
                             setSortMode('asc');
                             void loadInventory();
-                            toast('Filters refreshed', { icon: 'ℹ️' });
                         }}
                     >
                         <ArrowPathIcon className="h-4 w-4" />
                     </button>
                 </div>
             </div>
+            {isLoading ? (
+                <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] flex flex-col items-center justify-center z-10">
+                    <div className="w-10 h-10 border-4 border-cyan-600 border-t-transparent rounded-full animate-spin"></div>
+                    <p className="mt-4 text-sm font-bold text-slate-600 animate-pulse">Loading inventory...</p>
+                </div>
+            ) :
+                paged.length === 0 && !isLoading ? (
+                    <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-slate-500">No inventory items found.</div>
+                ) : null}
 
             <Table columns={columns} rows={isLoading ? [] : paged} />
             <Pagination page={page} pageSize={pageSize} total={filtered.length} onPageChange={setPage} />

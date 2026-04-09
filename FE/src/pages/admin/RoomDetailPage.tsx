@@ -244,9 +244,38 @@ export function RoomDetailPage() {
         key: 'status',
         label: 'Status',
         render: (row: InventoryItem) => (
-          <span className={`rounded-full px-2 py-1 text-xs font-medium ${row.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
-            {row.isActive ? 'ON' : 'OFF'}
-          </span>
+          <button
+            type="button"
+            style={{ cursor: 'pointer' }}
+            onClick={() => {
+              if (!ensure('MANAGE_ROOMS', 'toggle room inventory item')) {
+                return;
+              }
+              void (async () => {
+                try {
+                  await roomInventoriesApi.toggleActive(row.id);
+                  setItems((prev) =>
+                    prev.map((item) =>
+                      item.id === row.id
+                        ? {
+                          ...item,
+                          isActive: !item.isActive,
+                        }
+                        : item,
+                    ),
+                  );
+                  toast.success(
+                    `${isAmenityInventoryItem(row) ? `Amenity ${removeAmenityPrefix(row.name)}` : `Equipment ${row.name}`} is now ${row.isActive ? 'OFF' : 'ON'}`,
+                  );
+                } catch (error) {
+                  const apiError = toApiError(error);
+                  toast.error(apiError.message || 'Failed to toggle item status');
+                }
+              })();
+            }}
+          >
+            <Badge value={row.isActive ? 'Active' : 'Inactive'} />
+          </button>
         ),
       },
       {
@@ -288,38 +317,6 @@ export function RoomDetailPage() {
               }}
             >
               <PencilIcon className="h-4 w-4" />
-            </button>
-            <button
-              type="button"
-              className={`rounded-lg border p-1.5 ${row.isActive ? 'border-amber-200 text-amber-700' : 'border-emerald-200 text-emerald-700'}`}
-              onClick={() => {
-                if (!ensure('MANAGE_ROOMS', 'toggle room inventory item')) {
-                  return;
-                }
-                void (async () => {
-                  try {
-                    await roomInventoriesApi.toggleActive(row.id);
-                    setItems((prev) =>
-                      prev.map((item) =>
-                        item.id === row.id
-                          ? {
-                            ...item,
-                            isActive: !item.isActive,
-                          }
-                          : item,
-                      ),
-                    );
-                    toast.success(
-                      `${isAmenityInventoryItem(row) ? `Amenity ${removeAmenityPrefix(row.name)}` : `Equipment ${row.name}`} is now ${row.isActive ? 'OFF' : 'ON'}`,
-                    );
-                  } catch (error) {
-                    const apiError = toApiError(error);
-                    toast.error(apiError.message || 'Failed to toggle item status');
-                  }
-                })();
-              }}
-            >
-              <Badge value={row.isActive ? 'Active' : 'Inactive'} />
             </button>
           </div>
         ),

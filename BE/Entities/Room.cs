@@ -8,6 +8,7 @@ public class Room
     public int? Floor { get; set; }
     public string? Status { get; set; }
     public string? CleaningStatus { get; set; }
+    public bool CleaningRequested { get; set; } = false;
 
     public RoomType? RoomType { get; set; }
     public ICollection<RoomInventory> RoomInventories { get; set; } = new List<RoomInventory>();

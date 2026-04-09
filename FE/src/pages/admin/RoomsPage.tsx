@@ -17,6 +17,7 @@ import { equipmentsApi, type EquipmentItem } from '../../api/equipmentsApi';
 import { roomInventoriesApi } from '../../api/roomInventoriesApi';
 import { paginate, queryIncludes, sortBy } from '../../utils/table';
 import { usePermissionCheck } from '../../hooks/usePermissionCheck';
+import { BrushCleaning } from 'lucide-react';
 
 interface CreateRoomDraft {
     roomNumber: string;
@@ -212,7 +213,7 @@ export function RoomsPage() {
                         void (async () => {
                             try {
                                 await roomsApi.changeStatus(row.id, value);
-                                setRooms((prev) => prev.map((item) => (item.id === row.id ? { ...item, status: value, cleaningStatus: value === 'Available' ? 'Clean' : value === 'Maintenance' ? 'Inspecting' : value === 'Cleaning' ? 'Dirty' : value === 'Inspecting' ? 'Inspecting' : value === 'Occupied' ? 'Clean' : item.cleaningStatus } : item)));
+                                setRooms((prev) => prev.map((item) => (item.id === row.id ? { ...item, status: value, cleaningStatus: value === 'Available' ? 'Clean' : value === 'InsClean' ? 'Inspecting' : item.cleaningStatus } : item)));
                                 toast.success(`Room ${row.roomNumber} status updated`);
                             } catch (error) {
                                 const apiError = toApiError(error);
@@ -224,8 +225,7 @@ export function RoomsPage() {
                     <option>Available</option>
                     <option>Maintenance</option>
                     <option>Occupied</option>
-                    <option>Inspecting</option>
-                    <option>Cleaning</option>
+                    <option>InsClean</option>
                 </Select>
             ),
         },
@@ -255,6 +255,7 @@ export function RoomsPage() {
                 >
                     <option>Clean</option>
                     <option>Inspecting</option>
+                    <option>Cleaning</option>
                     <option>Dirty</option>
                 </Select>
             ),
@@ -264,8 +265,25 @@ export function RoomsPage() {
             label: 'Actions',
             render: (row: Room) => (
                 <div className="flex gap-2">
-                    <button type="button" className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-xs" onClick={() => navigate(`/admin/rooms/${row.id}`)}>
+                    <button type="button" className="w-30 inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-xs" onClick={() => navigate(`/admin/rooms/${row.id}`)}>
                         <EyeIcon className="h-4 w-4" /> View Details
+                    </button>
+                    <button type="button" className={` w-30 inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-xs ${row.cleaningRequested ? 'text-red-600' : 'text-green-700'}`}
+                        onClick={() => {
+                            if (!ensure('MANAGE_ROOMS', `${row.cleaningRequested ? 'cancel cleaning request' : 'request cleaning'}`)) {
+                                return;
+                            }
+                            void (async () => {
+                                try {
+                                    await roomsApi.requestCleaning(row.id, !row.cleaningRequested);
+                                    setRooms((prev) => prev.map((item) => (item.id === row.id ? { ...item, cleaningRequested: !item.cleaningRequested } : item)));
+                                } catch (error) {
+                                    const apiError = toApiError(error);
+                                    toast.error(apiError.message || 'Failed to update cleaning request');
+                                }
+                            })();
+                        }}>
+                        <BrushCleaning className={`h-4 w-4`} /> {row.cleaningRequested === true ? 'Cancel Request' : 'Request Cleaning'}
                     </button>
                 </div>
             ),
@@ -521,8 +539,9 @@ export function RoomsPage() {
             </div>
 
             {isLoading ? (
-                <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-slate-500">
-                    Loading rooms...
+                <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] flex flex-col items-center justify-center z-10">
+                    <div className="w-10 h-10 border-4 border-cyan-600 border-t-transparent rounded-full animate-spin"></div>
+                    <p className="mt-4 text-sm font-bold text-slate-600 animate-pulse">Loading rooms...</p>
                 </div>
             ) : filtered.length === 0 ? (
                 <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-slate-500">

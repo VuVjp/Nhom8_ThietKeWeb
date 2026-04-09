@@ -340,6 +340,7 @@ public class AppDbContext : DbContext
             e.Property(x => x.Floor).HasColumnName("floor");
             e.Property(x => x.Status).HasColumnName("status");
             e.Property(x => x.CleaningStatus).HasColumnName("cleaning_status");
+            e.Property(x => x.CleaningRequested).HasColumnName("cleaning_requested").HasDefaultValue(false);
         });
 
         modelBuilder.Entity<ServiceCategory>(e =>

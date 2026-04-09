@@ -91,7 +91,7 @@ export function VouchersPage() {
     if (!ensure('MANAGE_VOUCHERS', 'toggle voucher status')) return;
     try {
       await vouchersApi.toggleActive(id);
-      await loadVouchers();
+      setRows(prev => prev.map(v => v.id === id ? { ...v, isActive: !v.isActive } : v));
       toast.success('Voucher status updated');
     } catch (error) {
       toast.error(toApiError(error).message || 'Failed to toggle status');

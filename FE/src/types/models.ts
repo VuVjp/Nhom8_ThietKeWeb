@@ -1,4 +1,4 @@
-export type RoomStatus = 'Available' | 'Occupied' | 'Cleaning' | 'Inspecting' | 'Maintenance';
+export type RoomStatus = 'Available' | 'Occupied' | 'InsClean' | 'Maintenance';
 export type CleaningCondition = 'Normal' | 'Damaged' | 'Missing';
 
 export interface NotificationItem {
@@ -16,7 +16,8 @@ export interface Room {
   roomType: string;
   roomTypeId?: number;
   status: RoomStatus;
-  cleaningStatus: 'Clean' | 'Dirty' | 'Inspecting';
+  cleaningStatus: 'Clean' | 'Dirty' | 'Inspecting' | 'Cleaning';
+  cleaningRequested: boolean;
 }
 
 export interface InventoryItem {
@@ -40,7 +41,7 @@ export interface LossRecord {
   id: string;
   evidence: string;
   room: string;
-  item: string;
+  itemName: string;
   quantity: number;
   penalty: number;
   description: string;

@@ -4,6 +4,7 @@ using HotelManagement.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BE.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260409034622_add_cleaning_requested_room")]
+    partial class add_cleaning_requested_room
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -62,6 +65,10 @@ namespace BE.Migrations
                         .HasColumnType("int")
                         .HasColumnName("author_id");
 
+                    b.Property<int?>("CategoryId")
+                        .HasColumnType("int")
+                        .HasColumnName("category_id");
+
                     b.Property<string>("Content")
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("content");
@@ -91,6 +98,8 @@ namespace BE.Migrations
 
                     b.HasIndex("AuthorId");
 
+                    b.HasIndex("CategoryId");
+
                     b.HasIndex("Slug")
                         .IsUnique()
                         .HasFilter("[slug] IS NOT NULL");
@@ -119,27 +128,6 @@ namespace BE.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Article_Categories", (string)null);
-                });
-
-            modelBuilder.Entity("HotelManagement.Entities.ArticleCategoryMap", b =>
-                {
-                    b.Property<int>("ArticleId")
-                        .HasColumnType("int")
-                        .HasColumnName("article_id");
-
-                    b.Property<int>("CategoryId")
-                        .HasColumnType("int")
-                        .HasColumnName("category_id");
-
-                    b.HasKey("ArticleId", "CategoryId");
-
-                    b.HasIndex("ArticleId")
-                        .HasDatabaseName("IX_Article_Category_Map_ArticleId");
-
-                    b.HasIndex("CategoryId")
-                        .HasDatabaseName("IX_Article_Category_Map_CategoryId");
-
-                    b.ToTable("Article_Category_Map", (string)null);
                 });
 
             modelBuilder.Entity("HotelManagement.Entities.Attraction", b =>
@@ -1211,24 +1199,12 @@ namespace BE.Migrations
                         .HasForeignKey("AuthorId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.Navigation("Author");
-                });
-
-            modelBuilder.Entity("HotelManagement.Entities.ArticleCategoryMap", b =>
-                {
-                    b.HasOne("HotelManagement.Entities.Article", "Article")
-                        .WithMany("ArticleCategoryMaps")
-                        .HasForeignKey("ArticleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("HotelManagement.Entities.ArticleCategory", "Category")
-                        .WithMany("ArticleCategoryMaps")
+                        .WithMany("Articles")
                         .HasForeignKey("CategoryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.SetNull);
 
-                    b.Navigation("Article");
+                    b.Navigation("Author");
 
                     b.Navigation("Category");
                 });
@@ -1502,14 +1478,9 @@ namespace BE.Migrations
                     b.Navigation("RoomTypeAmenities");
                 });
 
-            modelBuilder.Entity("HotelManagement.Entities.Article", b =>
-                {
-                    b.Navigation("ArticleCategoryMaps");
-                });
-
             modelBuilder.Entity("HotelManagement.Entities.ArticleCategory", b =>
                 {
-                    b.Navigation("ArticleCategoryMaps");
+                    b.Navigation("Articles");
                 });
 
             modelBuilder.Entity("HotelManagement.Entities.Booking", b =>

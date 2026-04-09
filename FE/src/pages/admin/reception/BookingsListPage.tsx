@@ -358,8 +358,10 @@ export function BookingsListPage() {
             </div>
 
             {isLoading ? (
-                <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-slate-500">Loading bookings...</div>
-            ) : (
+                <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] flex flex-col items-center justify-center z-10">
+                    <div className="w-10 h-10 border-4 border-cyan-600 border-t-transparent rounded-full animate-spin"></div>
+                    <p className="mt-4 text-sm font-bold text-slate-600 animate-pulse">Loading bookings...</p>
+                </div>) : (
                 <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden p-4">
                     {filteredBookings.length === 0 ? (
                         <div className="text-center text-slate-500 py-8">No bookings found.</div>
