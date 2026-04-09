@@ -20,6 +20,10 @@ import { CreateBookingPage } from '../pages/admin/reception/CreateBookingPage';
 import { ArrivalsPage } from '../pages/admin/reception/ArrivalsPage';
 import { InHousePage } from '../pages/admin/reception/InHousePage';
 import { BookingsListPage } from '../pages/admin/reception/BookingsListPage';
+import { ServiceCategoriesPage } from '../pages/admin/ServiceCategoriesPage';
+import { ServicesPage } from '../pages/admin/ServicesPage';
+import { OrderServicesListPage } from '../pages/admin/reception/OrderServicesListPage';
+import { OrderServiceDetailPage } from '../pages/admin/reception/OrderServiceDetailPage';
 import { RequireAuth, RequireAnyPermission, RequirePermission } from './RouteGuards';
 import { useAppAuth } from '../auth/useAppAuth';
 
@@ -109,6 +113,14 @@ export const AppRouter = () => {
                         <Route path="admin/reception/arrivals" element={<ArrivalsPage />} />
                         <Route path="admin/reception/in-house" element={<InHousePage />} />
                         <Route path="admin/reception/bookings" element={<BookingsListPage />} />
+                    </Route>
+
+                    {/* Service Module */}
+                    <Route element={<RequireAnyPermission permissions={['MANAGE_SERVICES']} />}>
+                        <Route path="admin/service-categories" element={<ServiceCategoriesPage />} />
+                        <Route path="admin/services" element={<ServicesPage />} />
+                        <Route path="admin/reception/order-services" element={<OrderServicesListPage />} />
+                        <Route path="admin/reception/order-services/:id" element={<OrderServiceDetailPage />} />
                     </Route>
                 </Route>
             </Route>

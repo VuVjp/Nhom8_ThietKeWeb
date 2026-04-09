@@ -52,6 +52,13 @@ public class BookingsController : ControllerBase
         return Ok(await _service.GetInHouseGuestsAsync());
     }
 
+    [HttpGet("active-rooms")]
+    [Permission(PermissionNames.ManageServices)]
+    public async Task<IActionResult> GetActiveRooms()
+    {
+        return Ok(await _service.GetActiveRoomsAsync());
+    }
+
     [HttpGet]
     [Permission(PermissionNames.ManageBookings)]
     public async Task<IActionResult> GetAllBookings()

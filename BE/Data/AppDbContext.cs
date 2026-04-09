@@ -46,6 +46,10 @@ public class AppDbContext : DbContext
         .Property(n => n.Type)
         .HasConversion<string>();
 
+        modelBuilder.Entity<OrderService>()
+        .Property(n => n.Status)
+        .HasConversion<string>();
+
         // Table name mappings
         modelBuilder.Entity<Amenity>().ToTable("Amenities");
         modelBuilder.Entity<ArticleCategory>().ToTable("Article_Categories");
@@ -222,8 +226,10 @@ public class AppDbContext : DbContext
             e.Property(x => x.Id).HasColumnName("id");
             e.Property(x => x.OrderServiceId).HasColumnName("order_service_id");
             e.Property(x => x.ServiceId).HasColumnName("service_id");
+            e.Property(x => x.ServiceName).HasColumnName("service_name");
             e.Property(x => x.Quantity).HasColumnName("quantity");
             e.Property(x => x.UnitPrice).HasColumnName("unit_price").HasColumnType("decimal(18,2)");
+            e.Property(x => x.Unit).HasColumnName("unit");
         });
 
         modelBuilder.Entity<OrderService>(e =>
@@ -232,7 +238,9 @@ public class AppDbContext : DbContext
             e.Property(x => x.BookingDetailId).HasColumnName("booking_detail_id");
             e.Property(x => x.OrderDate).HasColumnName("order_date");
             e.Property(x => x.TotalAmount).HasColumnName("total_amount").HasColumnType("decimal(18,2)");
-            e.Property(x => x.Status).HasColumnName("status");
+            e.Property(x => x.Status).HasColumnName("status").HasColumnType("varchar(50)");
+            e.Property(x => x.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("GETDATE()");
+            e.Property(x => x.UpdatedAt).HasColumnName("updated_at");
         });
 
         modelBuilder.Entity<Notification>(e =>
@@ -325,6 +333,7 @@ public class AppDbContext : DbContext
         {
             e.Property(x => x.Id).HasColumnName("id");
             e.Property(x => x.Name).HasColumnName("name");
+            e.Property(x => x.IsActive).HasColumnName("is_active").HasDefaultValue(true);
         });
 
         modelBuilder.Entity<Service>(e =>
@@ -334,6 +343,7 @@ public class AppDbContext : DbContext
             e.Property(x => x.Name).HasColumnName("name");
             e.Property(x => x.Price).HasColumnName("price").HasColumnType("decimal(18,2)");
             e.Property(x => x.Unit).HasColumnName("unit");
+            e.Property(x => x.IsActive).HasColumnName("is_active").HasDefaultValue(true);
         });
 
         modelBuilder.Entity<User>(e =>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { HomeIcon, BuildingOffice2Icon, ArchiveBoxIcon, ExclamationTriangleIcon, SparklesIcon, UsersIcon, ShieldCheckIcon, WrenchScrewdriverIcon, Squares2X2Icon, RectangleStackIcon, ChevronDownIcon, CalendarDaysIcon, TicketIcon, ClipboardDocumentListIcon } from '@heroicons/react/24/outline';
+import { HomeIcon, BuildingOffice2Icon, ArchiveBoxIcon, ExclamationTriangleIcon, SparklesIcon, UsersIcon, ShieldCheckIcon, WrenchScrewdriverIcon, Squares2X2Icon, RectangleStackIcon, ChevronDownIcon, CalendarDaysIcon, TicketIcon, ClipboardDocumentListIcon, CubeIcon } from '@heroicons/react/24/outline';
 import { NavLink, useLocation } from 'react-router-dom';
 import type { AppPermission } from '../auth/auth.types';
 import { useAppAuth } from '../auth/useAppAuth';
@@ -33,6 +33,16 @@ const navItems: SidebarNavItem[] = [
       { to: '/admin/reception/arrivals', label: 'Arrivals Today', permissions: ['MANAGE_BOOKINGS'] as AppPermission[] },
       { to: '/admin/reception/in-house', label: 'In-House Guests', permissions: ['MANAGE_BOOKINGS'] as AppPermission[] },
       { to: '/admin/reception/bookings', label: 'All Bookings', permissions: ['MANAGE_BOOKINGS'] as AppPermission[] },
+      { to: '/admin/reception/order-services', label: 'Service Orders', permissions: ['MANAGE_SERVICES'] as AppPermission[] },
+    ]
+  },
+  {
+    label: 'Services',
+    icon: CubeIcon,
+    permissions: ['MANAGE_SERVICES'] as AppPermission[],
+    children: [
+      { to: '/admin/services', label: 'Service Catalog', permissions: ['MANAGE_SERVICES'] as AppPermission[] },
+      { to: '/admin/service-categories', label: 'Categories', permissions: ['MANAGE_SERVICES'] as AppPermission[] },
     ]
   },
   { to: '/admin/rooms', label: 'Rooms', icon: BuildingOffice2Icon, permissions: ['MANAGE_ROOMS'] as AppPermission[] },
