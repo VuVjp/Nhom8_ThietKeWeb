@@ -10,6 +10,7 @@ import { Table } from '../../../components/Table';
 import { Modal } from '../../../components/Modal';
 import { Select } from '../../../components/Select';
 import { Input } from '../../../components/Input';
+import { Badge } from '../../../components/Badge';
 
 export function OrderServicesListPage() {
     const navigate = useNavigate();
@@ -106,7 +107,7 @@ export function OrderServicesListPage() {
         const s = status?.toString();
         switch (s) {
             case 'Completed':
-            case '1': 
+            case '1':
                 return 'text-emerald-700 bg-emerald-50 border-emerald-200';
             case 'Cancelled':
             case '2':
@@ -118,28 +119,28 @@ export function OrderServicesListPage() {
 
     const columns = [
         { key: 'id', label: 'Order ID', render: (row: OrderService) => `#${row.id}` },
-        { 
-            key: 'room', 
-            label: 'Room', 
+        {
+            key: 'room',
+            label: 'Room',
             render: (row: OrderService) => (
                 <div className="font-medium text-slate-900">
                     Room {row.roomNumber || '-'}
                 </div>
-            ) 
+            )
         },
-        { 
-            key: 'guest', 
-            label: 'Guest', 
-            render: (row: OrderService) => row.guestName || '-' 
+        {
+            key: 'guest',
+            label: 'Guest',
+            render: (row: OrderService) => row.guestName || '-'
         },
-        { 
-            key: 'date', 
-            label: 'Order Date', 
-            render: (row: OrderService) => new Date(row.orderDate).toLocaleString() 
+        {
+            key: 'date',
+            label: 'Order Date',
+            render: (row: OrderService) => new Date(row.orderDate).toLocaleString()
         },
-        { 
-            key: 'amount', 
-            label: 'Total Amount', 
+        {
+            key: 'amount',
+            label: 'Total Amount',
             render: (row: OrderService) => (
                 <span className="font-bold text-slate-900">${row.totalAmount.toLocaleString()}</span>
             )
@@ -149,14 +150,12 @@ export function OrderServicesListPage() {
             label: 'Status',
             render: (row: OrderService) => {
                 const s = row.status.toString();
-                const displayStatus = isNaN(Number(s)) 
-                    ? s 
+                const displayStatus = isNaN(Number(s))
+                    ? s
                     : (s === '1' ? 'Completed' : (s === '2' ? 'Cancelled' : 'Pending'));
 
                 return (
-                    <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(s)}`}>
-                        {displayStatus}
-                    </div>
+                    <Badge value={displayStatus} />
                 );
             }
         },
@@ -182,7 +181,7 @@ export function OrderServicesListPage() {
                     <p className="text-slate-500 text-sm">Manage guest service requests and orders</p>
                 </div>
                 <div className="flex gap-2">
-                    <button 
+                    <button
                         onClick={() => setOpenCreate(true)}
                         className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-cyan-700 text-white hover:bg-cyan-800 transition shadow-sm font-semibold text-sm"
                     >
@@ -198,43 +197,43 @@ export function OrderServicesListPage() {
                         <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Search</label>
                         <div className="relative">
                             <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                            <Input 
-                                className="pl-9" 
-                                placeholder="ID, Room, Guest..." 
-                                value={search} 
+                            <Input
+                                className="pl-9"
+                                placeholder="ID, Room, Guest..."
+                                value={search}
                                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                                     setSearch(e.target.value);
                                     setPage(1);
-                                }} 
+                                }}
                             />
                         </div>
                     </div>
                     <div className="lg:col-span-4 space-y-1.5">
                         <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Date Range</label>
                         <div className="flex gap-2">
-                            <Input 
-                                type="date" 
+                            <Input
+                                type="date"
                                 className="min-w-0 flex-1 px-2"
-                                value={startDate} 
+                                value={startDate}
                                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                                     setStartDate(e.target.value);
                                     setPage(1);
-                                }} 
+                                }}
                             />
-                            <Input 
+                            <Input
                                 type="date"
                                 className="min-w-0 flex-1 px-2"
-                                value={endDate} 
+                                value={endDate}
                                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                                     setEndDate(e.target.value);
                                     setPage(1);
-                                }} 
+                                }}
                             />
                         </div>
                     </div>
                     <div className="lg:col-span-2 space-y-1.5 min-w-0">
                         <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Status</label>
-                        <select 
+                        <select
                             className="w-full px-4 py-2 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all outline-none appearance-none truncate"
                             value={status}
                             onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -250,7 +249,7 @@ export function OrderServicesListPage() {
                     </div>
                     <div className="lg:col-span-2 space-y-1.5 min-w-0">
                         <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Sort By</label>
-                        <select 
+                        <select
                             className="w-full px-4 py-2 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all outline-none appearance-none truncate"
                             value={`${sortBy}-${sortOrder}`}
                             onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -281,9 +280,9 @@ export function OrderServicesListPage() {
             </div>
 
             <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm transition-all hover:shadow-md relative">
-                <Table 
-                    columns={columns} 
-                    rows={rows} 
+                <Table
+                    columns={columns}
+                    rows={rows}
                 />
 
                 {isLoading && (
@@ -302,7 +301,7 @@ export function OrderServicesListPage() {
                         <p className="text-slate-500 text-sm mt-1">Try adjusting your filters or search terms.</p>
                     </div>
                 )}
-                
+
                 {/* Pagination */}
                 {total > 0 && (
                     <div className="p-4 border-t border-slate-100 flex items-center justify-between bg-slate-50/30">
@@ -310,14 +309,14 @@ export function OrderServicesListPage() {
                             Page <span className="font-bold text-slate-900">{page}</span> of <span className="font-bold text-slate-900">{Math.ceil(total / 10)}</span>
                         </p>
                         <div className="flex gap-2">
-                            <button 
+                            <button
                                 disabled={page <= 1}
                                 onClick={() => setPage(p => p - 1)}
                                 className="px-3 py-1 rounded-lg border border-slate-200 bg-white text-xs font-semibold disabled:opacity-30 hover:bg-slate-50 transition"
                             >
                                 Prev
                             </button>
-                            <button 
+                            <button
                                 disabled={page * 10 >= total}
                                 onClick={() => setPage(p => p + 1)}
                                 className="px-3 py-1 rounded-lg border border-slate-200 bg-white text-xs font-semibold disabled:opacity-30 hover:bg-slate-50 transition"

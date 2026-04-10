@@ -14,7 +14,7 @@ export const sortBy = <T,>(rows: T[], selector: (row: T) => string | number, dir
             return x - y;
         }
 
-        return String(x).localeCompare(String(y));
+        return String(x).localeCompare(String(y), undefined, { numeric: true, sensitivity: 'base' });
     });
 
     return direction === 'asc' ? sorted : sorted.reverse();

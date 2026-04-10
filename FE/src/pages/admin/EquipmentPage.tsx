@@ -10,6 +10,7 @@ import { equipmentsApi, type EquipmentItem } from '../../api/equipmentsApi';
 import { paginate, queryIncludes, sortBy } from '../../utils/table';
 import { usePermissionCheck } from '../../hooks/usePermissionCheck';
 import { Badge } from '../../components/Badge';
+import { ImageUpload } from '../../components/ImageUpload';
 
 const initialForm = {
     itemCode: '',
@@ -400,7 +401,11 @@ export function EquipmentPage() {
                             </div>
                             <div className="space-y-2">
                                 <label className="text-sm font-medium text-slate-700">Image</label>
-                                <Input type="file" accept="image/*" onChange={(e) => setSelectedFile(e.target.files?.[0] ?? null)} />
+                                <ImageUpload
+                                    value={selectedFile}
+                                    onChange={(val) => setSelectedFile(Array.isArray(val) ? val[0] : val)}
+                                    label="Click or drag image to upload"
+                                />
                                 <p className="text-xs text-slate-500">Upload a photo for faster recognition.</p>
                             </div>
                         </div>
@@ -500,23 +505,22 @@ export function EquipmentPage() {
                         </div>
                         <div className="grid gap-3 sm:grid-cols-2">
                             <div className="space-y-2">
+                                <label className="text-sm font-medium text-slate-700">Equipment image (Click or drag image to replace)</label>
+                                <ImageUpload
+                                    value={editFile}
+                                    onChange={(val) => setEditFile(Array.isArray(val) ? val[0] : val)}
+                                    currentUrl={editing?.imageUrl}
+                                    label="Select new image"
+                                />
+                                <p className="text-xs text-slate-500">The preview shows the current image. Upload a new one to replace it.</p>
+                            </div>
+                            <div className="space-y-2">
                                 <label className="text-sm font-medium text-slate-700">Supplier</label>
                                 <Input placeholder="Example: LG / Panasonic" value={editForm.supplier} onChange={(e) => setEditForm((prev) => ({ ...prev, supplier: e.target.value }))} />
                             </div>
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-slate-700">Current image</label>
-                                {editing?.imageUrl ? (
-                                    <img src={editing.imageUrl} alt={editing.name} className="h-16 w-16 rounded-lg border border-slate-200 object-cover" />
-                                ) : (
-                                    <div className="h-16 w-16 rounded-lg border border-dashed border-slate-300 bg-white" />
-                                )}
-                            </div>
                         </div>
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-slate-700">Replace image</label>
-                            <Input type="file" accept="image/*" onChange={(e) => setEditFile(e.target.files?.[0] ?? null)} />
-                            <p className="text-xs text-slate-500">Upload only when you want to change the existing image.</p>
-                        </div>
+
+
                     </section>
 
                     <div className="flex justify-end gap-2">

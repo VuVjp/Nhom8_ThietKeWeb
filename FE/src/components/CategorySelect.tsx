@@ -51,7 +51,7 @@ export function CategorySelect({
     };
 
     return (
-        <div ref={containerRef} className="relative min-w-[200px]">
+        <div ref={containerRef} className="relative w-full">
             {/* Trigger */}
             <div
                 role="button"

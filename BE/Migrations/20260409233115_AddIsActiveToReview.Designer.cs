@@ -4,6 +4,7 @@ using HotelManagement.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BE.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260409233115_AddIsActiveToReview")]
+    partial class AddIsActiveToReview
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -271,13 +274,6 @@ namespace BE.Migrations
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("guest_phone");
 
-                    b.Property<string>("InvoiceType")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("nvarchar(max)")
-                        .HasDefaultValue("Consolidated")
-                        .HasColumnName("invoice_type");
-
                     b.Property<string>("Status")
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("status");
@@ -315,9 +311,6 @@ namespace BE.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime?>("ActualCheckOutDate")
-                        .HasColumnType("datetime2");
-
                     b.Property<int?>("BookingId")
                         .HasColumnType("int")
                         .HasColumnName("booking_id");
@@ -329,10 +322,6 @@ namespace BE.Migrations
                     b.Property<DateTime>("CheckOutDate")
                         .HasColumnType("datetime2")
                         .HasColumnName("check_out_date");
-
-                    b.Property<int?>("InvoiceId")
-                        .HasColumnType("int")
-                        .HasColumnName("invoice_id");
 
                     b.Property<decimal>("PricePerNight")
                         .HasColumnType("decimal(18,2)")
@@ -349,8 +338,6 @@ namespace BE.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("BookingId");
-
-                    b.HasIndex("InvoiceId");
 
                     b.HasIndex("RoomTypeId");
 
@@ -455,12 +442,6 @@ namespace BE.Migrations
                         .HasColumnType("int")
                         .HasColumnName("booking_id");
 
-                    b.Property<DateTime?>("CompletedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
                     b.Property<decimal?>("DiscountAmount")
                         .HasColumnType("decimal(18,2)")
                         .HasColumnName("discount_amount");
@@ -469,9 +450,6 @@ namespace BE.Migrations
                         .HasColumnType("decimal(18,2)")
                         .HasColumnName("final_total");
 
-                    b.Property<string>("InvoiceCode")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("Status")
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("status");
@@ -479,9 +457,6 @@ namespace BE.Migrations
                     b.Property<decimal?>("TaxAmount")
                         .HasColumnType("decimal(18,2)")
                         .HasColumnName("tax_amount");
-
-                    b.Property<decimal?>("TotalLossDamageAmount")
-                        .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal?>("TotalRoomAmount")
                         .HasColumnType("decimal(18,2)")
@@ -1298,11 +1273,6 @@ namespace BE.Migrations
                         .HasForeignKey("BookingId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("HotelManagement.Entities.Invoice", "Invoice")
-                        .WithMany("BookingDetails")
-                        .HasForeignKey("InvoiceId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("HotelManagement.Entities.Room", "Room")
                         .WithMany("BookingDetails")
                         .HasForeignKey("RoomId")
@@ -1314,8 +1284,6 @@ namespace BE.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Booking");
-
-                    b.Navigation("Invoice");
 
                     b.Navigation("Room");
 
@@ -1571,8 +1539,6 @@ namespace BE.Migrations
 
             modelBuilder.Entity("HotelManagement.Entities.Invoice", b =>
                 {
-                    b.Navigation("BookingDetails");
-
                     b.Navigation("Payments");
                 });
 
