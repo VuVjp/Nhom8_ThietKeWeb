@@ -15,6 +15,7 @@ import { AmenitiesPage } from '../pages/admin/AmenitiesPage';
 import { RoomTypesPage } from '../pages/admin/RoomTypesPage';
 import { VouchersPage } from '../pages/admin/VouchersPage';
 import { AuditLogPage } from '../pages/admin/AuditLogPage';
+import { ReviewsPage } from '../pages/admin/ReviewsPage';
 import { ForbiddenPage } from '../pages/ForbiddenPage';
 import { CreateBookingPage } from '../pages/admin/reception/CreateBookingPage';
 import { ArrivalsPage } from '../pages/admin/reception/ArrivalsPage';
@@ -110,6 +111,10 @@ export const AppRouter = () => {
 
                     <Route element={<RequirePermission permission="VIEW_DASHBOARD" />}>
                         <Route path="admin/audit-log" element={<AuditLogPage />} />
+                    </Route>
+
+                    <Route element={<RequirePermission permission="MANAGE_REVIEWS" />}>
+                        <Route path="admin/reviews" element={<ReviewsPage />} />
                     </Route>
 
                     <Route element={<RequireAnyPermission permissions={['MANAGE_BOOKINGS']} />}>

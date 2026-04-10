@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { HomeIcon, BuildingOffice2Icon, ArchiveBoxIcon, ExclamationTriangleIcon, SparklesIcon, UsersIcon, ShieldCheckIcon, WrenchScrewdriverIcon, Squares2X2Icon, RectangleStackIcon, ChevronDownIcon, CalendarDaysIcon, TicketIcon, NewspaperIcon, CubeIcon } from '@heroicons/react/24/outline';
+import { HomeIcon, BuildingOffice2Icon, ArchiveBoxIcon, ExclamationTriangleIcon, SparklesIcon, UsersIcon, ShieldCheckIcon, WrenchScrewdriverIcon, Squares2X2Icon, RectangleStackIcon, ChevronDownIcon, CalendarDaysIcon, TicketIcon, NewspaperIcon, CubeIcon, StarIcon } from '@heroicons/react/24/outline';
 import { NavLink, useLocation } from 'react-router-dom';
 import type { AppPermission } from '../auth/auth.types';
 import { useAppAuth } from '../auth/useAppAuth';
@@ -65,6 +65,7 @@ const navItems: SidebarNavItem[] = [
   { to: '/admin/users', label: 'Users', icon: UsersIcon, permissions: ['MANAGE_USERS'] as AppPermission[] },
   { to: '/admin/roles', label: 'Roles', icon: ShieldCheckIcon, permissions: ['MANAGE_ROLES'] as AppPermission[] },
   { to: '/admin/audit-log', label: 'Audit Logs', icon: Squares2X2Icon, permissions: ['VIEW_DASHBOARD'] as AppPermission[] },
+  { to: '/admin/reviews', label: 'Reviews', icon: StarIcon, permissions: ['MANAGE_REVIEWS'] as AppPermission[] },
 ];
 
 export function Sidebar({ collapsed, mobileOpen, onCloseMobile }: SidebarProps) {

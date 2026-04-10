@@ -18,6 +18,7 @@ export const appPermissions = [
     'MANAGE_ROOM_INVENTORY',
     'MANAGE_ROOM_TYPES',
     'MANAGE_CLEANING',
+    'MANAGE_REVIEWS',
 ] as const;
 
 export type LegacyAppPermission =

@@ -20,4 +20,5 @@ public static class PermissionNames
     public const string ManageEquipments = "MANAGE_EQUIPMENTS";
     public const string ManageRoomInventory = "MANAGE_ROOM_INVENTORY";
     public const string ManageRoomTypes = "MANAGE_ROOM_TYPES";
+    public const string ManageReviews = "MANAGE_REVIEWS";
 }
