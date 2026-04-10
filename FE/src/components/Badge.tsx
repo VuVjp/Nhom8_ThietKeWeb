@@ -11,11 +11,14 @@ const classByValue: Record<string, string> = {
   Inactive: 'bg-slate-100 text-slate-600 border-slate-200',
   Clean: 'bg-emerald-100 text-emerald-700 border-emerald-200',
   Dirty: 'bg-amber-100 text-amber-700 border-amber-200',
+  Completed: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+  Cancelled: 'bg-red-100 text-red-700 border-red-200',
+  Pending: 'bg-amber-100 text-amber-700 border-amber-200',
 };
 
 export function Badge({ value }: BadgeProps) {
   return (
-    <span className={`inline-flex w-15 justify-center rounded-full border px-2.5 py-1 text-xs font-semibold ${classByValue[value] ?? 'bg-slate-100 text-slate-600 border-slate-200'}`}>
+    <span className={`inline-flex w-20 justify-center rounded-full border px-2.5 py-1 text-xs font-semibold ${classByValue[value] ?? 'bg-slate-100 text-slate-600 border-slate-200'}`}>
       {value}
     </span>
   );

@@ -21,6 +21,9 @@ export function BookingsListPage() {
     const [maxPrice, setMaxPrice] = useState('');
     const [minRooms, setMinRooms] = useState('');
     const [maxRooms, setMaxRooms] = useState('');
+    const [filterRoomNumber, setFilterRoomNumber] = useState('');
+    const [filterStartDate, setFilterStartDate] = useState('');
+    const [filterEndDate, setFilterEndDate] = useState('');
 
     const [currentPage, setCurrentPage] = useState(1);
     const pageSize = 10;
@@ -57,7 +60,8 @@ export function BookingsListPage() {
         try {
             await receptionApi.changeBookingStatus(id, status);
             toast.success('Status updated successfully');
-            void loadBookings();
+            setBookings((prev) => prev.map((b) => (b.id === id ? { ...b, status } : b)));
+
         } catch (error) {
             const apiError = toApiError(error);
             toast.error(apiError.message || 'Failed to update status');
@@ -70,7 +74,7 @@ export function BookingsListPage() {
             return;
         }
 
-        setIsLoadingEditRooms(true);
+        //setIsLoadingEditRooms(true);
         try {
             const rooms = await receptionApi.getAvailableRooms(checkIn, checkOut, bookingId);
             setEditAvailableRooms(rooms || []);
@@ -79,7 +83,7 @@ export function BookingsListPage() {
             toast.error(apiError.message || 'Failed to load available rooms');
             setEditAvailableRooms([]);
         } finally {
-            setIsLoadingEditRooms(false);
+            //setIsLoadingEditRooms(false);
         }
     }, []);
 
@@ -187,7 +191,7 @@ export function BookingsListPage() {
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [searchName, statusFilter, minPrice, maxPrice, minRooms, maxRooms]);
+    }, [searchName, statusFilter, minPrice, maxPrice, minRooms, maxRooms, filterStartDate, filterEndDate, filterRoomNumber]);
 
     const filteredBookings = useMemo(() => {
         const minPriceValue = minPrice === '' ? null : Number(minPrice);
@@ -206,9 +210,31 @@ export function BookingsListPage() {
             const priceMinMatches = minPriceValue === null || bookingPrice >= minPriceValue;
             const priceMaxMatches = maxPriceValue === null || bookingPrice <= maxPriceValue;
 
-            const roomCount = booking.roomIds?.length ?? 0;
+            const roomCount = booking.roomNumbers?.length ?? 0;
             const roomsMinMatches = minRoomsValue === null || roomCount >= minRoomsValue;
             const roomsMaxMatches = maxRoomsValue === null || roomCount <= maxRoomsValue;
+
+            const roomNumberMatches =
+                !filterRoomNumber.trim() ||
+                booking.roomNumbers?.some((rn) =>
+                    rn.toLowerCase().includes(filterRoomNumber.trim().toLowerCase())
+                );
+
+            const dateMatches = (() => {
+                if (!filterStartDate && !filterEndDate) return true;
+
+                const bookingStart = new Date(booking.checkInDate).setHours(0, 0, 0, 0);
+                const bookingEnd = new Date(booking.checkOutDate).setHours(23, 59, 59, 999);
+
+                const filterStart = filterStartDate
+                    ? new Date(filterStartDate).setHours(0, 0, 0, 0)
+                    : -Infinity;
+                const filterEnd = filterEndDate
+                    ? new Date(filterEndDate).setHours(23, 59, 59, 999)
+                    : Infinity;
+
+                return bookingStart <= filterEnd && bookingEnd >= filterStart;
+            })();
 
             return (
                 nameMatches &&
@@ -216,10 +242,12 @@ export function BookingsListPage() {
                 priceMinMatches &&
                 priceMaxMatches &&
                 roomsMinMatches &&
-                roomsMaxMatches
+                roomsMaxMatches &&
+                roomNumberMatches &&
+                dateMatches
             );
         });
-    }, [bookings, searchName, statusFilter, minPrice, maxPrice, minRooms, maxRooms]);
+    }, [bookings, searchName, statusFilter, minPrice, maxPrice, minRooms, maxRooms, filterStartDate, filterEndDate, filterRoomNumber]);
 
     const paginatedBookings = useMemo(() => {
         const start = (currentPage - 1) * pageSize;
@@ -239,12 +267,12 @@ export function BookingsListPage() {
             }
         },
         {
-            key: 'roomIds',
+            key: 'roomDetails',
             label: 'Room Details',
             render: (row: Booking) => (
                 <div className="text-xs leading-5">
-                    <div><span className="font-medium text-slate-800">IDs:</span> {row.roomIds?.join(', ') || 'Unassigned'}</div>
-                    <div><span className="font-medium text-slate-800">Count:</span> {row.roomIds?.length ?? 0}</div>
+                    <div><span className="font-medium text-slate-800">Rooms:</span> {row.roomNumbers?.join(', ') || 'Unassigned'}</div>
+                    <div><span className="font-medium text-slate-800">Count:</span> {row.roomNumbers?.length ?? 0}</div>
                 </div>
             ),
         },
@@ -350,6 +378,25 @@ export function BookingsListPage() {
                         onChange={(event) => setMaxRooms(event.target.value)}
                     />
                 </div>
+                <div className="grid grid-cols-2 gap-2">
+                    <Input
+                        type="date"
+                        value={filterStartDate}
+                        onChange={(event) => setFilterStartDate(event.target.value)}
+                        title="From date"
+                    />
+                    <Input
+                        type="date"
+                        value={filterEndDate}
+                        onChange={(event) => setFilterEndDate(event.target.value)}
+                        title="To date"
+                    />
+                </div>
+                <Input
+                    placeholder="Filter by room number"
+                    value={filterRoomNumber}
+                    onChange={(event) => setFilterRoomNumber(event.target.value)}
+                />
                 <div className="md:col-span-2 xl:col-span-3">
                     <p className="text-xs text-slate-500">
                         Showing <span className="font-semibold text-slate-700">{filteredBookings.length}</span> / {bookings.length} bookings
@@ -416,7 +463,7 @@ export function BookingsListPage() {
                             </div>
                             <div className="space-y-2 sm:col-span-2">
 
-                                <label className="text-sm font-medium text-slate-700">Available rooms</label>
+                                <label className="text-sm min-w-30 font-medium text-slate-700">Available rooms</label>
                                 {isLoadingEditRooms ? (
                                     <div className="rounded-lg border border-slate-200 bg-white p-3 text-sm text-slate-500">Loading rooms...</div>
                                 ) : editAvailableRooms.length === 0 ? (

@@ -52,7 +52,7 @@ function mapRoomInventoryToItem(dto: RoomInventoryDto): InventoryItem {
         roomId,
         equipmentId,
         amenityId,
-        code: `RINV-${String(id).padStart(3, '0')}`,
+        code: `#${String(id).padStart(3, '0')}`,
         name,
         category: amenityId ? 'Amenity' : 'Equipment',
         unit: 'pcs',

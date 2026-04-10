@@ -238,7 +238,7 @@ export function RoomTypesPage() {
             </div>
 
             {isLoading ? (
-                <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] flex flex-col items-center justify-center z-10">
+                <div className="flex flex-col items-center justify-center py-20">
                     <div className="w-10 h-10 border-4 border-cyan-600 border-t-transparent rounded-full animate-spin"></div>
                     <p className="mt-4 text-sm font-bold text-slate-600 animate-pulse">Loading room types...</p>
                 </div>
