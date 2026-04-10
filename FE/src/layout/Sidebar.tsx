@@ -27,6 +27,8 @@ const navItems: SidebarNavItem[] = [
   { to: '/admin/cleaning', label: 'Cleaning', icon: SparklesIcon, permissions: ['UPDATE_CLEANING'] as AppPermission[] },
   { to: '/admin/users', label: 'Users', icon: UsersIcon, permissions: ['MANAGE_USERS'] as AppPermission[] },
   { to: '/admin/roles', label: 'Roles', icon: ShieldCheckIcon, permissions: ['MANAGE_ROLES'] as AppPermission[] },
+  { to: '/admin/memberships', label: 'Memberships', icon: UsersIcon, permissions: ['MANAGE_MEMBERSHIPS'] as AppPermission[] },
+  { to: '/admin/attractions', label: 'Attractions', icon: HomeIcon, permissions: ['MANAGE_ATTRACTIONS'] as AppPermission[] },
 ];
 
 export function Sidebar({ collapsed, mobileOpen, onCloseMobile }: SidebarProps) {

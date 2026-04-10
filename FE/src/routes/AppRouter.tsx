@@ -13,6 +13,8 @@ import { UsersPage } from '../pages/admin/UsersPage';
 import { EquipmentPage } from '../pages/admin/EquipmentPage';
 import { AmenitiesPage } from '../pages/admin/AmenitiesPage';
 import { RoomTypesPage } from '../pages/admin/RoomTypesPage';
+import { MembershipsPage } from '../pages/admin/MembershipsPage';
+import { AttractionsPage } from '../pages/admin/AttractionsPage';
 import { ForbiddenPage } from '../pages/ForbiddenPage';
 import { RequireAuth, RequireAnyPermission, RequirePermission } from './RouteGuards';
 import { useAppAuth } from '../auth/useAppAuth';
@@ -88,6 +90,14 @@ export const AppRouter = () => {
 
                     <Route element={<RequireAnyPermission permissions={['MANAGE_EQUIPMENTS']} />}>
                         <Route path="admin/equipments" element={<EquipmentPage />} />
+                    </Route>
+
+                    <Route element={<RequirePermission permission="MANAGE_MEMBERSHIPS" />}>
+                        <Route path="admin/memberships" element={<MembershipsPage />} />
+                    </Route>
+
+                    <Route element={<RequirePermission permission="MANAGE_ATTRACTIONS" />}>
+                        <Route path="admin/attractions" element={<AttractionsPage />} />
                     </Route>
                 </Route>
             </Route>
