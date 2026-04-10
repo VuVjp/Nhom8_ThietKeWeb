@@ -109,3 +109,50 @@ body {
 .prose img { border-radius: 0.75rem; margin: 1rem 0; }
 .prose ul, .prose ol { padding-left: 1.5rem; }
 .prose blockquote { border-left: 4px solid #e2e8f0; padding-left: 1rem; color: #64748b; font-style: italic; }
+
+@media print {
+  /* Hide navigation elements */
+  header, 
+  aside, 
+  nav,
+  [role="navigation"],
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* Reset layout for print */
+  body {
+    background: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Force browser to hide headers and footers (like the localhost link) */
+  @page {
+    margin: 0 !important;
+  }
+
+  main {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    position: static !important;
+  }
+
+  /* Ensure the invoice container takes full width and has no shadows */
+  .print\:shadow-none {
+    shadow: none !important;
+    box-shadow: none !important;
+  }
+
+  .print\:border-none {
+    border: none !important;
+  }
+
+  .print\:p-0 {
+    padding: 0 !important;
+  }
+}
+

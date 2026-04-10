@@ -19,6 +19,7 @@ public class CreateBookingDto
     public DateTime CheckOutDate { get; set; }
     public List<int> RoomIds { get; set; } = new();
     public decimal TotalAmount { get; set; }
+    public string InvoiceType { get; set; } = "Consolidated";
 }
 
 public class UpdateBookingDto
@@ -29,6 +30,7 @@ public class UpdateBookingDto
     public DateTime CheckInDate { get; set; }
     public DateTime CheckOutDate { get; set; }
     public List<int> RoomIds { get; set; } = new();
+    public string InvoiceType { get; set; } = "Consolidated";
 }
 
 public class ActiveRoomDto

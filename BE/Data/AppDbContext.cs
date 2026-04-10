@@ -162,6 +162,7 @@ public class AppDbContext : DbContext
             e.Property(x => x.CheckInDate).HasColumnName("check_in_date");
             e.Property(x => x.CheckOutDate).HasColumnName("check_out_date");
             e.Property(x => x.PricePerNight).HasColumnName("price_per_night").HasColumnType("decimal(18,2)");
+            e.Property(x => x.InvoiceId).HasColumnName("invoice_id");
             e.HasIndex(x => new { x.RoomId, x.CheckInDate, x.CheckOutDate });
         });
 
@@ -178,6 +179,7 @@ public class AppDbContext : DbContext
             e.Property(x => x.TotalPrice).HasColumnName("total_price").HasColumnType("decimal(18,2)");
             e.Property(x => x.Discount).HasColumnName("discount").HasColumnType("decimal(18,2)");
             e.Property(x => x.FinalPrice).HasColumnName("final_price").HasColumnType("decimal(18,2)");
+            e.Property(x => x.InvoiceType).HasColumnName("invoice_type").HasDefaultValue("Consolidated");
             e.HasIndex(x => x.BookingCode).IsUnique();
         });
 
@@ -476,6 +478,9 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<Invoice>()
             .HasOne(i => i.Booking).WithMany(b => b.Invoices).HasForeignKey(i => i.BookingId).OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<BookingDetail>()
+            .HasOne(bd => bd.Invoice).WithMany(i => i.BookingDetails).HasForeignKey(bd => bd.InvoiceId).OnDelete(DeleteBehavior.SetNull);
 
         modelBuilder.Entity<Payment>()
             .HasOne(p => p.Invoice).WithMany(i => i.Payments).HasForeignKey(p => p.InvoiceId).OnDelete(DeleteBehavior.SetNull);

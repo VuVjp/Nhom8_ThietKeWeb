@@ -34,6 +34,7 @@ const navItems: SidebarNavItem[] = [
       { to: '/admin/reception/in-house', label: 'In-House Guests', permissions: ['MANAGE_BOOKINGS'] as AppPermission[] },
       { to: '/admin/reception/bookings', label: 'All Bookings', permissions: ['MANAGE_BOOKINGS'] as AppPermission[] },
       { to: '/admin/reception/order-services', label: 'Service Orders', permissions: ['MANAGE_SERVICES'] as AppPermission[] },
+      { to: '/admin/invoices', label: 'Invoices', permissions: ['MANAGE_BOOKINGS'] as AppPermission[] },
     ]
   },
   {

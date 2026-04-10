@@ -4,16 +4,19 @@ using HotelManagement.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace BE.Migrations
+namespace BE.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260410152311_AddInvoiceSplitFields")]
+    partial class AddInvoiceSplitFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -330,10 +333,6 @@ namespace BE.Migrations
                         .HasColumnType("datetime2")
                         .HasColumnName("check_out_date");
 
-                    b.Property<int?>("InvoiceId")
-                        .HasColumnType("int")
-                        .HasColumnName("invoice_id");
-
                     b.Property<decimal>("PricePerNight")
                         .HasColumnType("decimal(18,2)")
                         .HasColumnName("price_per_night");
@@ -349,8 +348,6 @@ namespace BE.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("BookingId");
-
-                    b.HasIndex("InvoiceId");
 
                     b.HasIndex("RoomTypeId");
 
@@ -451,6 +448,10 @@ namespace BE.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int?>("BookingDetailId")
+                        .HasColumnType("int")
+                        .HasColumnName("booking_detail_id");
+
                     b.Property<int?>("BookingId")
                         .HasColumnType("int")
                         .HasColumnName("booking_id");
@@ -492,6 +493,8 @@ namespace BE.Migrations
                         .HasColumnName("total_service_amount");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("BookingDetailId");
 
                     b.HasIndex("BookingId");
 
@@ -1295,11 +1298,6 @@ namespace BE.Migrations
                         .HasForeignKey("BookingId")
                         .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("HotelManagement.Entities.Invoice", "Invoice")
-                        .WithMany("BookingDetails")
-                        .HasForeignKey("InvoiceId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("HotelManagement.Entities.Room", "Room")
                         .WithMany("BookingDetails")
                         .HasForeignKey("RoomId")
@@ -1312,8 +1310,6 @@ namespace BE.Migrations
 
                     b.Navigation("Booking");
 
-                    b.Navigation("Invoice");
-
                     b.Navigation("Room");
 
                     b.Navigation("RoomType");
@@ -1321,12 +1317,19 @@ namespace BE.Migrations
 
             modelBuilder.Entity("HotelManagement.Entities.Invoice", b =>
                 {
+                    b.HasOne("HotelManagement.Entities.BookingDetail", "BookingDetail")
+                        .WithMany()
+                        .HasForeignKey("BookingDetailId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("HotelManagement.Entities.Booking", "Booking")
                         .WithMany("Invoices")
                         .HasForeignKey("BookingId")
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Booking");
+
+                    b.Navigation("BookingDetail");
                 });
 
             modelBuilder.Entity("HotelManagement.Entities.LossAndDamage", b =>
@@ -1568,8 +1571,6 @@ namespace BE.Migrations
 
             modelBuilder.Entity("HotelManagement.Entities.Invoice", b =>
                 {
-                    b.Navigation("BookingDetails");
-
                     b.Navigation("Payments");
                 });
 

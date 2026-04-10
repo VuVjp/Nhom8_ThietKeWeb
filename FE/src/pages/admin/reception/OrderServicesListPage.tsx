@@ -349,9 +349,11 @@ export function OrderServicesListPage() {
                             onChange={(e) => setSelectedDetailId(Number(e.target.value))}
                         >
                             <option value="">-- Select Room --</option>
-                            {activeRooms.map((r) => (
+                            {activeRooms
+                                .sort((a, b) => a.guestName.localeCompare(b.guestName))
+                                .map((r) => (
                                 <option key={r.bookingDetailId} value={r.bookingDetailId}>
-                                    Room {r.roomNumber} - {r.guestName}
+                                    [{r.guestName}] Room {r.roomNumber}
                                 </option>
                             ))}
                         </Select>

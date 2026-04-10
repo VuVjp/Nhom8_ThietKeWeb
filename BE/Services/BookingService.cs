@@ -19,12 +19,14 @@ public class BookingService : IBookingService
     private readonly IBookingRepository _repository;
     private readonly IVoucherRepository _voucherRepository;
     private readonly IVoucherService _voucherService;
+    private readonly IInvoiceService _invoiceService;
 
-    public BookingService(IBookingRepository repository, IVoucherRepository voucherRepository, IVoucherService voucherService)
+    public BookingService(IBookingRepository repository, IVoucherRepository voucherRepository, IVoucherService voucherService, IInvoiceService invoiceService)
     {
         _repository = repository;
         _voucherRepository = voucherRepository;
         _voucherService = voucherService;
+        _invoiceService = invoiceService;
     }
 
     public async Task<IEnumerable<RoomAvailabilityDto>> GetAvailableRoomsAsync(DateTime checkIn, DateTime checkOut, int? excludeBookingId = null)
@@ -121,6 +123,7 @@ public class BookingService : IBookingService
                 CheckOutDate = dto.CheckOutDate,
                 PricePerNight = room.RoomType!.BasePrice,
             }).ToList(),
+            InvoiceType = dto.InvoiceType ?? "Consolidated",
         };
 
         booking.TotalPrice = CalculateTotalAmount(booking.BookingDetails);
@@ -202,6 +205,7 @@ public class BookingService : IBookingService
         booking.GuestName = dto.GuestName!.Trim() ?? booking.GuestName;
         booking.GuestPhone = dto.GuestPhone!.Trim() ?? booking.GuestPhone;
         booking.GuestEmail = string.IsNullOrWhiteSpace(dto.GuestEmail) ? null : dto.GuestEmail.Trim();
+        booking.InvoiceType = dto.InvoiceType ?? booking.InvoiceType;
 
         _repository.RemoveBookingDetails(booking.BookingDetails);
 
@@ -319,6 +323,7 @@ public class BookingService : IBookingService
 
                 detail.Room.Status = "Inspecting";
                 detail.Room.CleaningStatus = "Dirty";
+                detail.ActualCheckOutDate = DateTime.Now;
             }
         }
         else if (status.Equals("Cancelled", StringComparison.OrdinalIgnoreCase))

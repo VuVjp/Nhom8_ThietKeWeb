@@ -38,6 +38,9 @@ export function CreateBookingPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [guestVerified, setGuestVerified] = useState(false);
 
+    // Invoicing State
+    const [invoiceType, setInvoiceType] = useState<'Consolidated' | 'Split'>('Consolidated');
+
     // Voucher State
     const [voucherCode, setVoucherCode] = useState('');
     const [isCheckingVoucher, setIsCheckingVoucher] = useState(false);
@@ -198,6 +201,7 @@ export function CreateBookingPage() {
                 roomIds: selectedRoomIds,
                 totalAmount: baseTotal - discount,
                 voucherId: appliedVoucher ? appliedVoucher?.id + "" : null,
+                invoiceType,
             });
             toast.success('Created booking successfully!');
             navigate('/admin/reception/bookings');
@@ -434,6 +438,35 @@ export function CreateBookingPage() {
                                         value={guestEmail}
                                         onChange={e => setGuestEmail(e.target.value)}
                                     />
+                                </div>
+
+                                <div className="space-y-4 pt-4 border-t border-slate-100">
+                                    <h3 className="font-semibold text-slate-800 flex items-center gap-2">
+                                        <ArrowPathIcon className="h-4 w-4 text-cyan-700" />
+                                        Invoicing Strategy
+                                    </h3>
+                                    <div className="flex gap-3">
+                                        <button
+                                            onClick={() => setInvoiceType('Consolidated')}
+                                            className={`flex-1 py-3 px-4 rounded-xl border text-sm font-medium transition-all text-left ${invoiceType === 'Consolidated'
+                                                ? 'border-cyan-500 bg-cyan-50 text-cyan-700 ring-1 ring-cyan-500'
+                                                : 'border-slate-200 text-slate-500 hover:border-cyan-300'
+                                                }`}
+                                        >
+                                            <div className="font-bold">Consolidated</div>
+                                            <div className="text-xs opacity-70">One invoice for all rooms</div>
+                                        </button>
+                                        <button
+                                            onClick={() => setInvoiceType('Split')}
+                                            className={`flex-1 py-3 px-4 rounded-xl border text-sm font-medium transition-all text-left ${invoiceType === 'Split'
+                                                ? 'border-cyan-500 bg-cyan-50 text-cyan-700 ring-1 ring-cyan-500'
+                                                : 'border-slate-200 text-slate-500 hover:border-cyan-300'
+                                                }`}
+                                        >
+                                            <div className="font-bold">Split</div>
+                                            <div className="text-xs opacity-70">Separate invoice per room</div>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
 

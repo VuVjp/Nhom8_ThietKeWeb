@@ -16,6 +16,8 @@ import { RoomTypesPage } from '../pages/admin/RoomTypesPage';
 import { VouchersPage } from '../pages/admin/VouchersPage';
 import { AuditLogPage } from '../pages/admin/AuditLogPage';
 import { ForbiddenPage } from '../pages/ForbiddenPage';
+import { InvoicesPage } from '../pages/admin/InvoicesPage';
+import { InvoiceDetailPage } from '../pages/admin/InvoiceDetailPage';
 import { CreateBookingPage } from '../pages/admin/reception/CreateBookingPage';
 import { ArrivalsPage } from '../pages/admin/reception/ArrivalsPage';
 import { InHousePage } from '../pages/admin/reception/InHousePage';
@@ -136,6 +138,10 @@ export const AppRouter = () => {
                         <Route path="admin/reception/order-services" element={<OrderServicesListPage />} />
                         <Route path="admin/reception/order-services/:id" element={<OrderServiceDetailPage />} />
                         <Route path="admin/reception/order-services/:id/add-service" element={<AddServiceToOrderPage />} />
+                    </Route>
+                    <Route element={<RequireAnyPermission permissions={['MANAGE_BOOKINGS']} />}>
+                        <Route path="admin/invoices" element={<InvoicesPage />} />
+                        <Route path="admin/invoices/:id" element={<InvoiceDetailPage />} />
                     </Route>
                 </Route>
             </Route>

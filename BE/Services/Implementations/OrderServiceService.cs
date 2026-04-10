@@ -12,15 +12,18 @@ public class OrderServiceService : IOrderServiceService
     private readonly IOrderServiceRepository _repository;
     private readonly IServiceRepository _serviceRepository;
     private readonly IBookingRepository _bookingRepository;
+    private readonly IInvoiceService _invoiceService;
 
     public OrderServiceService(
         IOrderServiceRepository repository, 
         IServiceRepository serviceRepository,
-        IBookingRepository bookingRepository)
+        IBookingRepository bookingRepository,
+        IInvoiceService invoiceService)
     {
         _repository = repository;
         _serviceRepository = serviceRepository;
         _bookingRepository = bookingRepository;
+        _invoiceService = invoiceService;
     }
 
     public async Task<PaginatedResultDto<OrderServiceSummaryDto>> GetPagedAsync(OrderServiceQueryDto query)
@@ -294,7 +297,7 @@ public class OrderServiceService : IOrderServiceService
             throw new ArgumentException("Invalid status.");
         }
 
-        var order = await _repository.GetByIdAsync(id);
+        var order = await _repository.GetByIdWithDetailsAsync(id);
         if (order == null) return false;
 
         if (order.Status == OrderServiceStatus.Cancelled && newStatus != OrderServiceStatus.Cancelled)
@@ -306,6 +309,13 @@ public class OrderServiceService : IOrderServiceService
         order.UpdatedAt = DateTime.Now;
 
         await _repository.SaveChangesAsync();
+
+        // If status is changed to Completed, update the invoice totals
+        if (newStatus == OrderServiceStatus.Completed && order.BookingDetail?.BookingId != null)
+        {
+            await _invoiceService.UpdateInvoiceAmountsAsync(order.BookingDetail.BookingId.Value);
+        }
+
         return true;
     }
 

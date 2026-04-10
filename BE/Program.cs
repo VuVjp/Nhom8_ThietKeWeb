@@ -179,6 +179,8 @@ builder.Services.AddScoped<IServiceRepository, ServiceRepository>();
 builder.Services.AddScoped<IServiceService, ServiceService>();
 builder.Services.AddScoped<IOrderServiceRepository, OrderServiceRepository>();
 builder.Services.AddScoped<IOrderServiceService, OrderServiceService>();
+builder.Services.AddScoped<IInvoiceRepository, InvoiceRepository>();
+builder.Services.AddScoped<IInvoiceService, InvoiceService>();
 
 builder.Services.AddSwaggerGen(options =>
 {

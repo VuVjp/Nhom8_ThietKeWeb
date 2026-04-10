@@ -1,4 +1,4 @@
-﻿using HotelManagement.Entities;
+using HotelManagement.Entities;
 using HotelManagement.Repositories.Interfaces;
 using HotelManagement.Services.Interfaces;
 using System.Collections.Generic;
@@ -22,12 +22,14 @@ public class RoomService : IRoomService
 	private readonly IRoomRepository _repository;
 	private readonly AppDbContext _context;
 	private readonly INotificationService _notificationService;
+	private readonly IInvoiceService _invoiceService;
 
-	public RoomService(IRoomRepository repository, AppDbContext context, INotificationService notificationService)
+	public RoomService(IRoomRepository repository, AppDbContext context, INotificationService notificationService, IInvoiceService invoiceService)
 	{
 		_repository = repository;
 		_context = context;
 		_notificationService = notificationService;
+		_invoiceService = invoiceService;
 	}
 
 	public async Task<IEnumerable<RoomDto>> GetListAsync()
@@ -211,6 +213,23 @@ public class RoomService : IRoomService
 		room.CleaningStatus = newCleaningStatus;
 		_repository.Update(room);
 		await _repository.SaveChangesAsync();
+
+		if (newCleaningStatus.Equals("Cleaning", StringComparison.OrdinalIgnoreCase))
+		{
+			// Find the most recent CheckedOut booking for this room
+			var booking = await _context.Bookings
+				.Include(b => b.BookingDetails)
+				.Where(b => b.Status == "CheckedOut")
+				.Where(b => b.BookingDetails.Any(bd => bd.RoomId == id))
+				.OrderByDescending(b => b.Id)
+				.FirstOrDefaultAsync();
+
+			if (booking != null)
+			{
+				// Keep the invoice creation (and charge sync) trigger when cleaning starts
+				await _invoiceService.CreateInvoiceAsync(booking.Id);
+			}
+		}
 	}
 
 	public async Task<bool> DeleteRoomAsync(int id)

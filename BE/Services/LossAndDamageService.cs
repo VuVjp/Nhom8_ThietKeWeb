@@ -12,12 +12,18 @@ public class LossAndDamageService : ILossAndDamageService
     private readonly ILossAndDamageRepository _repository;
     private readonly AppDbContext _context;
     private readonly INotificationService _notificationService;
+    private readonly IInvoiceService _invoiceService;
 
-    public LossAndDamageService(ILossAndDamageRepository repository, AppDbContext context, INotificationService notificationService)
+    public LossAndDamageService(
+        ILossAndDamageRepository repository, 
+        AppDbContext context, 
+        INotificationService notificationService,
+        IInvoiceService invoiceService)
     {
         _repository = repository;
         _context = context;
         _notificationService = notificationService;
+        _invoiceService = invoiceService;
     }
 
     public async Task<IEnumerable<LossAndDamageDto>> GetAllAsync()
@@ -72,6 +78,22 @@ public class LossAndDamageService : ILossAndDamageService
             CreatedAt = DateTime.UtcNow,
         };
 
+        // Find the active/recent booking detail for this room to associate the penalty
+        if (inventory.RoomId.HasValue)
+        {
+            var bookingDetail = await _context.BookingDetails
+                .Include(bd => bd.Booking)
+                .Where(bd => bd.RoomId == inventory.RoomId.Value)
+                .Where(bd => bd.Booking!.Status == "CheckedIn" || bd.Booking!.Status == "CheckedOut")
+                .OrderByDescending(bd => bd.Booking!.Id)
+                .FirstOrDefaultAsync();
+
+            if (bookingDetail != null)
+            {
+                entity.BookingDetailId = bookingDetail.Id;
+            }
+        }
+
         await _repository.AddAsync(entity);
         var created = await _repository.SaveChangesAsync();
 
@@ -87,6 +109,16 @@ public class LossAndDamageService : ILossAndDamageService
                 Type = NotificationAction.CheckOut,
                 ReferenceLink = "admin/cleaning"
             });
+
+            // Update the invoice for this booking
+            if (entity.BookingDetailId.HasValue)
+            {
+                var detail = await _context.BookingDetails.FindAsync(entity.BookingDetailId.Value);
+                if (detail?.BookingId != null)
+                {
+                    await _invoiceService.UpdateInvoiceAmountsAsync(detail.BookingId.Value);
+                }
+            }
         }
 
         return created;

@@ -70,7 +70,15 @@ public class BookingRepository : IBookingRepository
     public async Task<Booking?> GetBookingByIdWithDetailsAsync(int id, bool includeRoom = false)
     {
         IQueryable<Booking> query = _context.Bookings
-            .Include(item => item.BookingDetails);
+            .Include(item => item.User)
+                .ThenInclude(u => u!.Membership)
+            .Include(item => item.BookingDetails)
+                .ThenInclude(detail => detail.OrderServices)
+                    .ThenInclude(os => os.OrderServiceDetails)
+                        .ThenInclude(osd => osd.Service)
+            .Include(item => item.BookingDetails)
+                .ThenInclude(detail => detail.LossAndDamages)
+                    .ThenInclude(ld => ld.RoomInventory);
 
         if (includeRoom)
         {
