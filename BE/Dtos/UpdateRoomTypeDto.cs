@@ -6,4 +6,5 @@ public class UpdateRoomTypeDto
     public int CapacityAdults { get; set; }
     public int CapacityChildren { get; set; }
     public string? Description { get; set; }
+    public IList<IFormFile>? Files { get; set; }
 }

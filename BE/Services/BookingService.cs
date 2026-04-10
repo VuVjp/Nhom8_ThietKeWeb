@@ -165,6 +165,19 @@ public class BookingService : IBookingService
             throw new NotFoundException($"Booking with ID {id} not found.");
         }
 
+        if (string.IsNullOrWhiteSpace(dto.GuestName) && string.IsNullOrWhiteSpace(dto.GuestPhone) && string.IsNullOrWhiteSpace(dto.GuestEmail) && (dto.RoomIds == null || dto.RoomIds.Count == 0))
+        {
+            throw new ArgumentException("At least one field must be provided for update.");
+        }
+
+        if (dto.RoomIds == null || dto.RoomIds.Count == 0)
+        {
+            if (string.IsNullOrWhiteSpace(dto.GuestName) && string.IsNullOrWhiteSpace(dto.GuestPhone) && string.IsNullOrWhiteSpace(dto.GuestEmail))
+            {
+                throw new ArgumentException("At least one field must be provided for update.");
+            }
+        }
+
         if (!string.Equals(booking.Status, "Pending", StringComparison.OrdinalIgnoreCase))
         {
             throw new InvalidOperationException("Only pending bookings can be edited.");
@@ -213,6 +226,25 @@ public class BookingService : IBookingService
             CheckOutDate = dto.CheckOutDate,
             PricePerNight = room.RoomType!.BasePrice,
         }).ToList();
+
+        booking.TotalPrice = CalculateTotalAmount(booking.BookingDetails);
+        if (booking.VoucherId.HasValue)
+        {
+            var voucher = await _voucherRepository.GetByIdAsync(booking.VoucherId.Value);
+            if (voucher != null)
+            {
+                await _voucherService.ValidateCodeAsync(voucher.Code, booking.TotalPrice);
+                if (voucher.DiscountType == "Percentage")
+                {
+                    booking.Discount = Math.Round(booking.TotalPrice * (voucher.DiscountValue / 100m), 2);
+                }
+                else if (voucher.DiscountType == "Fixed")
+                {
+                    booking.Discount = Math.Min(voucher.DiscountValue, booking.TotalPrice);
+                }
+            }
+        }
+        booking.FinalPrice = booking.TotalPrice - (booking.Discount ?? 0);
 
         await _repository.SaveChangesAsync();
 
@@ -397,7 +429,8 @@ public class BookingService : IBookingService
             CheckOutDate = lastCheckOut,
             Status = string.IsNullOrWhiteSpace(booking.Status) ? "Pending" : booking.Status,
             TotalAmount = booking.FinalPrice,
-            RoomIds = orderedDetails.Where(item => item.RoomId.HasValue).Select(item => item.RoomId!.Value).Distinct().ToList(),
+            RoomNumbers = orderedDetails.Where(item => item.RoomId.HasValue).Select(item => item.Room?.RoomNumber ?? string.Empty).Distinct().ToList(),
+            RoomIds = orderedDetails.Where(item => item.RoomId.HasValue).Select(item => item.RoomId.Value).Distinct().ToList(),
         };
     }
 

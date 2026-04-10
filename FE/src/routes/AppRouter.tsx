@@ -13,6 +13,8 @@ import { UsersPage } from '../pages/admin/UsersPage';
 import { EquipmentPage } from '../pages/admin/EquipmentPage';
 import { AmenitiesPage } from '../pages/admin/AmenitiesPage';
 import { RoomTypesPage } from '../pages/admin/RoomTypesPage';
+import { MembershipsPage } from '../pages/admin/MembershipsPage';
+import { AttractionsPage } from '../pages/admin/AttractionsPage';
 import { VouchersPage } from '../pages/admin/VouchersPage';
 import { AuditLogPage } from '../pages/admin/AuditLogPage';
 import { ReviewsPage } from '../pages/admin/ReviewsPage';
@@ -105,6 +107,12 @@ export const AppRouter = () => {
                         <Route path="admin/equipments" element={<EquipmentPage />} />
                     </Route>
 
+                    <Route element={<RequirePermission permission="MANAGE_MEMBERSHIPS" />}>
+                        <Route path="admin/memberships" element={<MembershipsPage />} />
+                    </Route>
+
+                    <Route element={<RequirePermission permission="MANAGE_ATTRACTIONS" />}>
+                        <Route path="admin/attractions" element={<AttractionsPage />} />
                     <Route element={<RequirePermission permission="MANAGE_VOUCHERS" />}>
                         <Route path="admin/vouchers" element={<VouchersPage />} />
                     </Route>

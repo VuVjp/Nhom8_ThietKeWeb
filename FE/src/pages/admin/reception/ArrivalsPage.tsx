@@ -52,7 +52,7 @@ export function ArrivalsPage() {
         { key: 'guestName', label: 'Guest Name', render: (row: Booking) => row.guestName },
         { key: 'guestPhone', label: 'Phone', render: (row: Booking) => row.guestPhone },
         { key: 'dates', label: 'Dates', render: (row: Booking) => `${formatDate(row.checkInDate)} - ${formatDate(row.checkOutDate)}` },
-        { key: 'roomIds', label: 'Rooms', render: (row: Booking) => row.roomIds?.join(', ') || 'Unassigned' },
+        { key: 'roomNumbers', label: 'Rooms', render: (row: Booking) => row.roomNumbers?.join(', ') || 'Unassigned' },
         {
             key: 'status', label: 'Status', render: (row: Booking) => (
                 <span className="rounded bg-cyan-100 px-2 py-1 text-xs font-semibold text-cyan-800">{row.status}</span>

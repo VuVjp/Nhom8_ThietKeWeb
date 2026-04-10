@@ -33,7 +33,7 @@ namespace HotelManagement.Controllers
 
         [Permission(PermissionNames.ManageRoomTypes)]
         [HttpPost]
-        public async Task<ActionResult<RoomTypeDto>> CreateRoomType(CreateRoomTypeDto dto)
+        public async Task<ActionResult<RoomTypeDto>> CreateRoomType([FromForm] CreateRoomTypeDto dto)
         {
             var result = await _roomTypeService.CreateRoomTypeAsync(dto);
             if (!result)
@@ -44,11 +44,22 @@ namespace HotelManagement.Controllers
 
         [Permission(PermissionNames.ManageRoomTypes)]
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateRoomType(int id, UpdateRoomTypeDto dto)
+        public async Task<IActionResult> UpdateRoomType(int id, [FromForm] UpdateRoomTypeDto dto)
         {
             var result = await _roomTypeService.UpdateRoomTypeAsync(id, dto);
             if (!result)
                 return NotFound(new { message = "Room type not found." });
+
+            return NoContent();
+        }
+
+        [Permission(PermissionNames.ManageRoomTypes)]
+        [HttpPatch("{id}/set-primary-image/")]
+        public async Task<IActionResult> SetPrimaryImage(int id, [FromQuery] int imageId)
+        {
+            var result = await _roomTypeService.SetPrimaryRoomImageAsync(id, imageId);
+            if (!result)
+                return NotFound(new { message = "Room type or image not found." });
 
             return NoContent();
         }
@@ -83,18 +94,6 @@ namespace HotelManagement.Controllers
 
             if (!result)
                 return NotFound(new { message = "Image not found." });
-
-            return NoContent();
-        }
-
-        [Permission(PermissionNames.ManageRoomTypes)]
-        [HttpPatch("{roomTypeId}/images/{imageId}/set-primary")]
-        public async Task<IActionResult> SetPrimaryImage(int roomTypeId, int imageId)
-        {
-            var result = await _roomTypeService.SetPrimaryImageAsync(roomTypeId, imageId);
-
-            if (!result)
-                return NotFound(new { message = "Image or RoomType not found." });
 
             return NoContent();
         }

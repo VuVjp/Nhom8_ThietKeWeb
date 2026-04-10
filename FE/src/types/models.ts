@@ -83,6 +83,7 @@ export interface Booking {
   status: BookingStatus;
   totalAmount: number;
   roomIds: number[];
+  roomNumbers: string[];
 }
 
 export interface RoomAvailability {

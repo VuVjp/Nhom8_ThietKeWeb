@@ -69,7 +69,9 @@ export function RoomsPage() {
         status: 'Available',
         cleaningStatus: 'Clean',
     });
-    const [bulkRoomNumbersInput, setBulkRoomNumbersInput] = useState('');
+    const [bulkStartRoom, setBulkStartRoom] = useState('');
+    const [bulkEndRoom, setBulkEndRoom] = useState('');
+    const [bulkStep, setBulkStep] = useState('1');
     const [roomTypes, setRoomTypes] = useState<RoomTypeItem[]>([]);
     const [amenities, setAmenities] = useState<AmenityItem[]>([]);
     const [selectedAmenityIds, setSelectedAmenityIds] = useState<number[]>([]);
@@ -90,15 +92,20 @@ export function RoomsPage() {
     );
 
     const parseBulkRoomNumbers = useCallback(() => {
-        return Array.from(
-            new Set(
-                bulkRoomNumbersInput
-                    .split(/[\n,;]+/)
-                    .map((item) => item.trim())
-                    .filter((item) => item.length > 0),
-            ),
-        );
-    }, [bulkRoomNumbersInput]);
+        const start = Number(bulkStartRoom);
+        const end = Number(bulkEndRoom);
+        const step = Number(bulkStep) || 1;
+
+        if (!bulkStartRoom || !bulkEndRoom || isNaN(start) || isNaN(end) || step <= 0) {
+            return [];
+        }
+
+        const results: string[] = [];
+        for (let i = start; i <= end; i += step) {
+            results.push(String(i));
+        }
+        return results;
+    }, [bulkStartRoom, bulkEndRoom, bulkStep]);
 
     const loadRooms = useCallback(async () => {
         setIsLoading(true);
@@ -298,7 +305,9 @@ export function RoomsPage() {
         setCloneSourceRoomId(null);
         setSelectedAmenityIds([]);
         setSelectedInventories({});
-        setBulkRoomNumbersInput('');
+        setBulkStartRoom('');
+        setBulkEndRoom('');
+        setBulkStep('1');
         const firstActiveRoomTypeId = activeRoomTypes[0]?.id ?? 0;
         setDraft((prev) => ({
             roomNumber: '',
@@ -539,7 +548,7 @@ export function RoomsPage() {
             </div>
 
             {isLoading ? (
-                <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] flex flex-col items-center justify-center z-10">
+                <div className="flex flex-col items-center justify-center py-20">
                     <div className="w-10 h-10 border-4 border-cyan-600 border-t-transparent rounded-full animate-spin"></div>
                     <p className="mt-4 text-sm font-bold text-slate-600 animate-pulse">Loading rooms...</p>
                 </div>
@@ -591,16 +600,41 @@ export function RoomsPage() {
                                         <p className="text-xs text-slate-500">Unique room number used for check-in and operations.</p>
                                     </div>
                                 ) : (
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-medium text-slate-700">Room numbers</label>
-                                        <textarea
-                                            value={bulkRoomNumbersInput}
-                                            onChange={(e) => setBulkRoomNumbersInput(e.target.value)}
-                                            rows={5}
-                                            placeholder={'101\n102\n103'}
-                                            className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-800 outline-none ring-cyan-500 transition focus:ring-2"
-                                        />
-                                        <p className="text-xs text-slate-500">One per line or separated by comma/semicolon. Detected {parseBulkRoomNumbers().length} unique room number(s).</p>
+                                    <div className="space-y-3">
+                                        <div className="grid gap-3 sm:grid-cols-3">
+                                            <div className="space-y-1.5">
+                                                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Start number</label>
+                                                <Input 
+                                                    type="number" 
+                                                    placeholder="101" 
+                                                    value={bulkStartRoom} 
+                                                    onChange={(e) => setBulkStartRoom(e.target.value)} 
+                                                />
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">End number</label>
+                                                <Input 
+                                                    type="number" 
+                                                    placeholder="110" 
+                                                    value={bulkEndRoom} 
+                                                    onChange={(e) => setBulkEndRoom(e.target.value)} 
+                                                />
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Step</label>
+                                                <Input 
+                                                    type="number" 
+                                                    placeholder="1" 
+                                                    value={bulkStep} 
+                                                    onChange={(e) => setBulkStep(e.target.value)} 
+                                                />
+                                            </div>
+                                        </div>
+                                        <p className="text-xs text-slate-500 italic">
+                                            Generates a sequence from {bulkStartRoom || '...'} to {bulkEndRoom || '...'} with step {bulkStep || '1'}.
+                                            <br />
+                                            Detected <span className="font-bold text-cyan-700">{parseBulkRoomNumbers().length}</span> unique room number(s).
+                                        </p>
                                     </div>
                                 )}
 

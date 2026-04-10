@@ -27,7 +27,7 @@ export function InventoryPage() {
     const [roomFilterId, setRoomFilterId] = useState('all');
     const [typeFilter, setTypeFilter] = useState<'all' | 'amenity' | 'equipment'>('all');
     const [itemFilterId, setItemFilterId] = useState('all');
-    const [sortMode, setSortMode] = useState<'asc' | 'desc'>('asc');
+    const [sortMode, setSortMode] = useState<'asc' | 'desc'>('desc');
     const [page, setPage] = useState(1);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
@@ -109,7 +109,7 @@ export function InventoryPage() {
             return byRoomId && byType && byItemId;
         });
 
-        return sortBy(next, (item) => item.name, sortMode);
+        return sortBy(next, (item) => item.code, sortMode);
     }, [rows, roomFilterId, typeFilter, itemFilterId, sortMode]);
 
     const roomLookup = useMemo(
@@ -274,7 +274,7 @@ export function InventoryPage() {
             <div className="grid gap-2 rounded-xl border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-4">
                 <Select value={roomFilterId} onChange={(e) => setRoomFilterId(e.target.value)}>
                     <option value="all">Room: All</option>
-                    {filteredRoomOptions.map((room) => (
+                    {sortBy(filteredRoomOptions, (room) => room.roomNumber, 'asc').map((room) => (
                         <option key={room.id} value={room.id}>{room.roomNumber}</option>
                     ))}
                 </Select>

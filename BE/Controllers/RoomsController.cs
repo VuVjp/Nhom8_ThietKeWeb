@@ -31,6 +31,7 @@ public class RoomsController : ControllerBase
 		return Ok(await _service.GetByStatusAsync(status, includeCleaningRequested));
 	}
 
+
 	[Permission(PermissionNames.UpdateCleaning)]
 	[HttpPatch("{id}/request-cleaning")]
 	public async Task<IActionResult> ToggleCleaningRequest(int id, [FromBody] bool requested)
