@@ -9,11 +9,20 @@ public class ArticleRepository : Repository<Article>, IArticleRepository
     }
 
     public async Task<IEnumerable<Article>> GetAllActiveAsync()
-{
-    return await _dbSet
-        .Where(a => a.IsActive)
-        .Include(a => a.Category)
-        .Include(a => a.Author)
-        .ToListAsync();
-}
+    {
+        return await _dbSet
+            .Include(a => a.ArticleCategoryMaps)
+                .ThenInclude(m => m.Category)
+            .Include(a => a.Author)
+            .ToListAsync();
+    }
+
+    public async Task<Article?> GetByIdWithCategoriesAsync(int id)
+    {
+        return await _dbSet
+            .Include(a => a.ArticleCategoryMaps)
+                .ThenInclude(m => m.Category)
+            .Include(a => a.Author)
+            .FirstOrDefaultAsync(a => a.Id == id);
+    }
 }

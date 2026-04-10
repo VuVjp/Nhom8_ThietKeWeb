@@ -15,7 +15,7 @@ const classByValue: Record<string, string> = {
 
 export function Badge({ value }: BadgeProps) {
   return (
-    <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${classByValue[value] ?? 'bg-slate-100 text-slate-600 border-slate-200'}`}>
+    <span className={`inline-flex w-15 justify-center rounded-full border px-2.5 py-1 text-xs font-semibold ${classByValue[value] ?? 'bg-slate-100 text-slate-600 border-slate-200'}`}>
       {value}
     </span>
   );

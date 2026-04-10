@@ -45,7 +45,7 @@ public class UserManagementService : IUserManagementService
         {
             throw new ConflictException("Email already exists.");
         }
-        
+
         var passwordHash = BCrypt.Net.BCrypt.HashPassword(password);
         var user = new User
         {
@@ -64,6 +64,25 @@ public class UserManagementService : IUserManagementService
             + "<p></p>";
 
         await _emailService.SendAsync(user.Email, "Your new account password", body);
+    }
+
+    public async Task<validateUserResponseDto> ValidateUserAsync(string email)
+    {
+        var user = await _userRepository.GetByEmailAsync(email);
+        if (user == null)
+        {
+            throw new NotFoundException("User not found.");
+        }
+        if (!user.IsActive)
+        {
+            throw new InvalidOperationException("User account is inactive.");
+        }
+        return new validateUserResponseDto
+        {
+            FullName = user.FullName,
+            Phone = user.Phone,
+            Email = user.Email
+        };
     }
 
     public async Task EditUserAsync(int userId, string email, string password, int roleId)

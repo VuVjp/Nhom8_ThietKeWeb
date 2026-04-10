@@ -15,6 +15,7 @@ import { roomsApi } from '../../api/roomsApi';
 import type { Room } from '../../types/models';
 import { paginate, sortBy } from '../../utils/table';
 import { usePermissionCheck } from '../../hooks/usePermissionCheck';
+import { Badge } from '../../components/Badge';
 
 export function InventoryPage() {
     const { ensure } = usePermissionCheck();
@@ -167,6 +168,29 @@ export function InventoryPage() {
         setItemFilterId('all');
     }, [typeFilter, roomFilterId]);
 
+    const toggleInventoryActive = async (item: InventoryItem) => {
+        if (!ensure('MANAGE_INVENTORY', 'toggle inventory active status')) {
+            return;
+        }
+        try {
+            await roomInventoriesApi.toggleActive(item.id);
+            setRows((prev) =>
+                prev.map((row) =>
+                    row.id === item.id
+                        ? {
+                            ...row,
+                            isActive: !row.isActive,
+                        }
+                        : row,
+                ),
+            );
+            toast.success(`${item.code} is now ${item.isActive ? 'OFF' : 'ON'}`);
+        } catch (error) {
+            const apiError = toApiError(error);
+            toast.error(apiError.message || 'Failed to toggle inventory status');
+        }
+    };
+
     const pageSize = 10;
     const paged = paginate(filtered, page, pageSize);
 
@@ -189,49 +213,55 @@ export function InventoryPage() {
             key: 'status',
             label: 'Status',
             render: (row: InventoryItem) => (
-                <span className={`rounded-full px-2 py-1 text-xs font-medium ${row.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
-                    {row.isActive ? 'ON' : 'OFF'}
-                </span>
+                <button
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => {
+                        void toggleInventoryActive(row);
+                    }}
+                >
+                    <Badge value={row.isActive ? 'Active' : 'Inactive'} />
+                </button>
+
             ),
         },
-        {
-            key: 'actions',
-            label: 'Actions',
-            render: (row: InventoryItem) => (
-                <div className="flex gap-2">
-                    <button
-                        type="button"
-                        className={`rounded-lg border px-2 py-1 text-xs ${row.isActive ? 'border-amber-200 text-amber-700' : 'border-emerald-200 text-emerald-700'}`}
-                        onClick={() => {
-                            if (!ensure('MANAGE_INVENTORY', 'toggle inventory active status')) {
-                                return;
-                            }
-                            void (async () => {
-                                try {
-                                    await roomInventoriesApi.toggleActive(row.id);
-                                    setRows((prev) =>
-                                        prev.map((item) =>
-                                            item.id === row.id
-                                                ? {
-                                                    ...item,
-                                                    isActive: !item.isActive,
-                                                }
-                                                : item,
-                                        ),
-                                    );
-                                    toast.success(`${row.code} is now ${row.isActive ? 'OFF' : 'ON'}`);
-                                } catch (error) {
-                                    const apiError = toApiError(error);
-                                    toast.error(apiError.message || 'Failed to toggle inventory status');
-                                }
-                            })();
-                        }}
-                    >
-                        {row.isActive ? 'Set OFF' : 'Set ON'}
-                    </button>
-                </div>
-            ),
-        },
+        // {
+        //     key: 'actions',
+        //     label: 'Actions',
+        //     render: (row: InventoryItem) => (
+        //         <div className="flex gap-2">
+        //             <button
+        //                 type="button"
+        //                 className={`rounded-lg border px-2 py-1 text-xs ${row.isActive ? 'border-amber-200 text-amber-700' : 'border-emerald-200 text-emerald-700'}`}
+        //                 onClick={() => {
+        //                     if (!ensure('MANAGE_INVENTORY', 'toggle inventory active status')) {
+        //                         return;
+        //                     }
+        //                     void (async () => {
+        //                         try {
+        //                             await roomInventoriesApi.toggleActive(row.id);
+        //                             setRows((prev) =>
+        //                                 prev.map((item) =>
+        //                                     item.id === row.id
+        //                                         ? {
+        //                                             ...item,
+        //                                             isActive: !item.isActive,
+        //                                         }
+        //                                         : item,
+        //                                 ),
+        //                             );
+        //                             toast.success(`${row.code} is now ${row.isActive ? 'OFF' : 'ON'}`);
+        //                         } catch (error) {
+        //                             const apiError = toApiError(error);
+        //                             toast.error(apiError.message || 'Failed to toggle inventory status');
+        //                         }
+        //                     })();
+        //                 }}
+        //             >
+        //                 {row.isActive ? 'Set OFF' : 'Set ON'}
+        //             </button>
+        //         </div>
+        //     ),
+        // },
     ];
 
     return (
@@ -276,13 +306,21 @@ export function InventoryPage() {
                             setItemFilterId('all');
                             setSortMode('asc');
                             void loadInventory();
-                            toast('Filters refreshed', { icon: 'ℹ️' });
                         }}
                     >
                         <ArrowPathIcon className="h-4 w-4" />
                     </button>
                 </div>
             </div>
+            {isLoading ? (
+                <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] flex flex-col items-center justify-center z-10">
+                    <div className="w-10 h-10 border-4 border-cyan-600 border-t-transparent rounded-full animate-spin"></div>
+                    <p className="mt-4 text-sm font-bold text-slate-600 animate-pulse">Loading inventory...</p>
+                </div>
+            ) :
+                paged.length === 0 && !isLoading ? (
+                    <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-slate-500">No inventory items found.</div>
+                ) : null}
 
             <Table columns={columns} rows={isLoading ? [] : paged} />
             <Pagination page={page} pageSize={pageSize} total={filtered.length} onPageChange={setPage} />

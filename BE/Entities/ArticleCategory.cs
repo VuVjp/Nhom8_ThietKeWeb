@@ -6,5 +6,6 @@ public class ArticleCategory
     public string Name { get; set; } = string.Empty;
     public bool IsActive { get; set; } = true;
 
-    public ICollection<Article> Articles { get; set; } = new List<Article>();
+    /// <summary>Navigation for the many-to-many relationship with Article.</summary>
+    public ICollection<ArticleCategoryMap> ArticleCategoryMaps { get; set; } = new List<ArticleCategoryMap>();
 }

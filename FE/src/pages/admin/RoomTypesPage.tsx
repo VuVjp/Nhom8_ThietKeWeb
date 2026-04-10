@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { PencilSquareIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { PencilSquareIcon, PlusIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import { roomTypesApi, type RoomTypeItem, type RoomTypePayload } from '../../api/roomTypesApi';
 import { amenitiesApi, type AmenityItem } from '../../api/amenitiesApi';
 import { toApiError } from '../../api/httpClient';
@@ -8,6 +8,7 @@ import { Input } from '../../components/Input';
 import { Table } from '../../components/Table';
 import { Modal } from '../../components/Modal';
 import { usePermissionCheck } from '../../hooks/usePermissionCheck';
+import { Badge } from '../../components/Badge';
 
 const emptyDraft: RoomTypePayload = {
     name: '',
@@ -159,9 +160,14 @@ export function RoomTypesPage() {
             key: 'status',
             label: 'Status',
             render: (row: RoomTypeItem) => (
-                <span className={`rounded-full px-2 py-1 text-xs font-medium ${row.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
-                    {row.isActive ? 'ON' : 'OFF'}
-                </span>
+                <button
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => {
+                        void toggleRoomTypeActive(row);
+                    }}
+                >
+                    <Badge value={row.isActive ? 'Active' : 'Inactive'} />
+                </button>
             ),
         },
         {
@@ -192,7 +198,7 @@ export function RoomTypesPage() {
                     >
                         <PencilSquareIcon className="h-4 w-4" /> Edit
                     </button>
-                    <button
+                    {/* <button
                         type="button"
                         className={`inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-xs ${row.isActive ? 'border-amber-200 text-amber-700' : 'border-emerald-200 text-emerald-700'}`}
                         onClick={() => {
@@ -200,7 +206,7 @@ export function RoomTypesPage() {
                         }}
                     >
                         {row.isActive ? 'Set OFF' : 'Set ON'}
-                    </button>
+                    </button> */}
                 </div>
             ),
         },
@@ -213,14 +219,32 @@ export function RoomTypesPage() {
                     <h2 className="text-2xl font-bold text-slate-900">Room Types</h2>
                     <p className="text-sm text-slate-500">Add and manage room type definitions for room creation.</p>
                 </div>
-                <button
-                    type="button"
-                    className="inline-flex items-center gap-2 rounded-lg bg-cyan-700 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-800 disabled:opacity-60"
-                    onClick={() => setOpenCreate(true)}
-                >
-                    <PlusIcon className="h-4 w-4" /> Add Room Type
-                </button>
+                <div className="flex gap-2">
+                    <button
+                        onClick={() => void loadRoomTypes()}
+                        className="p-2 text-slate-500 hover:text-cyan-600 transition bg-white border border-slate-200 rounded-xl"
+                        title="Refresh"
+                    >
+                        <ArrowPathIcon className={`h-5 w-5 ${isLoading ? 'animate-spin' : ''}`} />
+                    </button>
+                    <button
+                        type="button"
+                        className="inline-flex items-center gap-2 rounded-lg bg-cyan-700 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-800 disabled:opacity-60"
+                        onClick={() => setOpenCreate(true)}
+                    >
+                        <PlusIcon className="h-4 w-4" /> Add Room Type
+                    </button>
+                </div>
             </div>
+
+            {isLoading ? (
+                <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] flex flex-col items-center justify-center z-10">
+                    <div className="w-10 h-10 border-4 border-cyan-600 border-t-transparent rounded-full animate-spin"></div>
+                    <p className="mt-4 text-sm font-bold text-slate-600 animate-pulse">Loading room types...</p>
+                </div>
+            ) : rows.length === 0 ? (
+                <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-slate-500">No room types found.</div>
+            ) : null}
 
             <Table columns={columns} rows={isLoading ? [] : rows} />
 

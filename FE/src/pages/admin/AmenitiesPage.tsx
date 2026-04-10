@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { PencilSquareIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { PencilSquareIcon, PlusIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import { amenitiesApi, type AmenityItem } from '../../api/amenitiesApi';
 import { toApiError } from '../../api/httpClient';
 import { Input } from '../../components/Input';
 import { Table } from '../../components/Table';
 import { Modal } from '../../components/Modal';
 import { usePermissionCheck } from '../../hooks/usePermissionCheck';
+import { Badge } from '../../components/Badge';
 
 export function AmenitiesPage() {
     const { ensure } = usePermissionCheck();
@@ -132,21 +133,24 @@ export function AmenitiesPage() {
         {
             key: 'icon',
             label: 'Icon',
-            render: (row: AmenityItem) =>
-                row.iconUrl ? (
-                    <img src={row.iconUrl} alt={row.name} className="h-10 w-10 rounded-lg border border-slate-200 object-cover" />
-                ) : (
-                    <div className="h-10 w-10 rounded-lg border border-dashed border-slate-300" />
-                ),
+            isImg: true,
+            src: (row: AmenityItem) => row.iconUrl ?? '',
+            render: () =>
+                <span className="text-xs text-slate-400">No image</span>
         },
         { key: 'name', label: 'Name', render: (row: AmenityItem) => row.name },
         {
             key: 'status',
             label: 'Status',
             render: (row: AmenityItem) => (
-                <span className={`rounded-full px-2 py-1 text-xs font-medium ${row.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
-                    {row.isActive ? 'ON' : 'OFF'}
-                </span>
+                <button
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => {
+                        void toggleAmenityActive(row);
+                    }}
+                >
+                    <Badge value={row.isActive ? 'Active' : 'Inactive'} />
+                </button>
             ),
         },
         {
@@ -165,7 +169,7 @@ export function AmenitiesPage() {
                     >
                         <PencilSquareIcon className="h-4 w-4" /> Edit
                     </button>
-                    <button
+                    {/* <button
                         type="button"
                         className={`inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-xs ${row.isActive ? 'border-amber-200 text-amber-700' : 'border-emerald-200 text-emerald-700'}`}
                         onClick={() => {
@@ -173,7 +177,7 @@ export function AmenitiesPage() {
                         }}
                     >
                         {row.isActive ? 'Set OFF' : 'Set ON'}
-                    </button>
+                    </button> */}
                 </div>
             ),
         },
@@ -186,13 +190,22 @@ export function AmenitiesPage() {
                     <h2 className="text-2xl font-bold text-slate-900">Amenities</h2>
                     <p className="text-sm text-slate-500">Manage amenity catalog and icon image for room setup.</p>
                 </div>
-                <button
-                    type="button"
-                    className="inline-flex items-center gap-2 rounded-lg bg-cyan-700 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-800 disabled:opacity-60"
-                    onClick={() => setOpenCreate(true)}
-                >
-                    <PlusIcon className="h-4 w-4" /> Add Amenity
-                </button>
+                <div className="flex gap-2">
+                    <button
+                        onClick={() => void loadAmenities()}
+                        className="p-2 text-slate-500 hover:text-cyan-600 transition bg-white border border-slate-200 rounded-xl"
+                        title="Refresh"
+                    >
+                        <ArrowPathIcon className={`h-5 w-5 ${isLoading ? 'animate-spin' : ''}`} />
+                    </button>
+                    <button
+                        type="button"
+                        className="inline-flex items-center gap-2 rounded-lg bg-cyan-700 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-800 disabled:opacity-60"
+                        onClick={() => setOpenCreate(true)}
+                    >
+                        <PlusIcon className="h-4 w-4" /> Add Amenity
+                    </button>
+                </div>
             </div>
 
             <Table columns={columns} rows={isLoading ? [] : rows} />

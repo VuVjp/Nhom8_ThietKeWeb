@@ -9,4 +9,5 @@ public interface IUserManagementService
     Task ChangeRoleByIdAsync(int userId, int roleId);
     Task ToggleUserActiveByIdAsync(int userId);
     Task ResetPasswordAndSendEmailAsync(int userId);
+    Task<validateUserResponseDto> ValidateUserAsync(string email);
 }

@@ -10,7 +10,9 @@ public class Booking
     public string BookingCode { get; set; } = string.Empty;
     public int? VoucherId { get; set; }
     public string? Status { get; set; }
-
+    public decimal TotalPrice { get; set; }
+    public decimal? Discount { get; set; }
+    public decimal FinalPrice { get; set; }
     public User? User { get; set; }
     public Voucher? Voucher { get; set; }
     public ICollection<BookingDetail> BookingDetails { get; set; } = new List<BookingDetail>();

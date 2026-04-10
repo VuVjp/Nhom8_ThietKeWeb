@@ -95,4 +95,20 @@ export const usersApi = {
         );
         return data;
     },
+
+    async isAvailable(email: string) {
+        const { data } = await httpClient.get<{
+            fullName?: string;
+            FullName?: string;
+            phone?: string;
+            Phone?: string;
+            email?: string;
+            Email?: string;
+        }>(`usermanagement/validate?email=${encodeURIComponent(email)}`);
+        return {
+            fullName: data.fullName ?? data.FullName ?? '',
+            phone: data.phone ?? data.Phone ?? '',
+            email: data.email ?? data.Email ?? email,
+        };
+    },
 };

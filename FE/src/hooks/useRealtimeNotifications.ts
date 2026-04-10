@@ -16,6 +16,17 @@ interface NotificationEventPayload {
 
 const PAGE_SIZE = 20;
 
+function getNotificationHubUrl(): string {
+    const apiBaseUrl = String(import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5082/api');
+    const normalized = apiBaseUrl.replace(/\/$/, '');
+
+    if (normalized.toLowerCase().endsWith('/api')) {
+        return `${normalized.slice(0, -4)}/hubs/notification`;
+    }
+
+    return `${normalized}/hubs/notification`;
+}
+
 function toNotificationItem(dto: NotificationDto): NotificationItem {
     const createdAt = String(dto.createdAt ?? dto.CreatedAt ?? new Date().toISOString());
 
@@ -137,7 +148,7 @@ export function useRealtimeNotifications(enabled: boolean) {
         void refreshNotifications();
 
         const connection = new HubConnectionBuilder()
-            .withUrl('http://localhost:5082/hubs/notification', {
+            .withUrl(getNotificationHubUrl(), {
                 accessTokenFactory: () => getAccessToken() ?? '',
             })
             .withAutomaticReconnect()

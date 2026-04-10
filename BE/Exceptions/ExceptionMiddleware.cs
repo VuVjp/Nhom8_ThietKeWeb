@@ -47,6 +47,28 @@ public class ExceptionMiddleware
                 message = ex.Message
             });
         }
+        catch (ValidationException ex)
+        {
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            context.Response.ContentType = "application/json";
+
+            await context.Response.WriteAsJsonAsync(new
+            {
+                status = 400,
+                message = ex.Message
+            });
+        }
+        catch (BadRequestException ex)
+        {
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            context.Response.ContentType = "application/json";
+
+            await context.Response.WriteAsJsonAsync(new
+            {
+                status = 400,
+                message = ex.Message
+            });
+        }
         catch (ConflictException ex)
         {
             context.Response.StatusCode = StatusCodes.Status409Conflict;

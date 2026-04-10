@@ -20,14 +20,37 @@ public class RoomRepository : IRoomRepository
 			.AsNoTracking()
 			.ToListAsync();
 
-	public async Task<IEnumerable<Room>> GetByStatusAsync(string status)
+	public async Task<IEnumerable<Room>> GetByStatusAsync(string status, bool includeCleaningRequested = false)
 	{
 		var normalized = status.Trim().ToLower();
+
+		var query = _context.Rooms
+			.Include(r => r.RoomType)
+			.AsNoTracking();
+		if (normalized == "insclean" && !includeCleaningRequested)
+		{
+			query = query.Where(r => r.Status != null && r.Status.Trim().ToLower() == normalized);
+		}
+		else if (includeCleaningRequested)
+		{
+			query = query.Where(r => r.CleaningRequested);
+		}
+		else
+		{
+			query = query.Where(r => r.Status != null && r.Status.Trim().ToLower() == normalized);
+		}
+
+		return await query.ToListAsync();
+	}
+
+	public async Task<IEnumerable<Room>> GetByCleaningStatusAsync(string cleaningStatus)
+	{
+		var normalized = cleaningStatus.Trim().ToLower();
 
 		return await _context.Rooms
 			.Include(r => r.RoomType)
 			.AsNoTracking()
-			.Where(r => r.Status != null && r.Status.Trim().ToLower() == normalized)
+			.Where(r => r.CleaningStatus != null && r.CleaningStatus.Trim().ToLower() == normalized)
 			.ToListAsync();
 	}
 

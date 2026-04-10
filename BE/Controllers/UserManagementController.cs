@@ -48,6 +48,13 @@ public class UserManagementController : ControllerBase
     }
 
     [Permission(PermissionNames.ManageUsers)]
+    [HttpGet("validate")]
+    public async Task<IActionResult> ValidateUser([FromQuery] string email)
+    {
+        return Ok(await _userManagementService.ValidateUserAsync(email));
+    }
+
+    [Permission(PermissionNames.ManageUsers)]
     [HttpPost]
     public async Task<IActionResult> CreateUser([FromBody] CreateUserDto dto)
     {

@@ -5,4 +5,5 @@ public interface IArticleCategoryService
     Task<bool> CreateAsync(CreateArticleCategoryDto dto);
     Task<bool> UpdateAsync(int id, UpdateArticleCategoryDto dto);
     Task<bool> DeleteAsync(int id);
+    Task<bool> RestoreAsync(int id);
 }

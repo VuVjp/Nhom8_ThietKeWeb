@@ -12,8 +12,8 @@ interface LossDto {
     Room?: string;
     roomNumber?: string;
     RoomNumber?: string;
-    item?: string;
-    Item?: string;
+    itemName?: string;
+    ItemName?: string;
     quantity?: number;
     Quantity?: number;
     penaltyAmount?: number;
@@ -43,7 +43,7 @@ function mapLossDtoToRecord(dto: LossDto, index: number): LossRecord {
     return {
         id: String(dto.id ?? dto.Id ?? `LS-${index + 1}`),
         room: String(dto.room ?? dto.Room ?? dto.roomNumber ?? dto.RoomNumber ?? dto.roomId ?? dto.RoomId ?? ''),
-        item: String(dto.item ?? dto.Item ?? 'Unknown'),
+        itemName: String(dto.itemName ?? dto.ItemName ?? 'Unknown'),
         quantity: Number(dto.quantity ?? dto.Quantity ?? 1),
         penalty: Number(dto.penaltyAmount ?? dto.PenaltyAmount ?? 0),
         description,

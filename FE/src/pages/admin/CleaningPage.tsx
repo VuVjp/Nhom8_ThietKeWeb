@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
-import { PencilSquareIcon, CheckCircleIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import { PencilSquareIcon, CheckCircleIcon, ExclamationTriangleIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import type { InventoryItem, LossRecord, Room } from '../../types/models';
 import { Select } from '../../components/Select';
 import { Modal } from '../../components/Modal';
@@ -11,6 +11,7 @@ import { toApiError } from '../../api/httpClient';
 import { roomsApi } from '../../api/roomsApi';
 import { roomInventoriesApi } from '../../api/roomInventoriesApi';
 import { lossApi } from '../../api/lossApi';
+import { BrushCleaning } from 'lucide-react';
 
 interface CleaningRoomState {
     room: Room;
@@ -66,8 +67,8 @@ export function CleaningPage() {
         setIsLoading(true);
         try {
             const [inspecting, cleaning] = await Promise.all([
-                roomsApi.getByStatus('Inspecting'),
-                roomsApi.getByStatus('Cleaning'),
+                roomsApi.getByCleaningStatus('Inspecting'),
+                roomsApi.getByStatusWithCleaningRequested('InsClean', true),
             ]);
 
             setInspectingRooms(inspecting);
@@ -231,7 +232,7 @@ export function CleaningPage() {
 
     const lossColumns = [
         { key: 'id', label: 'ID', render: (row: LossRecord) => row.id },
-        { key: 'item', label: 'Item', render: (row: LossRecord) => row.item },
+        { key: 'item', label: 'Item', render: (row: LossRecord) => row.itemName },
         { key: 'quantity', label: 'Qty', render: (row: LossRecord) => row.quantity },
         { key: 'penalty', label: 'Penalty', render: (row: LossRecord) => `$${row.penalty}` },
         { key: 'description', label: 'Description', render: (row: LossRecord) => row.description },
@@ -256,7 +257,7 @@ export function CleaningPage() {
             return;
         }
 
-        if (!ensure('MANAGE_CLEANING', 'move room to cleaning')) {
+        if (!ensure('UPDATE_CLEANING', 'move room to cleaning')) {
             return;
         }
 
@@ -269,7 +270,8 @@ export function CleaningPage() {
                     await sendPendingReports(selectedInspectingRoom.id);
                 }
 
-                await roomsApi.changeStatus(selectedInspectingRoom.id, 'Cleaning');
+                await roomsApi.requestCleaning(selectedInspectingRoom.id, true);
+                await roomsApi.changeCleaningStatus(selectedInspectingRoom.id, 'Cleaning');
 
                 if (pendingRows.length > 0) {
                     setPendingLossReportsByRoom((prev) => {
@@ -290,20 +292,43 @@ export function CleaningPage() {
         })();
     };
 
+    const markCleaningRequested = () => {
+        if (!selectedCleaningRoom) {
+            toast.error('Please select a room that is already in cleaning');
+            return;
+        }
+        if (!ensure('UPDATE_CLEANING', 'finish room cleaning')) {
+            return;
+        }
+        void (async () => {
+            setIsUpdatingStatus(true);
+            try {
+                await roomsApi.changeCleaningStatus(selectedCleaningRoom.id, 'Cleaning');
+            } catch (error) {
+                const apiError = toApiError(error);
+                toast.error(apiError.message || 'Failed to mark cleaning requested');
+            } finally {
+                selectedCleaningRoom.cleaningStatus = 'Cleaning';
+                setIsUpdatingStatus(false);
+            }
+        })();
+    }
+
     const completeCleaning = () => {
         if (!selectedCleaningRoom) {
             toast.error('Please select a room that is already in cleaning');
             return;
         }
 
-        if (!ensure('MANAGE_CLEANING', 'finish room cleaning')) {
+        if (!ensure('UPDATE_CLEANING', 'finish room cleaning')) {
             return;
         }
 
         void (async () => {
             setIsUpdatingStatus(true);
             try {
-                await roomsApi.changeStatus(selectedCleaningRoom.id, 'Available');
+                await roomsApi.changeCleaningStatus(selectedCleaningRoom.id, 'Clean');
+                await roomsApi.requestCleaning(selectedCleaningRoom.id, false);
                 // const updatedRoom = await roomsApi.getById(selectedCleaningRoom.id);
                 // if (updatedRoom.status === 'Maintenance') {
                 //     toast.error(`Room ${selectedCleaningRoom.roomNumber} was moved to Maintenance. Admin has been notified.`);
@@ -311,7 +336,6 @@ export function CleaningPage() {
                 //     toast.success(`Room ${selectedCleaningRoom.roomNumber} marked Available`);
                 // }
             } catch (error) {
-                await loadBoards();
                 const apiError = toApiError(error);
                 if (apiError.status === 400 && apiError.message?.toLowerCase().includes('room cannot be set to available')) {
                     toast.error(`Room ${selectedCleaningRoom.roomNumber} cannot be marked Available due to pending issues. It has been moved to Maintenance. Admin has been notified.`, { icon: '⚠️' });
@@ -319,6 +343,7 @@ export function CleaningPage() {
                 }
                 toast.error(apiError.message || 'Failed to finish cleaning');
             } finally {
+                await loadBoards();
                 setIsUpdatingStatus(false);
             }
         })();
@@ -445,9 +470,19 @@ export function CleaningPage() {
 
     return (
         <div className="space-y-6">
-            <div>
-                <h2 className="text-2xl font-bold text-slate-900">Cleaning Workflow</h2>
-                <p className="text-sm text-slate-500">Only supports Inspecting to Cleaning and Cleaning to Available.</p>
+            <div className="flex items-center justify-between">
+                <div>
+                    <h2 className="text-2xl font-bold text-slate-900">Cleaning Workflow</h2>
+                    <p className="text-sm text-slate-500">Only supports Inspecting to Cleaning and Cleaning to Available.</p>
+                </div>
+                <button
+                    type="button"
+                    onClick={() => void loadBoards()}
+                    className="p-2 text-slate-500 hover:text-cyan-600 transition bg-white border border-slate-200 rounded-xl"
+                    title="Refresh"
+                >
+                    <ArrowPathIcon className={`h-5 w-5 ${isLoading ? 'animate-spin' : ''}`} />
+                </button>
             </div>
 
             <div className="rounded-xl border border-slate-200 bg-white p-2 shadow-sm">
@@ -495,7 +530,7 @@ export function CleaningPage() {
                     </div>
 
                     <div className="mt-4 grid items-start gap-3 md:grid-cols-[280px_minmax(0,1fr)]">
-                        <div className="space-y-2 max-h-[560px] overflow-y-auto pr-1">
+                        <div className="space-y-2 max-h-140 overflow-y-auto pr-1">
                             {inspectingRooms.map((room) => (
                                 <button
                                     type="button"
@@ -509,7 +544,7 @@ export function CleaningPage() {
                             {!isLoading && inspectingRooms.length === 0 ? <p className="text-xs text-slate-400">No rooms are currently inspecting.</p> : null}
                         </div>
 
-                        <div className="min-w-0 space-y-4 min-h-[420px]">
+                        <div className="min-w-0 space-y-4 min-h-105">
                             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                                 <h4 className="text-sm font-semibold text-slate-900">Selected Room</h4>
                                 <p className="mt-1 text-sm text-slate-600">Room: {selectedInspectingRoom?.roomNumber ?? '-'}</p>
@@ -544,7 +579,10 @@ export function CleaningPage() {
 
                                 <div className="mt-3 overflow-x-auto">
                                     {isLoadingInspectingState ? (
-                                        <p className="text-sm text-slate-500">Loading room items...</p>
+                                        <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] flex flex-col items-center justify-center z-10">
+                                            <div className="w-10 h-10 border-4 border-cyan-600 border-t-transparent rounded-full animate-spin"></div>
+                                            <p className="mt-4 text-sm font-bold text-slate-600 animate-pulse">Loading cleaning items...</p>
+                                        </div>
                                     ) : inspectingState?.inventories.length ? (
                                         <Table columns={inventoryColumns} rows={inspectingState.inventories} />
                                     ) : (
@@ -556,7 +594,7 @@ export function CleaningPage() {
                             <div className="min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white p-4">
                                 <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                                     <h4 className="text-sm font-semibold text-slate-900">Pending Reports (RAM)</h4>
-                                    <span className="break-words text-xs text-slate-500">{pendingLossReports.length} pending, total penalty ${pendingPenaltyTotal}</span>
+                                    <span className="wrap-break-word text-xs text-slate-500">{pendingLossReports.length} pending, total penalty ${pendingPenaltyTotal}</span>
                                 </div>
                                 <div className="mb-3 flex flex-wrap items-center gap-2">
                                     <button
@@ -585,7 +623,7 @@ export function CleaningPage() {
                                                         <p className="font-medium">
                                                             {item.noIssue ? 'No loss/damage reported' : item.itemName}
                                                         </p>
-                                                        <p className="break-words text-xs">
+                                                        <p className="wrap-break-word text-xs">
                                                             Qty: {item.quantity} | Penalty: ${item.penaltyAmount}
                                                             {item.evidenceFile ? ` | Evidence: ${item.evidenceFile.name}` : ''}
                                                         </p>
@@ -623,23 +661,33 @@ export function CleaningPage() {
 
             {activeTab === 'cleaning' ? (
                 <section className="overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                    <div className="flex items-start justify-between gap-3">
+                    <div className="flex justify-between gap-3">
                         <div>
                             <h3 className="text-lg font-semibold text-slate-900">Cleaning Rooms</h3>
                             <p className="text-sm text-slate-500">Finish cleaning and move the room back to Available.</p>
                         </div>
-                        <button
-                            type="button"
-                            className="inline-flex items-center gap-2 rounded-lg bg-cyan-700 px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
-                            onClick={completeCleaning}
-                            disabled={!selectedCleaningRoom || isUpdatingStatus}
-                        >
-                            <CheckCircleIcon className="h-4 w-4" /> {isUpdatingStatus ? 'Updating...' : 'Mark Available'}
-                        </button>
+                        <div className="flex justify-end items-center gap-2">
+                            <button
+                                type="button"
+                                className="inline-flex items-center gap-2 rounded-lg bg-cyan-700 px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                                onClick={markCleaningRequested}
+                                disabled={!selectedCleaningRoom || isUpdatingStatus || selectedCleaningRoom.cleaningStatus === 'Cleaning'}
+                            >
+                                <BrushCleaning className="h-4 w-4" /> {isUpdatingStatus ? 'Updating...' : 'Cleaning'}
+                            </button>
+                            <button
+                                type="button"
+                                className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                                onClick={completeCleaning}
+                                disabled={!selectedCleaningRoom || isUpdatingStatus}
+                            >
+                                <CheckCircleIcon className="h-4 w-4" /> {isUpdatingStatus ? 'Updating...' : 'Mark Available'}
+                            </button>
+                        </div>
                     </div>
 
                     <div className="mt-4 grid items-start gap-3 md:grid-cols-[280px_minmax(0,1fr)]">
-                        <div className="space-y-2 max-h-[560px] overflow-y-auto pr-1">
+                        <div className="space-y-2 max-h-140 overflow-y-auto pr-1">
                             {cleaningRooms.map((room) => (
                                 <button
                                     type="button"
