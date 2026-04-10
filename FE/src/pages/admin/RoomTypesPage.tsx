@@ -9,13 +9,16 @@ import { Table } from '../../components/Table';
 import { Modal } from '../../components/Modal';
 import { usePermissionCheck } from '../../hooks/usePermissionCheck';
 import { Badge } from '../../components/Badge';
+import { ImageUpload } from '../../components/ImageUpload';
+import { PhotoIcon } from '@heroicons/react/24/outline';
 
 const emptyDraft: RoomTypePayload = {
-    name: '',
-    basePrice: 0,
-    capacityAdults: 1,
-    capacityChildren: 0,
-    description: '',
+    Name: '',
+    BasePrice: 0,
+    CapacityAdults: 1,
+    CapacityChildren: 0,
+    Description: '',
+    Files: [],
 };
 
 export function RoomTypesPage() {
@@ -30,6 +33,18 @@ export function RoomTypesPage() {
     const [isSaving, setIsSaving] = useState(false);
     const [amenityOptions, setAmenityOptions] = useState<AmenityItem[]>([]);
     const [selectedAmenityIds, setSelectedAmenityIds] = useState<number[]>([]);
+    const [createFiles, setCreateFiles] = useState<File[]>([]);
+    const [createPrimaryIndex, setCreatePrimaryIndex] = useState<number | string>(0);
+    const [editFiles, setEditFiles] = useState<File[]>([]);
+    const [editActiveIndex, setEditActiveIndex] = useState<number | string>(0);
+
+    const getDefaultActiveImageId = (images: RoomTypeItem['images']) => {
+        if (!images || images.length === 0) {
+            return 0;
+        }
+
+        return images.find((img) => img.isPrimary)?.id ?? images[0].id;
+    };
 
     const loadRoomTypes = useCallback(async () => {
         setIsLoading(true);
@@ -54,22 +69,28 @@ export function RoomTypesPage() {
             return false;
         }
 
-        if (!draft.name.trim()) {
+        if (!draft.Name.trim()) {
             toast.error('Room type name is required');
             return false;
         }
 
         setIsCreating(true);
         try {
+            const normalizedPrimaryIndex =
+                typeof createPrimaryIndex === 'string'
+                    ? parseInt(createPrimaryIndex.split('-')[1], 10)
+                    : Number(createPrimaryIndex);
+
             await roomTypesApi.create({
-                name: draft.name.trim(),
-                basePrice: Number(draft.basePrice),
-                capacityAdults: Number(draft.capacityAdults),
-                capacityChildren: Number(draft.capacityChildren),
-                description: draft.description?.trim() || '',
+                ...draft,
+                Files: createFiles,
+                PrimaryImageIndex: Number.isFinite(normalizedPrimaryIndex) ? normalizedPrimaryIndex : 0,
             });
+
             toast.success('Room type created');
             setDraft(emptyDraft);
+            setCreateFiles([]);
+            setCreatePrimaryIndex(0);
             await loadRoomTypes();
             return true;
         } catch (error) {
@@ -82,20 +103,54 @@ export function RoomTypesPage() {
     };
 
     const saveEdit = async (roomTypeId: number) => {
-        if (!editDraft.name.trim()) {
+        if (!editDraft.Name.trim()) {
             toast.error('Room type name is required');
             return false;
         }
 
-        await roomTypesApi.update(roomTypeId, {
-            name: editDraft.name.trim(),
-            basePrice: Number(editDraft.basePrice),
-            capacityAdults: Number(editDraft.capacityAdults),
-            capacityChildren: Number(editDraft.capacityChildren),
-            description: editDraft.description?.trim() || '',
-        });
+        try {
+            const updated = await roomTypesApi.update(roomTypeId, {
+                ...editDraft,
+                Files: editFiles,
+            });
 
-        return true;
+            // Handle primary image selection
+            let finalPrimaryId: number | null = null;
+            if (typeof editActiveIndex === 'number') {
+                // Existing image was selected
+                finalPrimaryId = editActiveIndex;
+            } else if (typeof editActiveIndex === 'string') {
+                // A new image was selected (resolved from returned list)
+                const newIndex = parseInt(editActiveIndex.split('-')[1]);
+                // New images are usually appended in the response gallery
+                // We need to find the correct ID. 
+                // Index is relative to the "editFiles" sent.
+                // Response gallery order: existing ones first, then new ones? 
+                // Or alphabetical by URL? Usually, it's deterministic.
+                // Assuming new images start after editing.images.length? 
+                // Actually, let's use the index in the returned images array.
+                // The new images uploaded are added to the room type.
+                const newImagePos = (editing?.images.length || 0) + newIndex;
+                if (updated.images[newImagePos]) {
+                    finalPrimaryId = updated.images[newImagePos].id;
+                }
+            }
+
+            if (finalPrimaryId) {
+                const currentPrimary = updated.images.find(img => img.isPrimary);
+                if (!currentPrimary || currentPrimary.id !== finalPrimaryId) {
+                    await roomTypesApi.setPrimaryImage(roomTypeId, finalPrimaryId);
+                }
+            }
+
+            setEditFiles([]);
+            setEditActiveIndex(0);
+            return true;
+        } catch (error) {
+            const apiError = toApiError(error);
+            toast.error(apiError.message || 'Failed to update room type');
+            return false;
+        }
     };
 
     const saveAmenities = async (roomTypeId: number, currentAmenityIds: number[], nextAmenityIds: number[]) => {
@@ -141,12 +196,14 @@ export function RoomTypesPage() {
     const openEdit = (row: RoomTypeItem) => {
         setEditing(row);
         setEditDraft({
-            name: row.name,
-            basePrice: row.basePrice,
-            capacityAdults: row.capacityAdults,
-            capacityChildren: row.capacityChildren,
-            description: row.description,
+            Name: row.name,
+            BasePrice: row.basePrice,
+            CapacityAdults: row.capacityAdults,
+            CapacityChildren: row.capacityChildren,
+            Description: row.description,
         });
+        setEditFiles([]);
+        setEditActiveIndex(getDefaultActiveImageId(row.images));
         setSelectedAmenityIds(row.amenities.map((amenity) => amenity.id));
     };
 
@@ -254,6 +311,8 @@ export function RoomTypesPage() {
                 onClose={() => {
                     setOpenCreate(false);
                     setDraft(emptyDraft);
+                    setCreateFiles([]);
+                    setCreatePrimaryIndex(0);
                 }}
             >
                 <div className="space-y-5">
@@ -264,12 +323,12 @@ export function RoomTypesPage() {
                         </div>
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-slate-700">Room type name</label>
-                            <Input placeholder="Example: Deluxe Sea View" value={draft.name} onChange={(event) => setDraft((prev) => ({ ...prev, name: event.target.value }))} />
+                            <Input placeholder="Example: Deluxe Sea View" value={draft.Name} onChange={(event) => setDraft((prev) => ({ ...prev, Name: event.target.value }))} />
                             <p className="text-xs text-slate-500">This name is shown when creating rooms.</p>
                         </div>
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-slate-700">Description</label>
-                            <Input placeholder="Example: Large room with balcony" value={draft.description ?? ''} onChange={(event) => setDraft((prev) => ({ ...prev, description: event.target.value }))} />
+                            <Input placeholder="Example: Large room with balcony" value={draft.Description ?? ''} onChange={(event) => setDraft((prev) => ({ ...prev, Description: event.target.value }))} />
                             <p className="text-xs text-slate-500">Describe the room style or selling point.</p>
                         </div>
                     </section>
@@ -282,20 +341,54 @@ export function RoomTypesPage() {
                         <div className="grid gap-3 sm:grid-cols-3">
                             <div className="space-y-2">
                                 <label className="text-sm font-medium text-slate-700">Base price</label>
-                                <Input type="number" min={0} step="0.01" placeholder="0" value={String(draft.basePrice)} onChange={(event) => setDraft((prev) => ({ ...prev, basePrice: Number(event.target.value) }))} />
+                                <Input type="number" min={0} step="0.01" placeholder="0" value={String(draft.BasePrice)} onChange={(event) => setDraft((prev) => ({ ...prev, BasePrice: Number(event.target.value) }))} />
                                 <p className="text-xs text-slate-500">Nightly price for this room type.</p>
                             </div>
                             <div className="space-y-2">
                                 <label className="text-sm font-medium text-slate-700">Adults</label>
-                                <Input type="number" min={0} placeholder="1" value={String(draft.capacityAdults)} onChange={(event) => setDraft((prev) => ({ ...prev, capacityAdults: Number(event.target.value) }))} />
+                                <Input type="number" min={0} placeholder="1" value={String(draft.CapacityAdults)} onChange={(event) => setDraft((prev) => ({ ...prev, CapacityAdults: Number(event.target.value) }))} />
                                 <p className="text-xs text-slate-500">Max adult guests.</p>
                             </div>
                             <div className="space-y-2">
                                 <label className="text-sm font-medium text-slate-700">Children</label>
-                                <Input type="number" min={0} placeholder="0" value={String(draft.capacityChildren)} onChange={(event) => setDraft((prev) => ({ ...prev, capacityChildren: Number(event.target.value) }))} />
+                                <Input type="number" min={0} placeholder="0" value={String(draft.CapacityChildren)} onChange={(event) => setDraft((prev) => ({ ...prev, CapacityChildren: Number(event.target.value) }))} />
                                 <p className="text-xs text-slate-500">Max child guests.</p>
                             </div>
                         </div>
+                    </section>
+
+                    <section className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <div className="flex items-center gap-2">
+                            <PhotoIcon className="h-5 w-5 text-slate-500" />
+                            <div>
+                                <h3 className="text-sm font-semibold text-slate-900">Gallery images</h3>
+                                <p className="text-xs text-slate-500">Pick multiple photos. The first one will be primary.</p>
+                            </div>
+                        </div>
+                        <ImageUpload
+                            multiple
+                            value={createFiles}
+                            onChange={(val) => {
+                                const files = Array.isArray(val) ? val : val ? [val] : [];
+                                setCreateFiles(files);
+                                if (files.length === 0) {
+                                    setCreatePrimaryIndex(0);
+                                    return;
+                                }
+
+                                if (typeof createPrimaryIndex === 'string') {
+                                    const currentIndex = parseInt(createPrimaryIndex.split('-')[1], 10);
+                                    if (!Number.isFinite(currentIndex) || currentIndex < 0 || currentIndex >= files.length) {
+                                        setCreatePrimaryIndex('new-0');
+                                    }
+                                } else {
+                                    setCreatePrimaryIndex('new-0');
+                                }
+                            }}
+                            activeIndex={createPrimaryIndex}
+                            onItemClick={(id) => setCreatePrimaryIndex(id)}
+                            label="Click or drag room type photos"
+                        />
                     </section>
 
                     <div className="flex justify-end gap-2">
@@ -345,12 +438,12 @@ export function RoomTypesPage() {
                         </div>
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-slate-700">Room type name</label>
-                            <Input placeholder="Example: Deluxe Sea View" value={editDraft.name} onChange={(event) => setEditDraft((prev) => ({ ...prev, name: event.target.value }))} />
+                            <Input placeholder="Example: Deluxe Sea View" value={editDraft.Name} onChange={(event) => setEditDraft((prev) => ({ ...prev, Name: event.target.value }))} />
                             <p className="text-xs text-slate-500">This name appears in room creation and room lists.</p>
                         </div>
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-slate-700">Description</label>
-                            <Input placeholder="Example: Large room with balcony" value={editDraft.description ?? ''} onChange={(event) => setEditDraft((prev) => ({ ...prev, description: event.target.value }))} />
+                            <Input placeholder="Example: Large room with balcony" value={editDraft.Description ?? ''} onChange={(event) => setEditDraft((prev) => ({ ...prev, Description: event.target.value }))} />
                             <p className="text-xs text-slate-500">Describe what makes this room type different.</p>
                         </div>
                     </section>
@@ -363,17 +456,17 @@ export function RoomTypesPage() {
                         <div className="grid gap-3 sm:grid-cols-3">
                             <div className="space-y-2">
                                 <label className="text-sm font-medium text-slate-700">Base price</label>
-                                <Input type="number" min={0} step="0.01" placeholder="0" value={String(editDraft.basePrice)} onChange={(event) => setEditDraft((prev) => ({ ...prev, basePrice: Number(event.target.value) }))} />
+                                <Input type="number" min={0} step="0.01" placeholder="0" value={String(editDraft.BasePrice)} onChange={(event) => setEditDraft((prev) => ({ ...prev, BasePrice: Number(event.target.value) }))} />
                                 <p className="text-xs text-slate-500">Used for pricing a room of this type.</p>
                             </div>
                             <div className="space-y-2">
                                 <label className="text-sm font-medium text-slate-700">Adults</label>
-                                <Input type="number" min={0} placeholder="1" value={String(editDraft.capacityAdults)} onChange={(event) => setEditDraft((prev) => ({ ...prev, capacityAdults: Number(event.target.value) }))} />
+                                <Input type="number" min={0} placeholder="1" value={String(editDraft.CapacityAdults)} onChange={(event) => setEditDraft((prev) => ({ ...prev, CapacityAdults: Number(event.target.value) }))} />
                                 <p className="text-xs text-slate-500">Maximum adult guests.</p>
                             </div>
                             <div className="space-y-2">
                                 <label className="text-sm font-medium text-slate-700">Children</label>
-                                <Input type="number" min={0} placeholder="0" value={String(editDraft.capacityChildren)} onChange={(event) => setEditDraft((prev) => ({ ...prev, capacityChildren: Number(event.target.value) }))} />
+                                <Input type="number" min={0} placeholder="0" value={String(editDraft.CapacityChildren)} onChange={(event) => setEditDraft((prev) => ({ ...prev, CapacityChildren: Number(event.target.value) }))} />
                                 <p className="text-xs text-slate-500">Maximum child guests.</p>
                             </div>
                         </div>
@@ -407,6 +500,62 @@ export function RoomTypesPage() {
                             })}
                             {amenityOptions.length === 0 ? <p className="text-sm text-slate-500">No amenities found.</p> : null}
                         </div>
+                    </section>
+
+                    <section className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <div className="flex items-center gap-2">
+                            <PhotoIcon className="h-5 w-5 text-slate-500" />
+                            <div>
+                                <h3 className="text-sm font-semibold text-slate-900">Room gallery</h3>
+                                <p className="text-xs text-slate-500">Pick any image (current or new) to set as primary.</p>
+                            </div>
+                        </div>
+
+                        <ImageUpload
+                            multiple
+                            value={editFiles}
+                            onChange={(val) => {
+                                const files = Array.isArray(val) ? val : val ? [val] : [];
+                                setEditFiles(files);
+                            }}
+                            existingFiles={editing?.images || []}
+                            onDeleteExisting={async (id) => {
+                                if (!editing) return;
+                                if (!confirm('Are you sure you want to delete this image?')) return;
+                                try {
+                                    const deletedWasSelected = editActiveIndex === id;
+                                    await roomTypesApi.deleteImage(editing.id, id);
+                                    toast.success('Image deleted');
+                                    // Update the editing item to reflect the deletion
+                                    const updatedRows = await roomTypesApi.getAll();
+                                    setRows(updatedRows);
+                                    const found = updatedRows.find((r) => r.id === editing.id);
+                                    if (found) {
+                                        setEditing(found);
+
+                                        if (deletedWasSelected) {
+                                            setEditActiveIndex(getDefaultActiveImageId(found.images));
+                                        } else {
+                                            const selectedStillExists =
+                                                typeof editActiveIndex === 'number'
+                                                    ? found.images.some((img) => img.id === editActiveIndex)
+                                                    : true;
+
+                                            if (!selectedStillExists) {
+                                                setEditActiveIndex(getDefaultActiveImageId(found.images));
+                                            }
+                                        }
+                                    } else {
+                                        setEditActiveIndex(0);
+                                    }
+                                } catch {
+                                    toast.error('Failed to delete image');
+                                }
+                            }}
+                            activeIndex={editActiveIndex}
+                            onItemClick={(id) => setEditActiveIndex(id)}
+                            label="Add more photos"
+                        />
                     </section>
 
                     <div className="flex justify-end gap-2">

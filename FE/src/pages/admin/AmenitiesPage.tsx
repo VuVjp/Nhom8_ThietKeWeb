@@ -8,6 +8,7 @@ import { Table } from '../../components/Table';
 import { Modal } from '../../components/Modal';
 import { usePermissionCheck } from '../../hooks/usePermissionCheck';
 import { Badge } from '../../components/Badge';
+import { ImageUpload } from '../../components/ImageUpload';
 
 export function AmenitiesPage() {
     const { ensure } = usePermissionCheck();
@@ -23,6 +24,8 @@ export function AmenitiesPage() {
     const [editName, setEditName] = useState('');
     const [editFile, setEditFile] = useState<File | null>(null);
     const [isSavingEdit, setIsSavingEdit] = useState(false);
+
+
 
     const loadAmenities = useCallback(async () => {
         setIsLoading(true);
@@ -232,7 +235,11 @@ export function AmenitiesPage() {
                         </div>
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-slate-700">Icon image</label>
-                            <Input type="file" accept="image/*" onChange={(event) => setCreateFile(event.target.files?.[0] ?? null)} />
+                            <ImageUpload
+                                value={createFile}
+                                onChange={(val) => setCreateFile(Array.isArray(val) ? val[0] : val)}
+                                label="Click or drag icon to upload"
+                            />
                             <p className="text-xs text-slate-500">Upload a small image for visual identification.</p>
                         </div>
                     </section>
@@ -291,19 +298,14 @@ export function AmenitiesPage() {
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-slate-700">Current icon</label>
-                            {editing?.iconUrl ? (
-                                <img src={editing.iconUrl} alt={editing.name} className="h-16 w-16 rounded-lg border border-slate-200 object-cover" />
-                            ) : (
-                                <div className="h-16 w-16 rounded-lg border border-dashed border-slate-300 bg-white" />
-                            )}
-                            <p className="text-xs text-slate-500">If no new image is selected, the current icon is kept.</p>
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-slate-700">Replace icon image</label>
-                            <Input type="file" accept="image/*" onChange={(event) => setEditFile(event.target.files?.[0] ?? null)} />
-                            <p className="text-xs text-slate-500">Upload only when you want to change the existing icon.</p>
+                            <label className="text-sm font-medium text-slate-700">Icon image (Click or drag image to replace)</label>
+                            <ImageUpload
+                                value={editFile}
+                                onChange={(val) => setEditFile(Array.isArray(val) ? val[0] : val)}
+                                currentUrl={editing?.iconUrl}
+                                label="Select new icon"
+                            />
+                            <p className="text-xs text-slate-500">The preview shows the current icon. Upload a new one to replace it.</p>
                         </div>
                     </section>
 

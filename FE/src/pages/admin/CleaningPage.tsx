@@ -12,6 +12,7 @@ import { roomsApi } from '../../api/roomsApi';
 import { roomInventoriesApi } from '../../api/roomInventoriesApi';
 import { lossApi } from '../../api/lossApi';
 import { BrushCleaning } from 'lucide-react';
+import { ImageUpload } from '../../components/ImageUpload';
 
 interface CleaningRoomState {
     room: Room;
@@ -209,7 +210,7 @@ export function CleaningPage() {
                                 return;
                             }
 
-                            if (!ensure('MANAGE_CLEANING', 'report loss and damage')) {
+                            if (!ensure('UPDATE_CLEANING', 'report loss and damage')) {
                                 return;
                             }
 
@@ -814,14 +815,13 @@ export function CleaningPage() {
 
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-slate-700">Evidence image (optional)</label>
-                            <input
-                                type="file"
-                                accept="image/*"
+                            <ImageUpload
+                                value={lossEvidenceFile}
+                                onChange={(val: File | File[] | null) => setLossEvidenceFile(Array.isArray(val) ? val[0] : val)}
                                 disabled={isNoIssueDraft}
-                                onChange={(e) => setLossEvidenceFile(e.target.files?.[0] ?? null)}
-                                className="block w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-cyan-50 file:px-3 file:py-1.5 file:text-cyan-700"
+                                label="Evidence of damage or missing item"
                             />
-                            <p className="text-xs text-slate-500">{lossEvidenceFile ? `Selected: ${lossEvidenceFile.name}` : 'No image selected'}</p>
+                            <p className="text-xs text-slate-500">Provide photos to support the compensation claim.</p>
                         </div>
                     </section>
 
