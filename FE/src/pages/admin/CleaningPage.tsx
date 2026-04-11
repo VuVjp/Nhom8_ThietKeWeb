@@ -450,7 +450,8 @@ export function CleaningPage() {
             setIsSendingPendingReports(true);
             try {
                 await sendPendingReports(selectedInspectingRoom.id);
-                await roomsApi.changeStatus(selectedInspectingRoom.id, 'Cleaning');
+                await roomsApi.changeCleaningStatus(selectedInspectingRoom.id, 'Cleaning');
+                await roomsApi.requestCleaning(selectedInspectingRoom.id, true);
 
                 setPendingLossReportsByRoom((prev) => {
                     const next = { ...prev };
