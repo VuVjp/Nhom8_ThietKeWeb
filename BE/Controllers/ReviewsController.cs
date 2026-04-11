@@ -29,7 +29,7 @@ public class ReviewsController : ControllerBase
         return Ok(data);
     }
 
-    //[Permission(PermissionNames.ManageReviews)]
+    [Permission(PermissionNames.ManageReviews)]
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {
@@ -38,7 +38,7 @@ public class ReviewsController : ControllerBase
         return NoContent();
     }
 
-    //[Permission(PermissionNames.ManageReviews)]
+    [Permission(PermissionNames.ManageReviews)]
     [HttpPatch("{id}/toggle-active")]
     public async Task<IActionResult> ToggleActive(int id)
     {

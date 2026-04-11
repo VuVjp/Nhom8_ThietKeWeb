@@ -32,6 +32,7 @@
         "MANAGE_EQUIPMENTS",
         "MANAGE_ROOM_INVENTORY",
         "MANAGE_ROOM_TYPES"
+        "MANAGE_REVIEWS",
     ],
     "CloudinarySettings": {
         "CloudName": "your_cloud_name",

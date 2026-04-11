@@ -353,8 +353,8 @@ public class BookingService : IBookingService
                     continue;
                 }
 
-                detail.Room.Status = "Inspecting";
-                detail.Room.CleaningStatus = "Dirty";
+                detail.Room.Status = "InsClean";
+                detail.Room.CleaningStatus = "Inspecting";
                 detail.ActualCheckOutDate = DateTime.Now;
             }
         }
