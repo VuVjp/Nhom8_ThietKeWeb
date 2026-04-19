@@ -23,11 +23,20 @@ public class BookingsController : ControllerBase
     }
 
     [HttpPost]
-    [Permission(PermissionNames.ManageBookings)]
     public async Task<IActionResult> Create([FromBody] CreateBookingDto dto)
     {
         var created = await _service.CreateBookingAsync(dto);
         return Ok(created);
+    }
+
+    [HttpGet("by-email")]
+    public async Task<IActionResult> GetByEmail([FromQuery] string email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+            return BadRequest("Email is required.");
+        var all = await _service.GetAllBookingsAsync();
+        var filtered = all.Where(b => string.Equals(b.GuestEmail, email, StringComparison.OrdinalIgnoreCase));
+        return Ok(filtered);
     }
 
     [HttpPut("{id}")]

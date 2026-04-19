@@ -14,6 +14,8 @@ import { EquipmentPage } from '../pages/admin/EquipmentPage';
 import { AmenitiesPage } from '../pages/admin/AmenitiesPage';
 import { RoomTypesPage } from '../pages/admin/RoomTypesPage';
 import { VouchersPage } from '../pages/admin/VouchersPage';
+import { MembershipsPage } from '../pages/admin/MembershipsPage';
+import { AttractionsPage } from '../pages/admin/AttractionsPage';
 import { ForbiddenPage } from '../pages/ForbiddenPage';
 import { CreateBookingPage } from '../pages/admin/reception/CreateBookingPage';
 import { ArrivalsPage } from '../pages/admin/reception/ArrivalsPage';
@@ -21,6 +23,20 @@ import { InHousePage } from '../pages/admin/reception/InHousePage';
 import { BookingsListPage } from '../pages/admin/reception/BookingsListPage';
 import { RequireAuth, RequireAnyPermission, RequirePermission } from './RouteGuards';
 import { useAppAuth } from '../auth/useAppAuth';
+
+import { ClientLayout } from '../layout/ClientLayout';
+import { HomePage } from '../pages/client/HomePage';
+import { ClientRoomsPage } from '../pages/client/ClientRoomsPage';
+import { ClientAttractionsPage } from '../pages/client/ClientAttractionsPage';
+import { ClientMembershipsPage } from '../pages/client/ClientMembershipsPage';
+import { ClientRoomDetailPage } from '../pages/client/ClientRoomDetailPage';
+import { ClientBookingPage } from '../pages/client/ClientBookingPage';
+import { ClientLoginPage } from '../pages/client/ClientLoginPage';
+import { ClientRegisterPage } from '../pages/client/ClientRegisterPage';
+import { ClientAccountPage } from '../pages/client/ClientAccountPage';
+import { ClientServicesPage } from '../pages/client/ClientServicesPage';
+import { ClientNewsPage } from '../pages/client/ClientNewsPage';
+import { ClientAboutPage } from '../pages/client/ClientAboutPage';
 
 function AdminEntryRedirect() {
     const { user, isAuthReady } = useAppAuth();
@@ -57,6 +73,9 @@ export const AppRouter = () => {
                     <Route element={<RequireAnyPermission permissions={['VIEW_DASHBOARD']} />}>
                         <Route path="admin/dashboard" element={<DashboardPage />} />
                     </Route>
+
+                    <Route path="admin/memberships" element={<MembershipsPage />} />
+                    <Route path="admin/attractions" element={<AttractionsPage />} />
 
                     <Route element={<RequireAnyPermission permissions={['MANAGE_ROOMS']} />}>
                         <Route path="admin/rooms" element={<RoomsPage />} />
@@ -108,7 +127,22 @@ export const AppRouter = () => {
                 </Route>
             </Route>
 
-            <Route path="/" element={<Navigate to="/admin" replace />} />
+            <Route element={<ClientLayout />}>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/rooms" element={<ClientRoomsPage />} />
+                <Route path="/rooms/:roomId" element={<ClientRoomDetailPage />} />
+                <Route path="/booking" element={<ClientBookingPage />} />
+                <Route path="/login" element={<ClientLoginPage />} />
+                <Route path="/register" element={<ClientRegisterPage />} />
+                <Route path="/account" element={<ClientAccountPage />} />
+                <Route path="/services" element={<ClientServicesPage />} />
+                <Route path="/news" element={<ClientNewsPage />} />
+                <Route path="/about" element={<ClientAboutPage />} />
+
+                <Route path="/attractions" element={<ClientAttractionsPage />} />
+                <Route path="/memberships" element={<ClientMembershipsPage />} />
+            </Route>
+
             <Route path="*" element={<NotFoundPage />} />
         </Routes>
     );

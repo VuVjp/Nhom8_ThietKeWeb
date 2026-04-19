@@ -43,6 +43,13 @@ export const receptionApi = {
     return response.data;
   },
 
+  getBookingsByEmail: async (email: string): Promise<Booking[]> => {
+    const response = await httpClient.get<Booking[]>('/Bookings/by-email', {
+      params: { email }
+    });
+    return response.data;
+  },
+
   changeBookingStatus: async (id: number, status: BookingStatus): Promise<void> => {
     // Backend expects just a JSON string for [FromBody] string status
     const formattedStatus = `"${status}"`;

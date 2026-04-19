@@ -3,7 +3,6 @@ import toast from 'react-hot-toast';
 import {
   PlusIcon,
   PencilSquareIcon,
-  TrashIcon,
   ArrowPathIcon
 } from '@heroicons/react/24/outline';
 import type { Voucher } from '../../types/models';
@@ -99,17 +98,6 @@ export function VouchersPage() {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!ensure('MANAGE_VOUCHERS', 'delete voucher')) return;
-    if (!confirm('Are you sure you want to delete this voucher?')) return;
-    try {
-      await vouchersApi.delete(id);
-      await loadVouchers();
-      toast.success('Voucher deleted');
-    } catch (error) {
-      toast.error(toApiError(error).message || 'Failed to delete voucher');
-    }
-  };
 
   const handleOpenCreate = () => {
     if (!ensure('MANAGE_VOUCHERS', 'create voucher')) return;

@@ -16,14 +16,14 @@ public class LossAndDamageRepository : ILossAndDamageRepository
 
     public async Task<IEnumerable<LossAndDamage>> GetAllAsync()
         => await _context.LossAndDamages
-            .Include(x => x.RoomInventory)
+            .Include(x => x.RoomInventory!)
             .ThenInclude(x => x.Room)
             .AsNoTracking()
             .ToListAsync();
 
     public async Task<IEnumerable<LossAndDamage>> GetByRoomIdAsync(int roomId)
         => await _context.LossAndDamages
-            .Include(x => x.RoomInventory)
+            .Include(x => x.RoomInventory!)
             .ThenInclude(x => x.Room)
             .Where(x => x.RoomInventory != null && x.RoomInventory.RoomId == roomId)
             .AsNoTracking()
@@ -31,7 +31,7 @@ public class LossAndDamageRepository : ILossAndDamageRepository
 
     public async Task<LossAndDamage?> GetByIdAsync(int id)
         => await _context.LossAndDamages
-            .Include(x => x.RoomInventory)
+            .Include(x => x.RoomInventory!)
             .ThenInclude(x => x.Room)
             .FirstOrDefaultAsync(x => x.Id == id);
 

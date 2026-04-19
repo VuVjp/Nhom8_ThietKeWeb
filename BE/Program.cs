@@ -13,6 +13,8 @@ using System.Text;
 using CloudinaryDotNet;
 using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.SignalR;
+using HotelManagement.Services;
+using HotelManagement.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -164,6 +166,8 @@ builder.Services.AddScoped<ILossAndDamageService, LossAndDamageService>();
 builder.Services.AddScoped<IRoomTypeRepository, RoomTypeRepository>();
 builder.Services.AddScoped<IRoomImageRepository, RoomImageRepository>();
 builder.Services.AddScoped<IRoomTypeService, RoomTypeService>();
+builder.Services.AddScoped<IMembershipRepository, MembershipRepository>();
+builder.Services.AddScoped<IMembershipService, MembershipService>();
 
 builder.Services.AddSwaggerGen(options =>
 {

@@ -9,3 +9,5 @@ export * from './amenitiesApi';
 export * from './roomTypesApi';
 export * from './notificationsApi';
 export * from './equipmentsApi';
+export * from './membershipsApi';
+export * from './attractionsApi';

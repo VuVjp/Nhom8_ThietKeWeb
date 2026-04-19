@@ -25,7 +25,7 @@ public class UserProfileService : IUserProfileService
             Email = user.Email,
             FullName = user.FullName,
             Phone = user.Phone,
-            RoleName = user.Role.Name ?? string.Empty,
+            RoleName = user.Role?.Name ?? string.Empty,
             IsActive = user.IsActive,
             AvatarUrl = user.AvatarUrl
         };
@@ -73,7 +73,7 @@ public class UserProfileService : IUserProfileService
             Email = user.Email,
             FullName = user.FullName,
             Phone = user.Phone,
-            RoleName = user.Role.Name ?? string.Empty,
+            RoleName = user.Role?.Name ?? string.Empty,
             IsActive = user.IsActive,
             AvatarUrl = user.AvatarUrl
         };

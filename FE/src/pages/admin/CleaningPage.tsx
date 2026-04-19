@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
-import { PencilSquareIcon, CheckCircleIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import { PencilSquareIcon, ArrowPathIcon, ExclamationTriangleIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 import type { InventoryItem, LossRecord, Room } from '../../types/models';
 import { Select } from '../../components/Select';
 import { Modal } from '../../components/Modal';
@@ -485,11 +485,11 @@ export function CleaningPage() {
                         <div className="flex items-center gap-2">
                             <button
                                 type="button"
-                                className="inline-flex items-center gap-2 rounded-lg bg-cyan-700 px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                                className="inline-flex items-center gap-2 rounded-lg bg-cyan-700 px-3 py-2 text-sm font-semibold text-white disabled:opacity-60 hover:bg-cyan-800 transition"
                                 onClick={completeInspection}
                                 disabled={!selectedInspectingRoom || isUpdatingStatus || isSendingPendingReports}
                             >
-                                <CheckCircleIcon className="h-4 w-4" /> {isUpdatingStatus ? 'Updating...' : 'Move to Cleaning'}
+                                <ArrowPathIcon className={`h-4 w-4 ${isUpdatingStatus ? 'animate-spin' : ''}`} /> {isUpdatingStatus ? 'Updating...' : 'Move to Cleaning'}
                             </button>
                         </div>
                     </div>
@@ -630,11 +630,11 @@ export function CleaningPage() {
                         </div>
                         <button
                             type="button"
-                            className="inline-flex items-center gap-2 rounded-lg bg-cyan-700 px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                            className="inline-flex items-center gap-2 rounded-lg bg-cyan-700 px-3 py-2 text-sm font-semibold text-white disabled:opacity-60 hover:bg-cyan-800 transition"
                             onClick={completeCleaning}
                             disabled={!selectedCleaningRoom || isUpdatingStatus}
                         >
-                            <CheckCircleIcon className="h-4 w-4" /> {isUpdatingStatus ? 'Updating...' : 'Mark Available'}
+                            <CheckCircleIcon className={`h-4 w-4 ${isUpdatingStatus ? 'animate-pulse' : ''}`} /> {isUpdatingStatus ? 'Updating...' : 'Mark Available'}
                         </button>
                     </div>
 

@@ -75,6 +75,11 @@ export const roomTypesApi = {
         return data.map(normalizeRoomType);
     },
 
+    async getById(id: number) {
+        const { data } = await httpClient.get<RoomTypeDto>(`roomtypes/${id}`);
+        return normalizeRoomType(data);
+    },
+
     async create(payload: RoomTypePayload) {
         await httpClient.post('roomtypes', payload);
     },

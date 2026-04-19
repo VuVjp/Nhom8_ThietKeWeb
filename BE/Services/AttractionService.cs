@@ -1,7 +1,9 @@
-﻿using HotelManagement.Entities;
+using HotelManagement.Entities;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System;
+
+namespace HotelManagement.Services;
 
 public class AttractionService : IAttractionService
 {
@@ -22,7 +24,9 @@ public class AttractionService : IAttractionService
 			Description = a.Description,
 			DistanceKm = a.DistanceKm,
 			Latitude = a.Latitude,
-			Longitude = a.Longitude
+			Longitude = a.Longitude,
+			IsActive = a.IsActive,
+			MapEmbedLink = a.MapEmbedLink
 		});
 	}
 		
@@ -30,7 +34,7 @@ public class AttractionService : IAttractionService
 	public async Task<AttractionDto?> GetByIdAsync(int id)
 	{
 		var a = await _repository.GetByIdAsync(id);
-		if (a == null || !a.IsActive) return null;
+		if (a == null) return null;
 
 		return new AttractionDto
 		{
@@ -39,7 +43,9 @@ public class AttractionService : IAttractionService
 			Description = a.Description,
 			DistanceKm = a.DistanceKm,
 			Latitude = a.Latitude,
-			Longitude = a.Longitude
+			Longitude = a.Longitude,
+			IsActive = a.IsActive,
+			MapEmbedLink = a.MapEmbedLink
 		};
 	}
 
@@ -51,7 +57,9 @@ public class AttractionService : IAttractionService
 			Description = dto.Description,
 			DistanceKm = dto.DistanceKm,
 			Latitude = dto.Latitude,
-			Longitude = dto.Longitude
+			Longitude = dto.Longitude,
+			IsActive = dto.IsActive,
+			MapEmbedLink = dto.MapEmbedLink
 		};
 
 		await _repository.AddAsync(entity);
@@ -71,6 +79,8 @@ public class AttractionService : IAttractionService
 		attraction.DistanceKm = dto.DistanceKm;
 		attraction.Latitude = dto.Latitude;
 		attraction.Longitude = dto.Longitude;
+		if (dto.IsActive.HasValue) attraction.IsActive = dto.IsActive.Value;
+		attraction.MapEmbedLink = dto.MapEmbedLink;
 
 		_repository.Update(attraction);
 		await _repository.SaveChangesAsync();

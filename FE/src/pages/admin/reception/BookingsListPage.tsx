@@ -226,17 +226,6 @@ export function BookingsListPage() {
         return filteredBookings.slice(start, start + pageSize);
     }, [filteredBookings, currentPage, pageSize]);
 
-    const getRoomByFloor = (booking: Booking) => {
-        const floorMap: Record<number, number[]> = {};
-        booking.roomIds?.forEach((roomId) => {
-            const floor = Math.floor(roomId / 100);
-            if (!floorMap[floor]) {
-                floorMap[floor] = [];
-            }
-            floorMap[floor].push(roomId);
-        });
-        return floorMap;
-    };
 
     const columns = [
         { key: 'id', label: 'Booking ID', render: (row: Booking) => `#${row.id}` },

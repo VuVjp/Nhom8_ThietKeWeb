@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { NotificationBell } from '../components/NotificationBell';
 import type { NotificationItem } from '../types/models';
-import { Input } from '../components/Input';
+
 import type { AppUser } from '../auth/auth.types';
 
 interface HeaderProps {
@@ -38,7 +38,11 @@ export function Header({ onSidebarToggle, onMobileToggle, onSearchChange, notifi
           </button>
           <div className="relative hidden w-72 md:block">
             <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-2.5 h-5 w-5 text-slate-400" />
-            <Input placeholder="Search rooms, inventory, users" className="pl-10" onChange={(e) => onSearchChange(e.target.value)} />
+            <input
+              placeholder="Search rooms, inventory, users"
+              className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm outline-none transition focus:border-cyan-300 focus:ring-2 focus:ring-cyan-100 text-slate-900"
+              onChange={(e) => onSearchChange(e.target.value)}
+            />
           </div>
         </div>
 

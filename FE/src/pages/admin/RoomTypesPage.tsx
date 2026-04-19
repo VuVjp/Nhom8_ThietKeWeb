@@ -166,7 +166,7 @@ export function RoomTypesPage() {
                         void toggleRoomTypeActive(row);
                     }}
                 >
-                    <Badge value={row.isActive ? 'Active' : 'Inactive'} color={row.isActive ? 'green' : 'red'} />
+                    <Badge value={row.isActive ? 'Active' : 'Inactive'} />
                 </button>
 
             ),
