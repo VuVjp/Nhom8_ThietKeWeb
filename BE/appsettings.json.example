@@ -32,6 +32,7 @@
         "MANAGE_EQUIPMENTS",
         "MANAGE_ROOM_INVENTORY",
         "MANAGE_ROOM_TYPES"
+        "MANAGE_REVIEWS",
     ],
     "CloudinarySettings": {
         "CloudName": "your_cloud_name",
@@ -44,5 +45,10 @@
         "Port": 587,
         "Username": "your_smtp_username",
         "Password": "your_smtp_password"
+    },
+    "BookingAutoCancel": {
+        "Enabled": true,
+        "CheckInGraceMinutes": 60,
+        "ScanIntervalMinutes": 5
     }
 }

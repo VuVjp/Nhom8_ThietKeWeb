@@ -9,4 +9,5 @@ public class RoomDto
     public int? Floor { get; set; }
     public string? Status { get; set; }
     public string? CleaningStatus { get; set; }
+    public bool CleaningRequested { get; set; }
 }

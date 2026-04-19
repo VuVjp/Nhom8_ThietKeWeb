@@ -10,7 +10,7 @@ public class RoomAvailabilityDto
 
 public class CreateBookingDto
 {
-    public string? VoucherCode { get; set; }
+    public string? VoucherId { get; set; }
     public bool IsExistingGuest { get; set; }
     public string GuestName { get; set; } = string.Empty;
     public string GuestPhone { get; set; } = string.Empty;
@@ -19,6 +19,7 @@ public class CreateBookingDto
     public DateTime CheckOutDate { get; set; }
     public List<int> RoomIds { get; set; } = new();
     public decimal TotalAmount { get; set; }
+    public string InvoiceType { get; set; } = "Consolidated";
 }
 
 public class UpdateBookingDto
@@ -29,6 +30,15 @@ public class UpdateBookingDto
     public DateTime CheckInDate { get; set; }
     public DateTime CheckOutDate { get; set; }
     public List<int> RoomIds { get; set; } = new();
+    public string InvoiceType { get; set; } = "Consolidated";
+}
+
+public class ActiveRoomDto
+{
+    public int BookingDetailId { get; set; }
+    public string RoomNumber { get; set; } = string.Empty;
+    public string GuestName { get; set; } = string.Empty;
+    public int BookingId { get; set; }
 }
 
 public class BookingSummaryDto
@@ -41,5 +51,6 @@ public class BookingSummaryDto
     public DateTime CheckOutDate { get; set; }
     public string Status { get; set; } = string.Empty;
     public decimal TotalAmount { get; set; }
+    public List<string> RoomNumbers { get; set; } = new();
     public List<int> RoomIds { get; set; } = new();
 }

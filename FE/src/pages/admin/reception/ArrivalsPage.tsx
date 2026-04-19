@@ -5,7 +5,7 @@ import { Pagination } from '../../../components/Pagination';
 import { toApiError } from '../../../api/httpClient';
 import { receptionApi } from '../../../api/receptionApi';
 import type { Booking } from '../../../types/models';
-import { CheckCircleIcon } from '@heroicons/react/24/outline';
+import { CheckCircleIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import { formatDate } from '../../../utils/format';
 
 export function ArrivalsPage() {
@@ -52,7 +52,7 @@ export function ArrivalsPage() {
         { key: 'guestName', label: 'Guest Name', render: (row: Booking) => row.guestName },
         { key: 'guestPhone', label: 'Phone', render: (row: Booking) => row.guestPhone },
         { key: 'dates', label: 'Dates', render: (row: Booking) => `${formatDate(row.checkInDate)} - ${formatDate(row.checkOutDate)}` },
-        { key: 'roomIds', label: 'Rooms', render: (row: Booking) => row.roomIds?.join(', ') || 'Unassigned' },
+        { key: 'roomNumbers', label: 'Rooms', render: (row: Booking) => row.roomNumbers?.join(', ') || 'Unassigned' },
         {
             key: 'status', label: 'Status', render: (row: Booking) => (
                 <span className="rounded bg-cyan-100 px-2 py-1 text-xs font-semibold text-cyan-800">{row.status}</span>
@@ -71,13 +71,25 @@ export function ArrivalsPage() {
 
     return (
         <div className="space-y-4">
-            <div>
-                <h2 className="text-2xl font-bold text-slate-900">Arrivals Today</h2>
-                <p className="text-sm text-slate-500">Guests expected to check-in today.</p>
+            <div className="flex items-center justify-between">
+                <div>
+                    <h2 className="text-2xl font-bold text-slate-900">Arrivals Today</h2>
+                    <p className="text-sm text-slate-500">Guests expected to check-in today.</p>
+                </div>
+                <button
+                    onClick={() => void loadArrivals()}
+                    className="p-2 text-slate-500 hover:text-cyan-600 transition bg-white border border-slate-200 rounded-xl"
+                    title="Refresh"
+                >
+                    <ArrowPathIcon className={`h-5 w-5 ${isLoading ? 'animate-spin' : ''}`} />
+                </button>
             </div>
 
             {isLoading ? (
-                <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-slate-500">Loading arrivals...</div>
+                <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] flex flex-col items-center justify-center z-10">
+                    <div className="w-10 h-10 border-4 border-cyan-600 border-t-transparent rounded-full animate-spin"></div>
+                    <p className="mt-4 text-sm font-bold text-slate-600 animate-pulse">Loading arrivals...</p>
+                </div>
             ) : (
                 <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden p-4">
                     {bookings.length === 0 ? (

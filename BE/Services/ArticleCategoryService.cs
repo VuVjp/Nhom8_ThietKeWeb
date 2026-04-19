@@ -11,24 +11,26 @@ public class ArticleCategoryService : IArticleCategoryService
 
     public async Task<IEnumerable<ArticleCategoryDto>> GetAllAsync()
     {
-        var data = await _repo.GetAllActiveAsync();
+        var data = await _repo.GetAllAsync();
 
         return data.Select(a => new ArticleCategoryDto
         {
             Id = a.Id,
-            Name = a.Name
+            Name = a.Name,
+            IsActive = a.IsActive
         });
     }
 
     public async Task<ArticleCategoryDto?> GetByIdAsync(int id)
     {
         var a = await _repo.GetByIdAsync(id);
-        if (a == null || !a.IsActive) throw new NotFoundException($"Article category with ID {id} not found.");
+        if (a == null) throw new NotFoundException($"Article category with ID {id} not found.");
 
         return new ArticleCategoryDto
         {
             Id = a.Id,
-            Name = a.Name
+            Name = a.Name,
+            IsActive = a.IsActive
         };
     }
 
@@ -36,7 +38,8 @@ public class ArticleCategoryService : IArticleCategoryService
     {
         var entity = new ArticleCategory
         {
-            Name = dto.Name
+            Name = dto.Name,
+            IsActive = dto.IsActive ?? true
         };
 
         await _repo.AddAsync(entity);
@@ -48,9 +51,13 @@ public class ArticleCategoryService : IArticleCategoryService
     public async Task<bool> UpdateAsync(int id, UpdateArticleCategoryDto dto)
     {
         var entity = await _repo.GetByIdAsync(id);
-        if (entity == null || !entity.IsActive) throw new NotFoundException($"Article category with ID {id} not found.");
+        if (entity == null) throw new NotFoundException($"Article category with ID {id} not found.");
 
         entity.Name = dto.Name;
+        if (dto.IsActive.HasValue) 
+        {
+            entity.IsActive = dto.IsActive.Value;
+        }
 
         _repo.Update(entity);
         await _repo.SaveChangesAsync();
@@ -61,9 +68,21 @@ public class ArticleCategoryService : IArticleCategoryService
     public async Task<bool> DeleteAsync(int id)
     {
         var entity = await _repo.GetByIdAsync(id);
-        if (entity == null || !entity.IsActive) throw new NotFoundException($"Article category with ID {id} not found.");
+        if (entity == null) throw new NotFoundException($"Article category with ID {id} not found.");
 
         entity.IsActive = false;
+        _repo.Update(entity);
+        await _repo.SaveChangesAsync();
+
+        return true;
+    }
+
+    public async Task<bool> RestoreAsync(int id)
+    {
+        var entity = await _repo.GetByIdAsync(id);
+        if (entity == null) throw new NotFoundException($"Article category with ID {id} not found.");
+
+        entity.IsActive = true;
         _repo.Update(entity);
         await _repo.SaveChangesAsync();
 

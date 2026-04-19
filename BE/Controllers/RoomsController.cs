@@ -19,15 +19,52 @@ public class RoomsController : ControllerBase
 	[HttpGet]
 	public async Task<IActionResult> GetAll() => Ok(await _service.GetListAsync());
 
+	[Permission(PermissionNames.UpdateCleaning)]
 	[HttpGet("status/{status}")]
-	public async Task<IActionResult> GetByStatus(string status)
+	public async Task<IActionResult> GetByStatus(string status, [FromQuery] bool includeCleaningRequested = false)
 	{
 		if (string.IsNullOrWhiteSpace(status))
 		{
 			return BadRequest("Status is required.");
 		}
 
-		return Ok(await _service.GetByStatusAsync(status));
+		return Ok(await _service.GetByStatusAsync(status, includeCleaningRequested));
+	}
+
+
+	[Permission(PermissionNames.UpdateCleaning)]
+	[HttpPatch("{id}/request-cleaning")]
+	public async Task<IActionResult> ToggleCleaningRequest(int id, [FromBody] bool requested)
+	{
+		await _service.ChangeCleaningRequestedAsync(id, requested);
+		return Ok("Cleaning request updated successfully.");
+	}
+
+	[Permission(PermissionNames.UpdateCleaning)]
+	[HttpPatch("{id}/complete-cleaning")]
+	public async Task<IActionResult> CompleteCleaningRequest(int id)
+	{
+		try
+		{
+			await _service.ChangeCleaningRequestedAsync(id, false);
+			return Ok("Room status updated to Available.");
+		}
+		catch (NotFoundException ex)
+		{
+			return NotFound(ex.Message);
+		}
+	}
+
+	[Permission(PermissionNames.UpdateCleaning)]
+	[HttpGet("cleaning-status/{cleaningStatus}")]
+	public async Task<IActionResult> GetByCleaningStatus(string cleaningStatus)
+	{
+		if (string.IsNullOrWhiteSpace(cleaningStatus))
+		{
+			return BadRequest("Cleaning status is required.");
+		}
+
+		return Ok(await _service.GetByCleaningStatusAsync(cleaningStatus));
 	}
 
 	[HttpGet("{id}")]

@@ -35,12 +35,11 @@ public class VouchersController : ControllerBase
     }
 
     [HttpGet("validate")]
-    public async Task<IActionResult> ValidateCode([FromQuery] string code)
+    public async Task<IActionResult> ValidateCode([FromQuery] string code, [FromQuery] decimal? bookingAmount)
     {
         try
         {
-            await _service.ValidateCodeAsync(code);
-            return Ok("Voucher code is valid.");
+            return Ok(await _service.ValidateCodeAsync(code, bookingAmount));
         }
         catch (ArgumentException ex)
         {

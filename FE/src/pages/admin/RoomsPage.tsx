@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { EyeIcon, PlusIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
+import { EyeIcon, PlusIcon, PencilSquareIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { Input } from '../../components/Input';
@@ -17,6 +17,7 @@ import { equipmentsApi, type EquipmentItem } from '../../api/equipmentsApi';
 import { roomInventoriesApi } from '../../api/roomInventoriesApi';
 import { paginate, queryIncludes, sortBy } from '../../utils/table';
 import { usePermissionCheck } from '../../hooks/usePermissionCheck';
+import { BrushCleaning } from 'lucide-react';
 
 interface CreateRoomDraft {
     roomNumber: string;
@@ -68,7 +69,9 @@ export function RoomsPage() {
         status: 'Available',
         cleaningStatus: 'Clean',
     });
-    const [bulkRoomNumbersInput, setBulkRoomNumbersInput] = useState('');
+    const [bulkStartRoom, setBulkStartRoom] = useState('');
+    const [bulkEndRoom, setBulkEndRoom] = useState('');
+    const [bulkStep, setBulkStep] = useState('1');
     const [roomTypes, setRoomTypes] = useState<RoomTypeItem[]>([]);
     const [amenities, setAmenities] = useState<AmenityItem[]>([]);
     const [selectedAmenityIds, setSelectedAmenityIds] = useState<number[]>([]);
@@ -89,15 +92,20 @@ export function RoomsPage() {
     );
 
     const parseBulkRoomNumbers = useCallback(() => {
-        return Array.from(
-            new Set(
-                bulkRoomNumbersInput
-                    .split(/[\n,;]+/)
-                    .map((item) => item.trim())
-                    .filter((item) => item.length > 0),
-            ),
-        );
-    }, [bulkRoomNumbersInput]);
+        const start = Number(bulkStartRoom);
+        const end = Number(bulkEndRoom);
+        const step = Number(bulkStep) || 1;
+
+        if (!bulkStartRoom || !bulkEndRoom || isNaN(start) || isNaN(end) || step <= 0) {
+            return [];
+        }
+
+        const results: string[] = [];
+        for (let i = start; i <= end; i += step) {
+            results.push(String(i));
+        }
+        return results;
+    }, [bulkStartRoom, bulkEndRoom, bulkStep]);
 
     const loadRooms = useCallback(async () => {
         setIsLoading(true);
@@ -212,7 +220,7 @@ export function RoomsPage() {
                         void (async () => {
                             try {
                                 await roomsApi.changeStatus(row.id, value);
-                                setRooms((prev) => prev.map((item) => (item.id === row.id ? { ...item, status: value, cleaningStatus: value === 'Available' ? 'Clean' : value === 'Maintenance' ? 'Inspecting' : value === 'Cleaning' ? 'Dirty' : value === 'Inspecting' ? 'Inspecting' : value === 'Occupied' ? 'Clean' : item.cleaningStatus } : item)));
+                                setRooms((prev) => prev.map((item) => (item.id === row.id ? { ...item, status: value, cleaningStatus: value === 'Available' ? 'Clean' : value === 'InsClean' ? 'Inspecting' : item.cleaningStatus } : item)));
                                 toast.success(`Room ${row.roomNumber} status updated`);
                             } catch (error) {
                                 const apiError = toApiError(error);
@@ -224,8 +232,7 @@ export function RoomsPage() {
                     <option>Available</option>
                     <option>Maintenance</option>
                     <option>Occupied</option>
-                    <option>Inspecting</option>
-                    <option>Cleaning</option>
+                    <option>InsClean</option>
                 </Select>
             ),
         },
@@ -255,6 +262,7 @@ export function RoomsPage() {
                 >
                     <option>Clean</option>
                     <option>Inspecting</option>
+                    <option>Cleaning</option>
                     <option>Dirty</option>
                 </Select>
             ),
@@ -264,8 +272,25 @@ export function RoomsPage() {
             label: 'Actions',
             render: (row: Room) => (
                 <div className="flex gap-2">
-                    <button type="button" className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-xs" onClick={() => navigate(`/admin/rooms/${row.id}`)}>
+                    <button type="button" className="w-30 inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-xs" onClick={() => navigate(`/admin/rooms/${row.id}`)}>
                         <EyeIcon className="h-4 w-4" /> View Details
+                    </button>
+                    <button type="button" className={` w-30 inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-xs ${row.cleaningRequested ? 'text-red-600' : 'text-green-700'}`}
+                        onClick={() => {
+                            if (!ensure('MANAGE_ROOMS', `${row.cleaningRequested ? 'cancel cleaning request' : 'request cleaning'}`)) {
+                                return;
+                            }
+                            void (async () => {
+                                try {
+                                    await roomsApi.requestCleaning(row.id, !row.cleaningRequested);
+                                    setRooms((prev) => prev.map((item) => (item.id === row.id ? { ...item, cleaningRequested: !item.cleaningRequested } : item)));
+                                } catch (error) {
+                                    const apiError = toApiError(error);
+                                    toast.error(apiError.message || 'Failed to update cleaning request');
+                                }
+                            })();
+                        }}>
+                        <BrushCleaning className={`h-4 w-4`} /> {row.cleaningRequested === true ? 'Cancel Request' : 'Request Cleaning'}
                     </button>
                 </div>
             ),
@@ -280,7 +305,9 @@ export function RoomsPage() {
         setCloneSourceRoomId(null);
         setSelectedAmenityIds([]);
         setSelectedInventories({});
-        setBulkRoomNumbersInput('');
+        setBulkStartRoom('');
+        setBulkEndRoom('');
+        setBulkStep('1');
         const firstActiveRoomTypeId = activeRoomTypes[0]?.id ?? 0;
         setDraft((prev) => ({
             roomNumber: '',
@@ -465,6 +492,13 @@ export function RoomsPage() {
                 </div>
                 <div className="flex items-center gap-2">
                     <button
+                        onClick={() => void loadRooms()}
+                        className="p-2 text-slate-500 hover:text-cyan-600 transition bg-white border border-slate-200 rounded-xl"
+                        title="Refresh"
+                    >
+                        <ArrowPathIcon className={`h-5 w-5 ${isLoading ? 'animate-spin' : ''}`} />
+                    </button>
+                    <button
                         type="button"
                         onClick={() => {
                             if (!ensure('MANAGE_ROOMS', 'create room')) {
@@ -514,8 +548,9 @@ export function RoomsPage() {
             </div>
 
             {isLoading ? (
-                <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-slate-500">
-                    Loading rooms...
+                <div className="flex flex-col items-center justify-center py-20">
+                    <div className="w-10 h-10 border-4 border-cyan-600 border-t-transparent rounded-full animate-spin"></div>
+                    <p className="mt-4 text-sm font-bold text-slate-600 animate-pulse">Loading rooms...</p>
                 </div>
             ) : filtered.length === 0 ? (
                 <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-slate-500">
@@ -565,16 +600,41 @@ export function RoomsPage() {
                                         <p className="text-xs text-slate-500">Unique room number used for check-in and operations.</p>
                                     </div>
                                 ) : (
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-medium text-slate-700">Room numbers</label>
-                                        <textarea
-                                            value={bulkRoomNumbersInput}
-                                            onChange={(e) => setBulkRoomNumbersInput(e.target.value)}
-                                            rows={5}
-                                            placeholder={'101\n102\n103'}
-                                            className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-800 outline-none ring-cyan-500 transition focus:ring-2"
-                                        />
-                                        <p className="text-xs text-slate-500">One per line or separated by comma/semicolon. Detected {parseBulkRoomNumbers().length} unique room number(s).</p>
+                                    <div className="space-y-3">
+                                        <div className="grid gap-3 sm:grid-cols-3">
+                                            <div className="space-y-1.5">
+                                                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Start number</label>
+                                                <Input 
+                                                    type="number" 
+                                                    placeholder="101" 
+                                                    value={bulkStartRoom} 
+                                                    onChange={(e) => setBulkStartRoom(e.target.value)} 
+                                                />
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">End number</label>
+                                                <Input 
+                                                    type="number" 
+                                                    placeholder="110" 
+                                                    value={bulkEndRoom} 
+                                                    onChange={(e) => setBulkEndRoom(e.target.value)} 
+                                                />
+                                            </div>
+                                            <div className="space-y-1.5">
+                                                <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Step</label>
+                                                <Input 
+                                                    type="number" 
+                                                    placeholder="1" 
+                                                    value={bulkStep} 
+                                                    onChange={(e) => setBulkStep(e.target.value)} 
+                                                />
+                                            </div>
+                                        </div>
+                                        <p className="text-xs text-slate-500 italic">
+                                            Generates a sequence from {bulkStartRoom || '...'} to {bulkEndRoom || '...'} with step {bulkStep || '1'}.
+                                            <br />
+                                            Detected <span className="font-bold text-cyan-700">{parseBulkRoomNumbers().length}</span> unique room number(s).
+                                        </p>
                                     </div>
                                 )}
 

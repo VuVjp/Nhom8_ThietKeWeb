@@ -70,7 +70,15 @@ public class BookingRepository : IBookingRepository
     public async Task<Booking?> GetBookingByIdWithDetailsAsync(int id, bool includeRoom = false)
     {
         IQueryable<Booking> query = _context.Bookings
-            .Include(item => item.BookingDetails);
+            .Include(item => item.User)
+                .ThenInclude(u => u!.Membership)
+            .Include(item => item.BookingDetails)
+                .ThenInclude(detail => detail.OrderServices)
+                    .ThenInclude(os => os.OrderServiceDetails)
+                        .ThenInclude(osd => osd.Service)
+            .Include(item => item.BookingDetails)
+                .ThenInclude(detail => detail.LossAndDamages)
+                    .ThenInclude(ld => ld.RoomInventory);
 
         if (includeRoom)
         {
@@ -87,6 +95,7 @@ public class BookingRepository : IBookingRepository
         return await _context.Bookings
             .AsNoTracking()
             .Include(booking => booking.BookingDetails)
+                .ThenInclude(detail => detail.Room)
             .Where(booking => booking.BookingDetails.Any(detail => detail.CheckInDate.Date == date.Date))
             .Where(booking => booking.Status == "Pending" || booking.Status == "Confirmed")
             .OrderBy(booking => booking.Id)
@@ -98,18 +107,37 @@ public class BookingRepository : IBookingRepository
         return await _context.Bookings
             .AsNoTracking()
             .Include(booking => booking.BookingDetails)
+                .ThenInclude(detail => detail.Room)
             .Where(booking => booking.Status == "CheckedIn")
             .OrderBy(booking => booking.Id)
             .ToListAsync();
     }
 
     public async Task<List<Booking>> GetAllWithDetailsAsync()
+{
+    return await _context.Bookings
+        .AsNoTracking()
+        .Include(booking => booking.BookingDetails)
+            .ThenInclude(detail => detail.Room)
+        .OrderByDescending(booking => booking.Id)
+        .ToListAsync();
+}
+
+    public async Task<List<int>> GetOverdueCheckInBookingIdsAsync(DateTime cutoffTime)
     {
         return await _context.Bookings
             .AsNoTracking()
-            .Include(booking => booking.BookingDetails)
-            .OrderByDescending(booking => booking.Id)
+            .Where(booking => booking.Status == "Pending" || booking.Status == "Confirmed")
+            .Where(booking => booking.BookingDetails.Any(detail => detail.CheckInDate <= cutoffTime))
+            .Select(booking => booking.Id)
             .ToListAsync();
+    }
+
+    public async Task<BookingDetail?> GetBookingDetailWithBookingAsync(int id)
+    {
+        return await _context.BookingDetails
+            .Include(bd => bd.Booking)
+            .FirstOrDefaultAsync(bd => bd.Id == id);
     }
 
     public async Task SaveChangesAsync()

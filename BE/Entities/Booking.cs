@@ -10,6 +10,10 @@ public class Booking
     public string BookingCode { get; set; } = string.Empty;
     public int? VoucherId { get; set; }
     public string? Status { get; set; }
+    public decimal TotalPrice { get; set; }
+    public decimal? Discount { get; set; }
+    public decimal FinalPrice { get; set; }
+    public string InvoiceType { get; set; } = "Consolidated"; // Consolidated or Split
 
     public User? User { get; set; }
     public Voucher? Voucher { get; set; }

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { HomeIcon, BuildingOffice2Icon, ArchiveBoxIcon, ExclamationTriangleIcon, SparklesIcon, UsersIcon, ShieldCheckIcon, WrenchScrewdriverIcon, Squares2X2Icon, RectangleStackIcon, ChevronDownIcon, CalendarDaysIcon, TicketIcon, StarIcon, MapIcon } from '@heroicons/react/24/outline';
+import { HomeIcon, BuildingOffice2Icon, ArchiveBoxIcon, ExclamationTriangleIcon, SparklesIcon, UsersIcon, ShieldCheckIcon, WrenchScrewdriverIcon, Squares2X2Icon, RectangleStackIcon, ChevronDownIcon, CalendarDaysIcon, TicketIcon } from '@heroicons/react/24/outline';
 import { NavLink, useLocation } from 'react-router-dom';
 import type { AppPermission } from '../auth/auth.types';
 import { useAppAuth } from '../auth/useAppAuth';
@@ -33,6 +33,17 @@ const navItems: SidebarNavItem[] = [
       { to: '/admin/reception/arrivals', label: 'Arrivals Today', permissions: ['MANAGE_BOOKINGS'] as AppPermission[] },
       { to: '/admin/reception/in-house', label: 'In-House Guests', permissions: ['MANAGE_BOOKINGS'] as AppPermission[] },
       { to: '/admin/reception/bookings', label: 'All Bookings', permissions: ['MANAGE_BOOKINGS'] as AppPermission[] },
+      { to: '/admin/reception/order-services', label: 'Service Orders', permissions: ['MANAGE_SERVICES'] as AppPermission[] },
+      { to: '/admin/invoices', label: 'Invoices', permissions: ['MANAGE_BOOKINGS'] as AppPermission[] },
+    ]
+  },
+  {
+    label: 'Services',
+    icon: CubeIcon,
+    permissions: ['MANAGE_SERVICES'] as AppPermission[],
+    children: [
+      { to: '/admin/services', label: 'Service Catalog', permissions: ['MANAGE_SERVICES'] as AppPermission[] },
+      { to: '/admin/service-categories', label: 'Categories', permissions: ['MANAGE_SERVICES'] as AppPermission[] },
     ]
   },
   { to: '/admin/rooms', label: 'Rooms', icon: BuildingOffice2Icon, permissions: ['MANAGE_ROOMS'] as AppPermission[] },
@@ -43,10 +54,10 @@ const navItems: SidebarNavItem[] = [
   { to: '/admin/loss', label: 'Loss & Compensation', icon: ExclamationTriangleIcon, permissions: ['APPROVE_LOSS'] as AppPermission[] },
   { to: '/admin/cleaning', label: 'Inspecting & Cleaning', icon: SparklesIcon, permissions: ['UPDATE_CLEANING'] as AppPermission[] },
   { to: '/admin/vouchers', label: 'Vouchers', icon: TicketIcon, permissions: ['MANAGE_VOUCHERS'] as AppPermission[] },
-  { to: '/admin/memberships', label: 'Memberships', icon: StarIcon },
-  { to: '/admin/attractions', label: 'Attractions', icon: MapIcon, permissions: ['MANAGE_ATTRACTIONS'] as AppPermission[] },
   { to: '/admin/users', label: 'Users', icon: UsersIcon, permissions: ['MANAGE_USERS'] as AppPermission[] },
   { to: '/admin/roles', label: 'Roles', icon: ShieldCheckIcon, permissions: ['MANAGE_ROLES'] as AppPermission[] },
+  { to: '/admin/audit-log', label: 'Audit Logs', icon: Squares2X2Icon, permissions: ['VIEW_DASHBOARD'] as AppPermission[] },
+  { to: '/admin/reviews', label: 'Reviews', icon: StarIcon, permissions: ['MANAGE_REVIEWS'] as AppPermission[] },
 ];
 
 export function Sidebar({ collapsed, mobileOpen, onCloseMobile }: SidebarProps) {
@@ -54,6 +65,24 @@ export function Sidebar({ collapsed, mobileOpen, onCloseMobile }: SidebarProps) 
   const location = useLocation();
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({ 'Reception': true });
 
+  useEffect(() => {
+    let changed = false;
+    const nextOpen = { ...openGroups };
+
+    navItems.forEach((item) => {
+      if (item.children && !nextOpen[item.label]) {
+        const hasActiveChild = item.children.some((child) => location.pathname.startsWith(child.to));
+        if (hasActiveChild) {
+          nextOpen[item.label] = true;
+          changed = true;
+        }
+      }
+    });
+
+    if (changed) {
+      setOpenGroups(nextOpen);
+    }
+  }, [location.pathname]);
   const toggleGroup = (label: string) => {
     if (collapsed) return;
     setOpenGroups((prev) => ({ ...prev, [label]: !prev[label] }));
@@ -72,11 +101,11 @@ export function Sidebar({ collapsed, mobileOpen, onCloseMobile }: SidebarProps) 
         <nav className="h-[calc(100vh-4rem)] space-y-1 overflow-y-auto p-3">
           {navItems.filter((item) => !item.permissions || item.permissions.some((permission) => hasPermission(permission))).map((item) => {
             const Icon = item.icon;
-            
+
             if (item.children) {
               const isOpen = openGroups[item.label] && !collapsed;
               const hasActiveChild = item.children.some(child => location.pathname.startsWith(child.to));
-              
+
               return (
                 <div key={item.label} className="space-y-1">
                   <button

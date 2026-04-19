@@ -46,11 +46,30 @@ public class RoomTypeService : IRoomTypeService
             IsActive = true
         };
 
+        if (dto.Files != null && dto.Files.Count > 0)
+        {
+            roomType.RoomImages = new List<RoomImage>();
+
+            foreach (var file in dto.Files)
+            {
+                var imageUrl = await _cloudinaryService.UploadImageAsync(file, $"room-types/{roomType.Name}");
+                roomType.RoomImages.Add(new RoomImage
+                {
+                    ImageUrl = imageUrl,
+                    IsPrimary = false
+                });
+            }
+
+            // Set the first image as primary if there are any images
+            roomType.RoomImages.First().IsPrimary = true;
+        }
+
         await _roomTypeRepository.AddAsync(roomType);
         await _roomTypeRepository.SaveChangesAsync();
 
         return true;
     }
+
     public async Task<bool> UpdateRoomTypeAsync(int id, UpdateRoomTypeDto dto)
     {
         var roomType = await _roomTypeRepository.GetByIdAsync(id);
@@ -61,6 +80,21 @@ public class RoomTypeService : IRoomTypeService
         roomType.CapacityAdults = dto.CapacityAdults;
         roomType.CapacityChildren = dto.CapacityChildren;
         roomType.Description = dto.Description;
+
+        if (dto.Files != null && dto.Files.Count > 0)
+        {
+            foreach (var file in dto.Files)
+            {
+                var imageUrl = await _cloudinaryService.UploadImageAsync(file, $"room-types/{roomType.Name}");
+                var roomImage = new RoomImage
+                {
+                    RoomTypeId = id,
+                    ImageUrl = imageUrl,
+                    IsPrimary = false
+                };
+                await _roomImageRepository.AddAsync(roomImage);
+            }
+        }
 
         _roomTypeRepository.Update(roomType);
         await _roomTypeRepository.SaveChangesAsync();
@@ -138,7 +172,7 @@ public class RoomTypeService : IRoomTypeService
         return true;
     }
 
-    public async Task<bool> SetPrimaryImageAsync(int roomTypeId, int imageId)
+    public async Task<bool> SetPrimaryRoomImageAsync(int roomTypeId, int imageId)
     {
         var images = (await _roomImageRepository
             .GetImagesByRoomTypeIdAsync(roomTypeId)).ToList();

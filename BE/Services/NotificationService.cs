@@ -45,7 +45,7 @@ public class NotificationService : INotificationService
                 Content = dto.Content,
                 Type = dto.Type,
                 ReferenceLink = dto.ReferenceLink,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.Now
             });
 
             targetGroups.Add($"user_{user.Id}");

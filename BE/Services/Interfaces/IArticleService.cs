@@ -5,5 +5,7 @@ public interface IArticleService
     Task<bool> CreateAsync(CreateArticleDto dto);
     Task<bool> UpdateAsync(int id, UpdateArticleDto dto);
     Task<bool> DeleteAsync(int id);
+    Task<bool> RestoreAsync(int id);
     Task<bool> UpdateThumbnailAsync(int id, UpdateArticleThumbnailDto dto);
+    Task<string> UploadImageAsync(IFormFile file);
 }

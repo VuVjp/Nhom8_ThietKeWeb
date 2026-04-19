@@ -7,11 +7,13 @@ public class ArticleCategoryRepository : Repository<ArticleCategory>, IArticleCa
     public ArticleCategoryRepository(AppDbContext context) : base(context)
     {
     }
+
     public async Task<IEnumerable<ArticleCategory>> GetAllActiveAsync()
     {
+        // Only return active categories — inactive ones must not appear in UI selectors.
         return await _dbSet
             .Where(ac => ac.IsActive)
-            .Include(ac => ac.Articles)
+            .OrderBy(ac => ac.Name)
             .ToListAsync();
     }
 }

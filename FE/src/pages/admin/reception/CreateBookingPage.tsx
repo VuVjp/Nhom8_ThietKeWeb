@@ -6,7 +6,7 @@ import { receptionApi } from '../../../api/receptionApi';
 import { usersApi } from '../../../api/usersApi';
 import { vouchersApi } from '../../../api/vouchersApi';
 import type { RoomAvailability, Voucher } from '../../../types/models';
-import { SparklesIcon, CheckCircleIcon, ArrowRightIcon, UserIcon, IdentificationIcon, TicketIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { SparklesIcon, CheckCircleIcon, ArrowRightIcon, UserIcon, IdentificationIcon, TicketIcon, XMarkIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import { useNavigate } from 'react-router-dom';
 
 export function CreateBookingPage() {
@@ -37,6 +37,9 @@ export function CreateBookingPage() {
     const [guestEmail, setGuestEmail] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [guestVerified, setGuestVerified] = useState(false);
+
+    // Invoicing State
+    const [invoiceType, setInvoiceType] = useState<'Consolidated' | 'Split'>('Consolidated');
 
     // Voucher State
     const [voucherCode, setVoucherCode] = useState('');
@@ -197,7 +200,8 @@ export function CreateBookingPage() {
                 checkOutDate: end,
                 roomIds: selectedRoomIds,
                 totalAmount: baseTotal - discount,
-                voucherCode: appliedVoucher?.code
+                voucherId: appliedVoucher ? appliedVoucher?.id + "" : null,
+                invoiceType,
             });
             toast.success('Created booking successfully!');
             navigate('/admin/reception/bookings');
@@ -225,7 +229,7 @@ export function CreateBookingPage() {
                 <span className={`font-semibold ${step >= 3 ? 'text-cyan-700' : 'text-slate-400'}`}>3. Confirmation</span>
             </div>
 
-            <div className={`rounded-xl border border-slate-200 bg-white p-6 shadow-sm ${step === 1 ? 'max-w-[500px]' : ''}`}>
+            <div className={`rounded-xl border border-slate-200 bg-white p-6 shadow-sm ${step === 1 ? 'max-w-125' : ''}`}>
                 {step === 1 && (
                     <div className="space-y-6 max-w-md">
                         <div className="flex gap-2 p-1 bg-slate-100 rounded-lg">
@@ -285,8 +289,17 @@ export function CreateBookingPage() {
 
                 {step === 2 && (
                     <div className="space-y-4">
-                        <div className="mb-4 text-sm text-slate-600">
-                            Found <span className="font-bold text-cyan-700">{availableRooms.length}</span> rooms available.
+                        <div className="flex items-center justify-between">
+                            <div className="mb-4 text-sm text-slate-600">
+                                Found <span className="font-bold text-cyan-700">{availableRooms.length}</span> rooms available.
+                            </div>
+                            <button
+                                onClick={() => void handleSearchRooms()}
+                                className="p-2 text-slate-500 hover:text-cyan-600 transition bg-white border border-slate-200 rounded-xl"
+                                title="Refresh"
+                            >
+                                <ArrowPathIcon className={`h-5 w-5 ${isSearching ? 'animate-spin' : ''}`} />
+                            </button>
                         </div>
 
                         <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
@@ -314,6 +327,7 @@ export function CreateBookingPage() {
                             {availableRooms.length === 0 && (
                                 <div className="col-span-full py-8 text-center text-slate-500">No rooms available for the selected time.</div>
                             )}
+
                         </div>
 
                         <div className="mt-6 flex justify-between">
@@ -424,6 +438,35 @@ export function CreateBookingPage() {
                                         value={guestEmail}
                                         onChange={e => setGuestEmail(e.target.value)}
                                     />
+                                </div>
+
+                                <div className="space-y-4 pt-4 border-t border-slate-100">
+                                    <h3 className="font-semibold text-slate-800 flex items-center gap-2">
+                                        <ArrowPathIcon className="h-4 w-4 text-cyan-700" />
+                                        Invoicing Strategy
+                                    </h3>
+                                    <div className="flex gap-3">
+                                        <button
+                                            onClick={() => setInvoiceType('Consolidated')}
+                                            className={`flex-1 py-3 px-4 rounded-xl border text-sm font-medium transition-all text-left ${invoiceType === 'Consolidated'
+                                                ? 'border-cyan-500 bg-cyan-50 text-cyan-700 ring-1 ring-cyan-500'
+                                                : 'border-slate-200 text-slate-500 hover:border-cyan-300'
+                                                }`}
+                                        >
+                                            <div className="font-bold">Consolidated</div>
+                                            <div className="text-xs opacity-70">One invoice for all rooms</div>
+                                        </button>
+                                        <button
+                                            onClick={() => setInvoiceType('Split')}
+                                            className={`flex-1 py-3 px-4 rounded-xl border text-sm font-medium transition-all text-left ${invoiceType === 'Split'
+                                                ? 'border-cyan-500 bg-cyan-50 text-cyan-700 ring-1 ring-cyan-500'
+                                                : 'border-slate-200 text-slate-500 hover:border-cyan-300'
+                                                }`}
+                                        >
+                                            <div className="font-bold">Split</div>
+                                            <div className="text-xs opacity-70">Separate invoice per room</div>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
 

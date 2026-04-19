@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
-import { PencilSquareIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { PencilSquareIcon, PlusIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import { Input } from '../../components/Input';
 import { Table } from '../../components/Table';
 import { Pagination } from '../../components/Pagination';
@@ -10,6 +10,7 @@ import { equipmentsApi, type EquipmentItem } from '../../api/equipmentsApi';
 import { paginate, queryIncludes, sortBy } from '../../utils/table';
 import { usePermissionCheck } from '../../hooks/usePermissionCheck';
 import { Badge } from '../../components/Badge';
+import { ImageUpload } from '../../components/ImageUpload';
 
 const initialForm = {
     itemCode: '',
@@ -200,14 +201,9 @@ export function EquipmentPage() {
         {
             key: 'image',
             label: 'Image',
-            render: (row: EquipmentItem) =>
-                row.imageUrl ? (
-                    <a className="text-cyan-700 underline" href={row.imageUrl} target="_blank" rel="noreferrer">
-                        View
-                    </a>
-                ) : (
-                    <span className="text-slate-400">-</span>
-                ),
+            isImg: true,
+            src: (row: EquipmentItem) => row.imageUrl ?? '',
+            render: () => <span className="text-xs text-slate-400">No image</span>,
         },
         {
             key: 'actions',
@@ -295,13 +291,23 @@ export function EquipmentPage() {
                     <h2 className="text-2xl font-bold text-slate-900">Equipments</h2>
                     <p className="text-sm text-slate-500">Add and manage amenity items used in rooms.</p>
                 </div>
-                <button
-                    type="button"
-                    className="inline-flex items-center gap-2 rounded-lg bg-cyan-700 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-800 disabled:opacity-60"
-                    onClick={() => setOpenCreate(true)}
-                >
-                    <PlusIcon className="h-4 w-4" /> Add Equipment
-                </button>
+                <div className="flex gap-2">
+                    <button
+                        onClick={() => void loadEquipments()}
+                        className="p-2 text-slate-500 hover:text-cyan-600 transition bg-white border border-slate-200 rounded-xl"
+                        title="Refresh"
+                    >
+                        <ArrowPathIcon className={`h-5 w-5 ${isLoading ? 'animate-spin' : ''}`} />
+                    </button>
+
+                    <button
+                        type="button"
+                        className="inline-flex items-center gap-2 rounded-lg bg-cyan-700 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-800 disabled:opacity-60"
+                        onClick={() => setOpenCreate(true)}
+                    >
+                        <PlusIcon className="h-4 w-4" /> Add Equipment
+                    </button>
+                </div>
             </div>
 
             <div className="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-2">
@@ -395,7 +401,11 @@ export function EquipmentPage() {
                             </div>
                             <div className="space-y-2">
                                 <label className="text-sm font-medium text-slate-700">Image</label>
-                                <Input type="file" accept="image/*" onChange={(e) => setSelectedFile(e.target.files?.[0] ?? null)} />
+                                <ImageUpload
+                                    value={selectedFile}
+                                    onChange={(val) => setSelectedFile(Array.isArray(val) ? val[0] : val)}
+                                    label="Click or drag image to upload"
+                                />
                                 <p className="text-xs text-slate-500">Upload a photo for faster recognition.</p>
                             </div>
                         </div>
@@ -495,23 +505,22 @@ export function EquipmentPage() {
                         </div>
                         <div className="grid gap-3 sm:grid-cols-2">
                             <div className="space-y-2">
+                                <label className="text-sm font-medium text-slate-700">Equipment image (Click or drag image to replace)</label>
+                                <ImageUpload
+                                    value={editFile}
+                                    onChange={(val) => setEditFile(Array.isArray(val) ? val[0] : val)}
+                                    currentUrl={editing?.imageUrl}
+                                    label="Select new image"
+                                />
+                                <p className="text-xs text-slate-500">The preview shows the current image. Upload a new one to replace it.</p>
+                            </div>
+                            <div className="space-y-2">
                                 <label className="text-sm font-medium text-slate-700">Supplier</label>
                                 <Input placeholder="Example: LG / Panasonic" value={editForm.supplier} onChange={(e) => setEditForm((prev) => ({ ...prev, supplier: e.target.value }))} />
                             </div>
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-slate-700">Current image</label>
-                                {editing?.imageUrl ? (
-                                    <img src={editing.imageUrl} alt={editing.name} className="h-16 w-16 rounded-lg border border-slate-200 object-cover" />
-                                ) : (
-                                    <div className="h-16 w-16 rounded-lg border border-dashed border-slate-300 bg-white" />
-                                )}
-                            </div>
                         </div>
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-slate-700">Replace image</label>
-                            <Input type="file" accept="image/*" onChange={(e) => setEditFile(e.target.files?.[0] ?? null)} />
-                            <p className="text-xs text-slate-500">Upload only when you want to change the existing image.</p>
-                        </div>
+
+
                     </section>
 
                     <div className="flex justify-end gap-2">

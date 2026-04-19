@@ -16,13 +16,25 @@ import { RoomTypesPage } from '../pages/admin/RoomTypesPage';
 import { VouchersPage } from '../pages/admin/VouchersPage';
 import { MembershipsPage } from '../pages/admin/MembershipsPage';
 import { AttractionsPage } from '../pages/admin/AttractionsPage';
+import { AuditLogPage } from '../pages/admin/AuditLogPage';
+import { ReviewsPage } from '../pages/admin/ReviewsPage';
 import { ForbiddenPage } from '../pages/ForbiddenPage';
+import { InvoicesPage } from '../pages/admin/InvoicesPage';
+import { InvoiceDetailPage } from '../pages/admin/InvoiceDetailPage';
 import { CreateBookingPage } from '../pages/admin/reception/CreateBookingPage';
 import { ArrivalsPage } from '../pages/admin/reception/ArrivalsPage';
 import { InHousePage } from '../pages/admin/reception/InHousePage';
 import { BookingsListPage } from '../pages/admin/reception/BookingsListPage';
+import { ServiceCategoriesPage } from '../pages/admin/ServiceCategoriesPage';
+import { ServicesPage } from '../pages/admin/ServicesPage';
+import { OrderServicesListPage } from '../pages/admin/reception/OrderServicesListPage';
+import { OrderServiceDetailPage } from '../pages/admin/reception/OrderServiceDetailPage';
+import { AddServiceToOrderPage } from '../pages/admin/reception/AddServiceToOrderPage';
 import { RequireAuth, RequireAnyPermission, RequirePermission } from './RouteGuards';
 import { useAppAuth } from '../auth/useAppAuth';
+import { ArticlesPage } from '../modules/article/pages/ArticlesPage';
+import { ArticleFormPage } from '../modules/article/pages/ArticleFormPage';
+import { ArticleCategoriesPage } from '../modules/article/pages/ArticleCategoriesPage';
 
 import { ClientLayout } from '../layout/ClientLayout';
 import { HomePage } from '../pages/client/HomePage';
@@ -118,11 +130,42 @@ export const AppRouter = () => {
                         <Route path="admin/vouchers" element={<VouchersPage />} />
                     </Route>
 
+                    <Route element={<RequirePermission permission="VIEW_DASHBOARD" />}>
+                        <Route path="admin/audit-log" element={<AuditLogPage />} />
+                    </Route>
+
+                    <Route element={<RequirePermission permission="MANAGE_REVIEWS" />}>
+                        <Route path="admin/reviews" element={<ReviewsPage />} />
+                    </Route>
+
                     <Route element={<RequireAnyPermission permissions={['MANAGE_BOOKINGS']} />}>
                         <Route path="admin/reception/create-booking" element={<CreateBookingPage />} />
                         <Route path="admin/reception/arrivals" element={<ArrivalsPage />} />
                         <Route path="admin/reception/in-house" element={<InHousePage />} />
                         <Route path="admin/reception/bookings" element={<BookingsListPage />} />
+                    </Route>
+
+                    <Route element={<RequireAnyPermission permissions={['MANAGE_ARTICLES']} />}>
+                        <Route path="admin/articles" element={<ArticlesPage />} />
+                        <Route path="admin/articles/new" element={<ArticleFormPage />} />
+                        <Route path="admin/articles/:id/edit" element={<ArticleFormPage />} />
+                    </Route>
+
+                    <Route element={<RequireAnyPermission permissions={['MANAGE_ARTICLE_CATEGORY']} />}>
+                        <Route path="admin/article-categories" element={<ArticleCategoriesPage />} />
+                    </Route>
+
+                    {/* Service Module */}
+                    <Route element={<RequireAnyPermission permissions={['MANAGE_SERVICES']} />}>
+                        <Route path="admin/service-categories" element={<ServiceCategoriesPage />} />
+                        <Route path="admin/services" element={<ServicesPage />} />
+                        <Route path="admin/reception/order-services" element={<OrderServicesListPage />} />
+                        <Route path="admin/reception/order-services/:id" element={<OrderServiceDetailPage />} />
+                        <Route path="admin/reception/order-services/:id/add-service" element={<AddServiceToOrderPage />} />
+                    </Route>
+                    <Route element={<RequireAnyPermission permissions={['MANAGE_BOOKINGS']} />}>
+                        <Route path="admin/invoices" element={<InvoicesPage />} />
+                        <Route path="admin/invoices/:id" element={<InvoiceDetailPage />} />
                     </Route>
                 </Route>
             </Route>

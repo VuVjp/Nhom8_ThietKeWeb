@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { PencilSquareIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { PencilSquareIcon, PlusIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import { amenitiesApi, type AmenityItem } from '../../api/amenitiesApi';
 import { toApiError } from '../../api/httpClient';
 import { Input } from '../../components/Input';
@@ -8,6 +8,7 @@ import { Table } from '../../components/Table';
 import { Modal } from '../../components/Modal';
 import { usePermissionCheck } from '../../hooks/usePermissionCheck';
 import { Badge } from '../../components/Badge';
+import { ImageUpload } from '../../components/ImageUpload';
 
 export function AmenitiesPage() {
     const { ensure } = usePermissionCheck();
@@ -23,6 +24,8 @@ export function AmenitiesPage() {
     const [editName, setEditName] = useState('');
     const [editFile, setEditFile] = useState<File | null>(null);
     const [isSavingEdit, setIsSavingEdit] = useState(false);
+
+
 
     const loadAmenities = useCallback(async () => {
         setIsLoading(true);
@@ -133,12 +136,10 @@ export function AmenitiesPage() {
         {
             key: 'icon',
             label: 'Icon',
-            render: (row: AmenityItem) =>
-                row.iconUrl ? (
-                    <img src={row.iconUrl} alt={row.name} className="h-10 w-10 rounded-lg border border-slate-200 object-cover" />
-                ) : (
-                    <div className="h-10 w-10 rounded-lg border border-dashed border-slate-300" />
-                ),
+            isImg: true,
+            src: (row: AmenityItem) => row.iconUrl ?? '',
+            render: () =>
+                <span className="text-xs text-slate-400">No image</span>
         },
         { key: 'name', label: 'Name', render: (row: AmenityItem) => row.name },
         {
@@ -192,13 +193,22 @@ export function AmenitiesPage() {
                     <h2 className="text-2xl font-bold text-slate-900">Amenities</h2>
                     <p className="text-sm text-slate-500">Manage amenity catalog and icon image for room setup.</p>
                 </div>
-                <button
-                    type="button"
-                    className="inline-flex items-center gap-2 rounded-lg bg-cyan-700 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-800 disabled:opacity-60"
-                    onClick={() => setOpenCreate(true)}
-                >
-                    <PlusIcon className="h-4 w-4" /> Add Amenity
-                </button>
+                <div className="flex gap-2">
+                    <button
+                        onClick={() => void loadAmenities()}
+                        className="p-2 text-slate-500 hover:text-cyan-600 transition bg-white border border-slate-200 rounded-xl"
+                        title="Refresh"
+                    >
+                        <ArrowPathIcon className={`h-5 w-5 ${isLoading ? 'animate-spin' : ''}`} />
+                    </button>
+                    <button
+                        type="button"
+                        className="inline-flex items-center gap-2 rounded-lg bg-cyan-700 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-800 disabled:opacity-60"
+                        onClick={() => setOpenCreate(true)}
+                    >
+                        <PlusIcon className="h-4 w-4" /> Add Amenity
+                    </button>
+                </div>
             </div>
 
             <Table columns={columns} rows={isLoading ? [] : rows} />
@@ -225,7 +235,11 @@ export function AmenitiesPage() {
                         </div>
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-slate-700">Icon image</label>
-                            <Input type="file" accept="image/*" onChange={(event) => setCreateFile(event.target.files?.[0] ?? null)} />
+                            <ImageUpload
+                                value={createFile}
+                                onChange={(val) => setCreateFile(Array.isArray(val) ? val[0] : val)}
+                                label="Click or drag icon to upload"
+                            />
                             <p className="text-xs text-slate-500">Upload a small image for visual identification.</p>
                         </div>
                     </section>
@@ -284,19 +298,14 @@ export function AmenitiesPage() {
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-slate-700">Current icon</label>
-                            {editing?.iconUrl ? (
-                                <img src={editing.iconUrl} alt={editing.name} className="h-16 w-16 rounded-lg border border-slate-200 object-cover" />
-                            ) : (
-                                <div className="h-16 w-16 rounded-lg border border-dashed border-slate-300 bg-white" />
-                            )}
-                            <p className="text-xs text-slate-500">If no new image is selected, the current icon is kept.</p>
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-slate-700">Replace icon image</label>
-                            <Input type="file" accept="image/*" onChange={(event) => setEditFile(event.target.files?.[0] ?? null)} />
-                            <p className="text-xs text-slate-500">Upload only when you want to change the existing icon.</p>
+                            <label className="text-sm font-medium text-slate-700">Icon image (Click or drag image to replace)</label>
+                            <ImageUpload
+                                value={editFile}
+                                onChange={(val) => setEditFile(Array.isArray(val) ? val[0] : val)}
+                                currentUrl={editing?.iconUrl}
+                                label="Select new icon"
+                            />
+                            <p className="text-xs text-slate-500">The preview shows the current icon. Upload a new one to replace it.</p>
                         </div>
                     </section>
 

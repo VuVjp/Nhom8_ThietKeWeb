@@ -59,4 +59,9 @@ export const receptionApi = {
       }
     });
   },
+
+  getActiveRooms: async (): Promise<any[]> => {
+    const response = await httpClient.get<any[]>('/Bookings/active-rooms');
+    return response.data;
+  },
 };

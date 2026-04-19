@@ -18,6 +18,8 @@ export const appPermissions = [
     'MANAGE_ROOM_INVENTORY',
     'MANAGE_ROOM_TYPES',
     'MANAGE_CLEANING',
+    'MANAGE_REVIEWS',
+    'MANAGE_MEMBERSHIPS',
 ] as const;
 
 export type LegacyAppPermission =
@@ -48,12 +50,12 @@ export type LegacyAppPermission =
     | 'assign_role';
 
 export type AppPermission = (typeof appPermissions)[number] | LegacyAppPermission;
-export type AppRole = 'Admin' | 'Manager' | 'Staff';
+export type AppRole = 'Admin' | 'Manager' | 'Receptionist' | 'Accountant' | 'Housekeeping' | 'Guest' | 'Maintenance' | 'Security';
 
 export interface AppUser {
     id: number;
     name: string;
     email: string;
-    role: AppRole;
+    role: AppRole | string;
     permissions: AppPermission[];
 }

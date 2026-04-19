@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
+import { ArrowPathIcon } from '@heroicons/react/24/outline';
 import { Input } from '../../components/Input';
 import { Table } from '../../components/Table';
 import { Pagination } from '../../components/Pagination';
@@ -19,22 +20,28 @@ export function LossPage() {
   const [amountMax, setAmountMax] = useState('');
   const [hasImage, setHasImage] = useState(false);
   const [page, setPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const loadLosses = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const data = await lossApi.getAll();
+      setRows(data);
+    } catch (error) {
+      const apiError = toApiError(error);
+      toast.error(apiError.message || 'Failed to load loss records');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    void (async () => {
-      try {
-        const data = await lossApi.getAll();
-        setRows(data);
-      } catch (error) {
-        const apiError = toApiError(error);
-        toast.error(apiError.message || 'Failed to load loss records');
-      }
-    })();
-  }, []);
+    void loadLosses();
+  }, [loadLosses]);
 
   const filtered = useMemo(() => {
     const nextRows = rows.filter((item) => {
-      const matchSearch = queryIncludes(item.id, search) || queryIncludes(item.item, search) || queryIncludes(item.room, search);
+      const matchSearch = queryIncludes(item.id, search) || queryIncludes(item.itemName, search) || queryIncludes(item.room, search);
       const matchFrom = !dateFrom || item.date >= dateFrom;
       const matchTo = !dateTo || item.date <= dateTo;
       const amount = item.penalty;
@@ -56,11 +63,13 @@ export function LossPage() {
     {
       key: 'evidence',
       label: 'Evidence',
-      render: (row: (typeof filtered)[number]) =>
-        row.evidence ? <img src={row.evidence} alt={row.id} className="h-14 w-20 rounded-lg object-cover" /> : <span className="text-xs text-slate-400">No image</span>,
+      isImg: true,
+      src: (row: (typeof filtered)[number]) => row.evidence ?? '',
+      render: () =>
+        <span className="text-xs text-slate-400">No image</span>
     },
     { key: 'room', label: 'Room', render: (row: (typeof filtered)[number]) => row.room },
-    { key: 'item', label: 'Item', render: (row: (typeof filtered)[number]) => row.item },
+    { key: 'item', label: 'Item', render: (row: (typeof filtered)[number]) => row.itemName },
     { key: 'quantity', label: 'Quantity', render: (row: (typeof filtered)[number]) => row.quantity },
     { key: 'penalty', label: 'Penalty', render: (row: (typeof filtered)[number]) => formatCurrency(row.penalty) },
     { key: 'description', label: 'Description', render: (row: (typeof filtered)[number]) => row.description },
@@ -70,9 +79,18 @@ export function LossPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h2 className="text-2xl font-bold text-slate-900">Loss & Compensation</h2>
-        <p className="text-sm text-slate-500">Track penalties with evidence, amount and room mapping.</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-900">Loss & Compensation</h2>
+          <p className="text-sm text-slate-500">Track penalties with evidence, amount and room mapping.</p>
+        </div>
+        <button
+          onClick={() => void loadLosses()}
+          className="p-2 text-slate-500 hover:text-cyan-600 transition bg-white border border-slate-200 rounded-xl"
+          title="Refresh"
+        >
+          <ArrowPathIcon className={`h-5 w-5 ${isLoading ? 'animate-spin' : ''}`} />
+        </button>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">

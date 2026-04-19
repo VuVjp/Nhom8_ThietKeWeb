@@ -18,6 +18,8 @@ interface RoomDto {
     Status?: string;
     cleaningStatus?: string;
     CleaningStatus?: string;
+    cleaningRequested?: boolean;
+    CleaningRequested?: boolean;
 }
 
 export interface RoomPayload {
@@ -41,6 +43,7 @@ function normalizeRoom(dto: RoomDto): Room {
         roomTypeId: Number(dto.roomTypeId ?? dto.RoomTypeId ?? 0) || undefined,
         status: String(dto.status ?? dto.Status ?? 'Available') as Room['status'],
         cleaningStatus: String(dto.cleaningStatus ?? dto.CleaningStatus ?? 'Clean') as Room['cleaningStatus'],
+        cleaningRequested: Boolean(dto.cleaningRequested ?? dto.CleaningRequested ?? false),
     };
 }
 
@@ -50,8 +53,19 @@ export const roomsApi = {
         return data.map(normalizeRoom);
     },
 
+    async requestCleaning(id: number, request: boolean) {
+        await httpClient.patch(`rooms/${id}/request-cleaning`, request, {
+            headers: { 'Content-Type': 'application/json' },
+        });
+    },
+
     async getByStatus(status: Room['status']) {
         const { data } = await httpClient.get<RoomDto[]>(`rooms/status/${status}`);
+        return data.map(normalizeRoom);
+    },
+
+    async getByStatusWithCleaningRequested(status: Room['status'], includeCleaningRequested: boolean) {
+        const { data } = await httpClient.get<RoomDto[]>(`rooms/status/${status}/?includeCleaningRequested=${includeCleaningRequested}`);
         return data.map(normalizeRoom);
     },
 
@@ -84,6 +98,11 @@ export const roomsApi = {
         await httpClient.patch(`rooms/${id}/cleaning-status`, cleaningStatus, {
             headers: { 'Content-Type': 'application/json' },
         });
+    },
+
+    async getByCleaningStatus(cleaningStatus: Room['cleaningStatus']) {
+        const { data } = await httpClient.get<RoomDto[]>(`rooms/cleaning-status/${cleaningStatus}`);
+        return data.map(normalizeRoom);
     },
 
     async remove(id: number) {

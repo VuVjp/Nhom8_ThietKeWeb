@@ -10,7 +10,7 @@ public class CloudinaryService : ICloudinaryService
         _cloudinary = cloudinary;
     }
 
-    public async Task<string> UploadImageAsync(IFormFile file, string folder, string publicId = null!)
+    public async Task<string> UploadImageAsync(IFormFile file, string folder, string? publicId = null)
     {
         if (file == null || file.Length == 0)
             return null!;
@@ -21,10 +21,6 @@ public class CloudinaryService : ICloudinaryService
             File = new FileDescription(file.FileName, stream),
             Folder = folder,
             PublicId = publicId,
-            Transformation = new Transformation()
-                .Width(500)
-                .Height(500)
-                .Crop("fill"),
             UseFilename = false,
             UniqueFilename = true,
             Overwrite = true
