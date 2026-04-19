@@ -78,7 +78,7 @@ public class EquipmentsController : ControllerBase
     public async Task<IActionResult> Update(int id, [FromForm] UpdateEquipmentDto dto)
     {
         var ok = await _service.UpdateAsync(id, dto);
-        
+
         if (!ok)
         {
             return NotFound();

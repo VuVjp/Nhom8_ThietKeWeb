@@ -1,3 +1,5 @@
+using HotelManagement.Dtos;
+using HotelManagement.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
@@ -6,10 +8,35 @@ using System.Security.Claims;
 public class ArticlesController : ControllerBase
 {
     private readonly IArticleService _service;
+    private readonly INotificationService _notificationService;
 
-    public ArticlesController(IArticleService service)
+    public ArticlesController(IArticleService service, INotificationService notificationService)
     {
         _service = service;
+        _notificationService = notificationService;
+    }
+
+    private async Task NotifyRolesAsync(IEnumerable<RoleName> roles, CreateNotificationDto dto)
+    {
+        var tasks = roles.Distinct().Select(role => _notificationService.SendByRoleAsync(role, dto));
+        await Task.WhenAll(tasks);
+    }
+
+    private async Task TryNotifyRolesAsync(IEnumerable<RoleName> roles, CreateNotificationDto dto)
+    {
+        try
+        {
+            await NotifyRolesAsync(roles, dto);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Notification Warning] {ex.Message}");
+        }
+    }
+
+    private static IEnumerable<RoleName> GetRoles()
+    {
+        return new[] { RoleName.Admin, RoleName.Manager };
     }
 
     [HttpGet]
@@ -38,6 +65,17 @@ public class ArticlesController : ControllerBase
 
         var ok = await _service.CreateAsync(dto);
         if (!ok) return BadRequest();
+
+        await TryNotifyRolesAsync(
+            GetRoles(),
+            new CreateNotificationDto
+            {
+                Title = "Article created",
+                Content = $"Article {dto.Title} was created.",
+                Type = NotificationAction.ArticleCreated,
+                ReferenceLink = "admin/articles"
+            });
+
         return Ok();
     }
 
@@ -47,6 +85,17 @@ public class ArticlesController : ControllerBase
     {
         var ok = await _service.UpdateAsync(id, dto);
         if (!ok) return NotFound();
+
+        await TryNotifyRolesAsync(
+            GetRoles(),
+            new CreateNotificationDto
+            {
+                Title = "Article updated",
+                Content = $"Article #{id} was updated.",
+                Type = NotificationAction.ArticleUpdated,
+                ReferenceLink = $"admin/articles/{id}"
+            });
+
         return NoContent();
     }
 
@@ -56,6 +105,17 @@ public class ArticlesController : ControllerBase
     {
         var ok = await _service.DeleteAsync(id);
         if (!ok) return NotFound();
+
+        await TryNotifyRolesAsync(
+            GetRoles(),
+            new CreateNotificationDto
+            {
+                Title = "Article deleted",
+                Content = $"Article #{id} was deleted.",
+                Type = NotificationAction.ArticleDeleted,
+                ReferenceLink = "admin/articles"
+            });
+
         return NoContent();
     }
 
@@ -65,6 +125,17 @@ public class ArticlesController : ControllerBase
     {
         var ok = await _service.RestoreAsync(id);
         if (!ok) return NotFound();
+
+        await TryNotifyRolesAsync(
+            GetRoles(),
+            new CreateNotificationDto
+            {
+                Title = "Article restored",
+                Content = $"Article #{id} was restored.",
+                Type = NotificationAction.ArticleRestored,
+                ReferenceLink = $"admin/articles/{id}"
+            });
+
         return NoContent();
     }
 
@@ -74,6 +145,17 @@ public class ArticlesController : ControllerBase
     {
         var ok = await _service.UpdateThumbnailAsync(id, dto);
         if (!ok) return NotFound();
+
+        await TryNotifyRolesAsync(
+            GetRoles(),
+            new CreateNotificationDto
+            {
+                Title = "Article thumbnail updated",
+                Content = $"Article #{id} thumbnail was updated.",
+                Type = NotificationAction.ArticleThumbnailUpdated,
+                ReferenceLink = $"admin/articles/{id}"
+            });
+
         return NoContent();
     }
 

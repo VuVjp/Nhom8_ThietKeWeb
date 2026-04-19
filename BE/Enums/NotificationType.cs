@@ -52,5 +52,22 @@ public enum NotificationAction
     RoomInventoryCreated,
     RoomInventoryUpdated,
     RoomInventoryActivated,
-    RoomInventoryCloned
+    RoomInventoryCloned,
+    ArticleCreated,
+    ArticleUpdated,
+    ArticleDeleted,
+    ArticleRestored,
+    ArticleThumbnailUpdated,
+    AmenityCreated,
+    AmenityUpdated,
+    AmenityActivated,
+    AmenityDeactivated,
+    AttractionCreated,
+    AttractionUpdated,
+    AttractionDeleted,
+    ReviewDeleted,
+    ReviewActivated,
+    ReviewDeactivated,
+    PermissionAssigned,
+    RolePermissionsUpdated
 }

@@ -67,6 +67,15 @@ public class AuditLogRepository : IAuditLogRepository
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<int> DeleteOlderThanAsync(DateTime cutoffDate, CancellationToken cancellationToken = default)
+    {
+        var normalizedCutoff = cutoffDate.Date;
+
+        return await _context.AuditLogs
+            .Where(x => x.AuditDate < normalizedCutoff)
+            .ExecuteDeleteAsync(cancellationToken);
+    }
+
     private AuditLogBucketPayload DeserializePayload(string? json)
     {
         if (string.IsNullOrWhiteSpace(json))
