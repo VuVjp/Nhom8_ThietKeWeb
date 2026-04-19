@@ -435,7 +435,12 @@ public class BookingService : IBookingService
             Status = string.IsNullOrWhiteSpace(booking.Status) ? "Pending" : booking.Status,
             TotalAmount = booking.FinalPrice,
             RoomNumbers = orderedDetails.Where(item => item.RoomId.HasValue).Select(item => item.Room?.RoomNumber ?? string.Empty).Distinct().ToList(),
-            RoomIds = orderedDetails.Where(item => item.RoomId.HasValue).Select(item => item.RoomId.Value).Distinct().ToList(),
+            RoomIds = orderedDetails
+                .Select(item => item.RoomId)
+                .Where(id => id.HasValue)
+                .Select(id => id.GetValueOrDefault())
+                .Distinct()
+                .ToList(),
         };
     }
 

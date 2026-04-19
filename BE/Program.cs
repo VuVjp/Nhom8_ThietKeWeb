@@ -27,7 +27,9 @@ builder.Services.AddControllers()
     });
 
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        x => x.MigrationsAssembly("BE")));
 
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]!);
@@ -170,7 +172,7 @@ builder.Services.AddScoped<IVoucherRepository, VoucherRepository>();
 builder.Services.AddScoped<IVoucherService, VoucherService>();
 builder.Services.AddScoped<IBookingRepository, BookingRepository>();
 builder.Services.AddScoped<IBookingService, BookingService>();
-builder.Services.AddHostedService<BookingAutoCancelBackgroundService>();
+builder.Services.AddHostedService<BookingAutoCancelBackgroundService>(); // TODO: Fix database schema issue with Memberships.is_active
 builder.Services.AddScoped<ILossAndDamageRepository, LossAndDamageRepository>();
 builder.Services.AddScoped<ILossAndDamageService, LossAndDamageService>();
 builder.Services.AddScoped<IRoomTypeRepository, RoomTypeRepository>();

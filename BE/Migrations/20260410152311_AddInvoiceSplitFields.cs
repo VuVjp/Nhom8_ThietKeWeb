@@ -1,8 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace BE.Data.Migrations
+namespace BE.Migrations
 {
     /// <inheritdoc />
     public partial class AddInvoiceSplitFields : Migration

@@ -234,6 +234,7 @@ public class AppDbContext : DbContext
             e.Property(x => x.TierName).HasColumnName("tier_name");
             e.Property(x => x.MinPoints).HasColumnName("min_points");
             e.Property(x => x.DiscountPercent).HasColumnName("discount_percent").HasColumnType("decimal(5,2)");
+            e.Property(x => x.IsActive).HasColumnName("is_active");
         });
 
         modelBuilder.Entity<OrderServiceDetail>(e =>
