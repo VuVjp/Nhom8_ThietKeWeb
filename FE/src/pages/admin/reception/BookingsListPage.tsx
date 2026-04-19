@@ -36,7 +36,7 @@ export function BookingsListPage() {
     const [editCheckOutDate, setEditCheckOutDate] = useState('');
     const [editSelectedRoomIds, setEditSelectedRoomIds] = useState<number[]>([]);
     const [editAvailableRooms, setEditAvailableRooms] = useState<RoomAvailability[]>([]);
-    const [isLoadingEditRooms, setIsLoadingEditRooms] = useState(false);
+    const [isLoadingEditRooms] = useState(false);
     const [isSavingEdit, setIsSavingEdit] = useState(false);
 
     const loadBookings = useCallback(async () => {

@@ -103,19 +103,6 @@ export function OrderServicesListPage() {
         }
     };
 
-    const getStatusColor = (status: any) => {
-        const s = status?.toString();
-        switch (s) {
-            case 'Completed':
-            case '1':
-                return 'text-emerald-700 bg-emerald-50 border-emerald-200';
-            case 'Cancelled':
-            case '2':
-                return 'text-red-700 bg-red-50 border-red-200';
-            default: // Pending / 0
-                return 'text-amber-700 bg-amber-50 border-amber-200';
-        }
-    };
 
     const columns = [
         { key: 'id', label: 'Order ID', render: (row: OrderService) => `#${row.id}` },

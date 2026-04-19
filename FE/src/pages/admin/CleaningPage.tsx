@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
-import { PencilSquareIcon, CheckCircleIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import { PencilSquareIcon, CheckCircleIcon, ExclamationTriangleIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import type { InventoryItem, LossRecord, Room } from '../../types/models';
 import { Select } from '../../components/Select';
 import { Modal } from '../../components/Modal';
@@ -11,7 +11,6 @@ import { toApiError } from '../../api/httpClient';
 import { roomsApi } from '../../api/roomsApi';
 import { roomInventoriesApi } from '../../api/roomInventoriesApi';
 import { lossApi } from '../../api/lossApi';
-import { BrushCleaning } from 'lucide-react';
 import { ImageUpload } from '../../components/ImageUpload';
 
 interface CleaningRoomState {
@@ -292,28 +291,6 @@ export function CleaningPage() {
             }
         })();
     };
-
-    const markCleaningRequested = () => {
-        if (!selectedCleaningRoom) {
-            toast.error('Please select a room that is already in cleaning');
-            return;
-        }
-        if (!ensure('UPDATE_CLEANING', 'finish room cleaning')) {
-            return;
-        }
-        void (async () => {
-            setIsUpdatingStatus(true);
-            try {
-                await roomsApi.changeCleaningStatus(selectedCleaningRoom.id, 'Cleaning');
-            } catch (error) {
-                const apiError = toApiError(error);
-                toast.error(apiError.message || 'Failed to mark cleaning requested');
-            } finally {
-                selectedCleaningRoom.cleaningStatus = 'Cleaning';
-                setIsUpdatingStatus(false);
-            }
-        })();
-    }
 
     const completeCleaning = () => {
         if (!selectedCleaningRoom) {

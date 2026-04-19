@@ -6,7 +6,6 @@ import { reviewsApi, type ReviewItem } from '../../api/reviewsApi';
 import { roomTypesApi, type RoomTypeItem } from '../../api/roomTypesApi';
 import { toApiError } from '../../api/httpClient';
 import { Table } from '../../components/Table';
-import { Select } from '../../components/Select';
 import { Input } from '../../components/Input';
 import { Pagination } from '../../components/Pagination';
 import { Badge } from '../../components/Badge';

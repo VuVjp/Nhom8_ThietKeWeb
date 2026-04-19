@@ -87,7 +87,7 @@ function getUserBaseFromToken(): Omit<AppUser, 'permissions'> | null {
         id: Number(idClaim ?? Date.now()),
         name: String(nameClaim),
         email: String(emailClaim ?? ''),
-        role,
+        role: String(roleClaim ?? 'Guest'),
     };
 }
 

@@ -49,15 +49,15 @@ export function Table<T>({ columns, rows }: TableProps<T>) {
                             onClick={() => {
                               setPreviewImage({
                                 src: imageSrc,
-                                title: column.label,
+                                title: String(column.label),
                               });
                             }}
                             className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white p-1 transition hover:border-sky-300 hover:shadow-sm"
-                            aria-label={`Preview ${column.label}`}
+                            aria-label={`Preview ${String(column.label)}`}
                           >
                             <img
                               src={imageSrc}
-                              alt={column.label}
+                              alt={String(column.label)}
                               className="h-16 w-16 rounded-md object-cover"
                             />
                           </button>

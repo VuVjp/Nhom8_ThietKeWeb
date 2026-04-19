@@ -71,7 +71,6 @@ export function ArticlesPage() {
 
     // ── Granular Zustand selectors (avoids `store` object as dep) ──────────
     const rawData = useArticleStore((s) => s.rawData);
-    const isLoaded = useArticleStore((s) => s.isLoaded);
     const isLoading = useArticleStore((s) => s.isLoading);
     const page = useArticleStore((s) => s.page);
     const pageSize = useArticleStore((s) => s.pageSize);

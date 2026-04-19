@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { ArrowLeftIcon, PrinterIcon, ArrowPathIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import { ArrowPathIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import invoicesApi from '../../api/invoicesApi';
 import type { InvoiceDetail } from '../../types/invoices';
 import { toApiError } from '../../api/httpClient';
-import { Badge } from '../../components/Badge';
 import { Modal } from '../../components/Modal';
 
 export function InvoiceDetailPage() {

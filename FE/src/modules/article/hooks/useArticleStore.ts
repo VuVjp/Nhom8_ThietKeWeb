@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { ArticleCategory, ArticleItem, ArticleListParams } from '../types/article.types';
+import type { ArticleCategory, ArticleItem } from '../types/article.types';
 
 // ─── Article Store ────────────────────────────────────────────────────────────
 
@@ -35,7 +35,7 @@ const defaultFilters: ArticleFilters = {
     sortDir: 'desc',
 };
 
-export const useArticleStore = create<ArticleState>((set, get) => ({
+export const useArticleStore = create<ArticleState>((set) => ({
     rawData: [],
     isLoaded: false,
     page: 1,

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { EyeIcon, PlusIcon, PencilSquareIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+import { EyeIcon, PlusIcon, PencilSquareIcon, ArrowPathIcon, ArrowUturnLeftIcon } from '@heroicons/react/24/outline';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { Input } from '../../components/Input';
@@ -17,7 +17,6 @@ import { equipmentsApi, type EquipmentItem } from '../../api/equipmentsApi';
 import { roomInventoriesApi } from '../../api/roomInventoriesApi';
 import { paginate, queryIncludes, sortBy } from '../../utils/table';
 import { usePermissionCheck } from '../../hooks/usePermissionCheck';
-import { BrushCleaning } from 'lucide-react';
 
 interface CreateRoomDraft {
     roomNumber: string;
@@ -290,7 +289,7 @@ export function RoomsPage() {
                                 }
                             })();
                         }}>
-                        <BrushCleaning className={`h-4 w-4`} /> {row.cleaningRequested === true ? 'Cancel Request' : 'Request Cleaning'}
+                        <ArrowUturnLeftIcon className={`h-4 w-4`} /> {row.cleaningRequested === true ? 'Cancel Request' : 'Request Cleaning'}
                     </button>
                 </div>
             ),

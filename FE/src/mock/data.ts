@@ -19,6 +19,7 @@ export const roomsSeed: Room[] = Array.from({ length: 24 }).map((_, idx) => ({
   roomType: roomTypes[idx % roomTypes.length],
   status: roomStatuses[idx % roomStatuses.length],
   cleaningStatus: cleaningStates[idx % cleaningStates.length],
+  cleaningRequested: false,
 }));
 
 const categories = ['Linen', 'Bathroom', 'Electronics', 'Minibar'] as const;
@@ -47,7 +48,7 @@ export const lossSeed: LossRecord[] = Array.from({ length: 18 }).map((_, idx) =>
   id: `LS-${202 + idx}`,
   evidence: `https://picsum.photos/seed/loss-${idx + 1}/120/80`,
   room: `${7 + (idx % 5)}0${1 + (idx % 8)}`,
-  item: ['Towel', 'Hair Dryer', 'Wine Glass', 'Bathrobe'][idx % 4],
+  itemName: ['Towel', 'Hair Dryer', 'Wine Glass', 'Bathrobe'][idx % 4],
   quantity: 1 + (idx % 3),
   penalty: 40 + idx * 12,
   description: 'Guest-reported damage with housekeeping confirmation',

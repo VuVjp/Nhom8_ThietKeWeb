@@ -1,23 +1,13 @@
 import Heading from '@tiptap/extension-heading';
 
-function generateSlug(text: string): string {
-    return text
-        .toString()
-        .toLowerCase()
-        .trim()
-        .replace(/\s+/g, '-')       // Replace spaces with -
-        .replace(/[^\w-]+/g, '')     // Remove all non-word chars
-        .replace(/--+/g, '-');       // Replace multiple - with single -
-}
-
 export const CustomHeading = Heading.extend({
     addAttributes() {
         return {
             ...this.parent?.(),
             id: {
                 default: null,
-                parseHTML: element => element.getAttribute('id'),
-                renderHTML: attributes => {
+                parseHTML: (element: HTMLElement) => element.getAttribute('id'),
+                renderHTML: (attributes: Record<string, unknown>) => {
                     if (!attributes.id) {
                         return {};
                     }

@@ -2,9 +2,6 @@ import { httpClient } from '../../../api/httpClient';
 import type {
     ArticleCategory,
     ArticleItem,
-    ArticleListParams,
-    ArticlePaginatedResult,
-    ArticleStatus,
     CreateArticlePayload,
     UpdateArticlePayload,
 } from '../types/article.types';
