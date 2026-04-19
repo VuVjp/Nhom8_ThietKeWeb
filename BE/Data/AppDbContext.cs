@@ -141,16 +141,12 @@ public class AppDbContext : DbContext
         {
             e.Property(x => x.Id).HasColumnName("id");
             e.Property(x => x.UserId).HasColumnName("user_id");
-            e.Property(x => x.Action).HasColumnName("action");
-            e.Property(x => x.TableName).HasColumnName("table_name");
-            e.Property(x => x.RecordId).HasColumnName("record_id");
-            e.Property(x => x.OldValue).HasColumnName("old_value");
-            e.Property(x => x.NewValue).HasColumnName("new_value");
-            e.Property(x => x.CreatedAt).HasColumnName("created_at");
+            e.Property(x => x.AuditDate).HasColumnName("audit_date").HasColumnType("date");
+            e.Property(x => x.EventJson).HasColumnName("event_json");
+            e.Property(x => x.LastUpdatedAt).HasColumnName("last_updated_at");
 
-            e.HasIndex(x => x.CreatedAt);
-            e.HasIndex(x => x.UserId);
-            e.HasIndex(x => new { x.TableName, x.RecordId });
+            e.HasIndex(x => new { x.AuditDate, x.UserId }).IsUnique();
+            e.HasIndex(x => x.LastUpdatedAt);
         });
 
         modelBuilder.Entity<BookingDetail>(e =>

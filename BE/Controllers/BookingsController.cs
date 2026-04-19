@@ -9,10 +9,36 @@ namespace HotelManagement.Controllers;
 public class BookingsController : ControllerBase
 {
     private readonly IBookingService _service;
+    private readonly INotificationService _notificationService;
 
-    public BookingsController(IBookingService service)
+    public BookingsController(IBookingService service, INotificationService notificationService)
     {
         _service = service;
+        _notificationService = notificationService;
+    }
+
+    private async Task NotifyRolesAsync(IEnumerable<RoleName> roles, CreateNotificationDto dto)
+    {
+        var tasks = roles.Distinct().Select(role => _notificationService.SendByRoleAsync(role, dto));
+        await Task.WhenAll(tasks);
+    }
+
+    private async Task TryNotifyRolesAsync(IEnumerable<RoleName> roles, CreateNotificationDto dto)
+    {
+        try
+        {
+            await NotifyRolesAsync(roles, dto);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Notification Warning] {ex.Message}");
+        }
+    }
+
+    private static bool IsOperationalBookingStatus(string status)
+    {
+        var normalized = status.Trim().ToUpperInvariant();
+        return normalized is "CHECKIN" or "CHECKEDIN" or "CHECKOUT" or "CHECKEDOUT";
     }
 
     [HttpGet("available-rooms")]
@@ -26,6 +52,17 @@ public class BookingsController : ControllerBase
     public async Task<IActionResult> Create([FromBody] CreateBookingDto dto)
     {
         var created = await _service.CreateBookingAsync(dto);
+
+        await TryNotifyRolesAsync(
+            new[] { RoleName.Admin, RoleName.Manager },
+            new CreateNotificationDto
+            {
+                Title = "New booking created",
+                Content = $"Booking #{created.Id} for {created.GuestName} from {created.CheckInDate:yyyy-MM-dd} to {created.CheckOutDate:yyyy-MM-dd}.",
+                Type = NotificationAction.BookingCreated,
+                ReferenceLink = "admin/bookings"
+            });
+
         return Ok(created);
     }
 
@@ -44,6 +81,17 @@ public class BookingsController : ControllerBase
     public async Task<IActionResult> Update(int id, [FromBody] UpdateBookingDto dto)
     {
         var updated = await _service.UpdateBookingAsync(id, dto);
+
+        await TryNotifyRolesAsync(
+            new[] { RoleName.Admin, RoleName.Manager },
+            new CreateNotificationDto
+            {
+                Title = "Booking updated",
+                Content = $"Booking #{updated.Id} was updated for {updated.GuestName}.",
+                Type = NotificationAction.BookingUpdated,
+                ReferenceLink = $"admin/bookings/{updated.Id}"
+            });
+
         return Ok(updated);
     }
 
@@ -91,6 +139,22 @@ public class BookingsController : ControllerBase
             {
                 return NotFound();
             }
+
+            var rolesToNotify = new List<RoleName> { RoleName.Admin, RoleName.Manager, RoleName.Receptionist };
+            if (IsOperationalBookingStatus(dto.Status))
+            {
+                rolesToNotify.Add(RoleName.Housekeeping);
+            }
+
+            await TryNotifyRolesAsync(
+                rolesToNotify,
+                new CreateNotificationDto
+                {
+                    Title = "Booking status changed",
+                    Content = $"Booking #{id} status changed to {dto.Status}.",
+                    Type = NotificationAction.BookingStatusChanged,
+                    ReferenceLink = $"admin/bookings/{id}"
+                });
 
             return NoContent();
         }

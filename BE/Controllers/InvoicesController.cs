@@ -9,10 +9,30 @@ namespace HotelManagement.Controllers;
 public class InvoicesController : ControllerBase
 {
     private readonly IInvoiceService _invoiceService;
+    private readonly INotificationService _notificationService;
 
-    public InvoicesController(IInvoiceService invoiceService)
+    public InvoicesController(IInvoiceService invoiceService, INotificationService notificationService)
     {
         _invoiceService = invoiceService;
+        _notificationService = notificationService;
+    }
+
+    private async Task NotifyRolesAsync(IEnumerable<RoleName> roles, CreateNotificationDto dto)
+    {
+        var tasks = roles.Distinct().Select(role => _notificationService.SendByRoleAsync(role, dto));
+        await Task.WhenAll(tasks);
+    }
+
+    private async Task TryNotifyRolesAsync(IEnumerable<RoleName> roles, CreateNotificationDto dto)
+    {
+        try
+        {
+            await NotifyRolesAsync(roles, dto);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Notification Warning] {ex.Message}");
+        }
     }
 
     [HttpGet]
@@ -131,6 +151,17 @@ public class InvoicesController : ControllerBase
     {
         var ok = await _invoiceService.SplitInvoiceAsync(id);
         if (!ok) return BadRequest("Could not split invoice. Ensure it is a multi-room invoice.");
+
+        await TryNotifyRolesAsync(
+            new[] { RoleName.Admin, RoleName.Manager, RoleName.Accountant },
+            new CreateNotificationDto
+            {
+                Title = "Invoice split",
+                Content = $"Invoice #{id} has been split by room.",
+                Type = NotificationAction.InvoiceSplit,
+                ReferenceLink = "admin/invoices"
+            });
+
         return Ok();
     }
 
@@ -139,6 +170,17 @@ public class InvoicesController : ControllerBase
     {
         var ok = await _invoiceService.SplitMultipleAsync(id, roomDetailIds);
         if (!ok) return BadRequest("Could not split selected rooms. Ensure you are not moving all rooms.");
+
+        await TryNotifyRolesAsync(
+            new[] { RoleName.Admin, RoleName.Manager, RoleName.Accountant },
+            new CreateNotificationDto
+            {
+                Title = "Invoice split for selected rooms",
+                Content = $"Invoice #{id} was split for {roomDetailIds.Count} room detail(s).",
+                Type = NotificationAction.InvoiceSplit,
+                ReferenceLink = "admin/invoices"
+            });
+
         return Ok();
     }
 
@@ -147,6 +189,17 @@ public class InvoicesController : ControllerBase
     {
         var ok = await _invoiceService.CompleteInvoiceByIdAsync(id);
         if (!ok) return BadRequest("Could not complete invoice. It may already be completed or not exist.");
+
+        await TryNotifyRolesAsync(
+            new[] { RoleName.Admin, RoleName.Manager, RoleName.Accountant },
+            new CreateNotificationDto
+            {
+                Title = "Invoice completed",
+                Content = $"Invoice #{id} was marked as completed.",
+                Type = NotificationAction.InvoiceCompleted,
+                ReferenceLink = $"admin/invoices/{id}"
+            });
+
         return Ok();
     }
 

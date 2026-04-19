@@ -9,10 +9,35 @@ namespace HotelManagement.Controllers;
 public class VouchersController : ControllerBase
 {
     private readonly IVoucherService _service;
+    private readonly INotificationService _notificationService;
 
-    public VouchersController(IVoucherService service)
+    public VouchersController(IVoucherService service, INotificationService notificationService)
     {
         _service = service;
+        _notificationService = notificationService;
+    }
+
+    private async Task NotifyRolesAsync(IEnumerable<RoleName> roles, CreateNotificationDto dto)
+    {
+        var tasks = roles.Distinct().Select(role => _notificationService.SendByRoleAsync(role, dto));
+        await Task.WhenAll(tasks);
+    }
+
+    private async Task TryNotifyRolesAsync(IEnumerable<RoleName> roles, CreateNotificationDto dto)
+    {
+        try
+        {
+            await NotifyRolesAsync(roles, dto);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Notification Warning] {ex.Message}");
+        }
+    }
+
+    private static IEnumerable<RoleName> GetVoucherRoles()
+    {
+        return new[] { RoleName.Admin, RoleName.Manager, RoleName.Accountant };
     }
 
     [HttpGet]
@@ -57,6 +82,16 @@ public class VouchersController : ControllerBase
             return BadRequest(new { message = "Failed to create voucher." });
         }
 
+        await TryNotifyRolesAsync(
+            GetVoucherRoles(),
+            new CreateNotificationDto
+            {
+                Title = "Voucher created",
+                Content = $"Voucher {dto.Code} was created with {dto.DiscountType} discount.",
+                Type = NotificationAction.VoucherCreated,
+                ReferenceLink = "admin/vouchers"
+            });
+
         return Ok();
     }
 
@@ -70,6 +105,16 @@ public class VouchersController : ControllerBase
             return NotFound();
         }
 
+        await TryNotifyRolesAsync(
+            GetVoucherRoles(),
+            new CreateNotificationDto
+            {
+                Title = "Voucher updated",
+                Content = $"Voucher #{id} was updated.",
+                Type = NotificationAction.VoucherUpdated,
+                ReferenceLink = $"admin/vouchers/{id}"
+            });
+
         return NoContent();
     }
 
@@ -82,6 +127,19 @@ public class VouchersController : ControllerBase
         {
             return NotFound();
         }
+
+        var voucher = await _service.GetByIdAsync(id);
+        var isActive = voucher?.IsActive ?? true;
+
+        await TryNotifyRolesAsync(
+            GetVoucherRoles(),
+            new CreateNotificationDto
+            {
+                Title = isActive ? "Voucher activated" : "Voucher deactivated",
+                Content = $"Voucher #{id} is now {(isActive ? "active" : "inactive")}.",
+                Type = isActive ? NotificationAction.VoucherActivated : NotificationAction.VoucherDeactivated,
+                ReferenceLink = $"admin/vouchers/{id}"
+            });
 
         return Ok(new { message = "Voucher active status toggled successfully." });
     }

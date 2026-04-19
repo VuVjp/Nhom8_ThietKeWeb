@@ -40,7 +40,7 @@ export interface UpdateRolePermissionsPayload {
 
 export const rolesApi = {
     async getAll() {
-        const { data } = await httpClient.get<RoleDto[]>('roles');
+        const { data } = await httpClient.get<RoleDto[]>('permissions/roles');
         return data.map(
             (item): RoleItem => ({
                 id: Number(item.Id ?? item.id ?? 0),
@@ -51,22 +51,22 @@ export const rolesApi = {
     },
 
     async getAllPermissions() {
-        const { data } = await httpClient.get<string[]>('roles/permissions');
+        const { data } = await httpClient.get<string[]>('permissions/catalog');
         return normalizePermissions(data);
     },
 
     async assignPermission(payload: AssignPermissionPayload) {
-        await httpClient.post('roles/assign-permission', payload);
+        await httpClient.post('permissions/assign', payload);
     },
 
     async updateRolePermissions(roleId: number, payload: UpdateRolePermissionsPayload) {
-        await httpClient.put(`roles/${roleId}/permissions`, {
+        await httpClient.put(`permissions/roles/${roleId}`, {
             permissionNames: normalizePermissions(payload.permissionNames),
         });
     },
 
     async getMyPermissions() {
-        const { data } = await httpClient.get<string[]>('roles/my-permissions');
+        const { data } = await httpClient.get<string[]>('permissions/my');
         return normalizePermissions(data);
     },
 };

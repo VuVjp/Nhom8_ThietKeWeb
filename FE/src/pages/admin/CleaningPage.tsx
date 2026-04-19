@@ -12,6 +12,7 @@ import { roomsApi } from '../../api/roomsApi';
 import { roomInventoriesApi } from '../../api/roomInventoriesApi';
 import { lossApi } from '../../api/lossApi';
 import { ImageUpload } from '../../components/ImageUpload';
+import { BrushCleaningIcon } from 'lucide-react';
 
 interface CleaningRoomState {
     room: Room;
@@ -503,7 +504,7 @@ export function CleaningPage() {
                                 onClick={completeInspection}
                                 disabled={!selectedInspectingRoom || isUpdatingStatus || isSendingPendingReports}
                             >
-                                <ArrowPathIcon className={`h-4 w-4 ${isUpdatingStatus ? 'animate-spin' : ''}`} /> {isUpdatingStatus ? 'Updating...' : 'Move to Cleaning'}
+                                <BrushCleaningIcon className={`h-4 w-4 ${isUpdatingStatus ? 'animate-spin' : ''}`} /> {isUpdatingStatus ? 'Updating...' : 'Move to Cleaning'}
                             </button>
                         </div>
                     </div>

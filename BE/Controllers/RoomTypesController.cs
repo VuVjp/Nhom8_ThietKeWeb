@@ -8,10 +8,35 @@ namespace HotelManagement.Controllers
     public class RoomTypesController : ControllerBase
     {
         private readonly IRoomTypeService _roomTypeService;
+        private readonly INotificationService _notificationService;
 
-        public RoomTypesController(IRoomTypeService roomTypeService)
+        public RoomTypesController(IRoomTypeService roomTypeService, INotificationService notificationService)
         {
             _roomTypeService = roomTypeService;
+            _notificationService = notificationService;
+        }
+
+        private async Task NotifyRolesAsync(IEnumerable<RoleName> roles, CreateNotificationDto dto)
+        {
+            var tasks = roles.Distinct().Select(role => _notificationService.SendByRoleAsync(role, dto));
+            await Task.WhenAll(tasks);
+        }
+
+        private async Task TryNotifyRolesAsync(IEnumerable<RoleName> roles, CreateNotificationDto dto)
+        {
+            try
+            {
+                await NotifyRolesAsync(roles, dto);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Notification Warning] {ex.Message}");
+            }
+        }
+
+        private static IEnumerable<RoleName> GetRoomTypeRoles()
+        {
+            return new[] { RoleName.Admin, RoleName.Manager };
         }
 
         [HttpGet]
@@ -39,6 +64,16 @@ namespace HotelManagement.Controllers
             if (!result)
                 return BadRequest(new { message = "Failed to create room type." });
 
+            await TryNotifyRolesAsync(
+                GetRoomTypeRoles(),
+                new CreateNotificationDto
+                {
+                    Title = "Room type created",
+                    Content = $"Room type {dto.Name} was created.",
+                    Type = NotificationAction.RoomTypeCreated,
+                    ReferenceLink = "admin/room-types"
+                });
+
             return Ok(new { message = "Room type created successfully." });
         }
 
@@ -49,6 +84,16 @@ namespace HotelManagement.Controllers
             var result = await _roomTypeService.UpdateRoomTypeAsync(id, dto);
             if (!result)
                 return NotFound(new { message = "Room type not found." });
+
+            await TryNotifyRolesAsync(
+                GetRoomTypeRoles(),
+                new CreateNotificationDto
+                {
+                    Title = "Room type updated",
+                    Content = $"Room type #{id} was updated.",
+                    Type = NotificationAction.RoomTypeUpdated,
+                    ReferenceLink = $"admin/room-types/{id}"
+                });
 
             return NoContent();
         }
@@ -61,6 +106,16 @@ namespace HotelManagement.Controllers
             if (!result)
                 return NotFound(new { message = "Room type or image not found." });
 
+            await TryNotifyRolesAsync(
+                GetRoomTypeRoles(),
+                new CreateNotificationDto
+                {
+                    Title = "Room type primary image changed",
+                    Content = $"Room type #{id} primary image was updated.",
+                    Type = NotificationAction.RoomTypePrimaryImageChanged,
+                    ReferenceLink = $"admin/room-types/{id}"
+                });
+
             return NoContent();
         }
 
@@ -71,6 +126,16 @@ namespace HotelManagement.Controllers
             var result = await _roomTypeService.ToggleActiveAsync(id);
             if (!result)
                 return NotFound(new { message = "Room type not found." });
+
+            await TryNotifyRolesAsync(
+                GetRoomTypeRoles(),
+                new CreateNotificationDto
+                {
+                    Title = "Room type active status changed",
+                    Content = $"Room type #{id} active status was toggled.",
+                    Type = NotificationAction.RoomTypeActivated,
+                    ReferenceLink = $"admin/room-types/{id}"
+                });
 
             return Ok(new { message = "Room type active status toggled successfully." });
         }
@@ -83,6 +148,16 @@ namespace HotelManagement.Controllers
             if (!result)
                 return NotFound(new { message = "Room type not found." });
 
+            await TryNotifyRolesAsync(
+                GetRoomTypeRoles(),
+                new CreateNotificationDto
+                {
+                    Title = "Room type image added",
+                    Content = $"An image was added to room type #{id}.",
+                    Type = NotificationAction.RoomTypeImageAdded,
+                    ReferenceLink = $"admin/room-types/{id}"
+                });
+
             return Ok(new { message = "Image added successfully." });
         }
 
@@ -94,6 +169,16 @@ namespace HotelManagement.Controllers
 
             if (!result)
                 return NotFound(new { message = "Image not found." });
+
+            await TryNotifyRolesAsync(
+                GetRoomTypeRoles(),
+                new CreateNotificationDto
+                {
+                    Title = "Room type image deleted",
+                    Content = $"Image #{imageId} was deleted from a room type.",
+                    Type = NotificationAction.RoomTypeImageDeleted,
+                    ReferenceLink = "admin/room-types"
+                });
 
             return NoContent();
         }
@@ -114,6 +199,16 @@ namespace HotelManagement.Controllers
             if (!result)
                 return NotFound(new { message = "Room type not found." });
 
+            await TryNotifyRolesAsync(
+                GetRoomTypeRoles(),
+                new CreateNotificationDto
+                {
+                    Title = "Room type amenity added",
+                    Content = $"Amenity #{dto.AmenityId} was added to room type #{id}.",
+                    Type = NotificationAction.RoomTypeAmenityAdded,
+                    ReferenceLink = $"admin/room-types/{id}"
+                });
+
             return Ok(new { message = "Amenity added successfully." });
         }
 
@@ -125,6 +220,16 @@ namespace HotelManagement.Controllers
             if (!result)
                 return NotFound(new { message = "Room type or amenities not found." });
 
+            await TryNotifyRolesAsync(
+                GetRoomTypeRoles(),
+                new CreateNotificationDto
+                {
+                    Title = "Room type amenities added",
+                    Content = $"{dto.AmenityIds.Count} amenity(ies) were added to room type #{id}.",
+                    Type = NotificationAction.RoomTypeAmenitiesAdded,
+                    ReferenceLink = $"admin/room-types/{id}"
+                });
+
             return Ok(new { message = "Amenities added successfully." });
         }
 
@@ -135,6 +240,16 @@ namespace HotelManagement.Controllers
             var result = await _roomTypeService.RemoveAmenityAsync(id, amenityId);
             if (!result)
                 return NotFound(new { message = "Room type amenity relation not found." });
+
+            await TryNotifyRolesAsync(
+                GetRoomTypeRoles(),
+                new CreateNotificationDto
+                {
+                    Title = "Room type amenity removed",
+                    Content = $"Amenity #{amenityId} was removed from room type #{id}.",
+                    Type = NotificationAction.RoomTypeAmenityRemoved,
+                    ReferenceLink = $"admin/room-types/{id}"
+                });
 
             return NoContent();
         }

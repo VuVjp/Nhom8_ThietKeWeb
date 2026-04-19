@@ -9,10 +9,35 @@ namespace HotelManagement.Controllers;
 public class ServicesController : ControllerBase
 {
     private readonly IServiceService _service;
+    private readonly INotificationService _notificationService;
 
-    public ServicesController(IServiceService service)
+    public ServicesController(IServiceService service, INotificationService notificationService)
     {
         _service = service;
+        _notificationService = notificationService;
+    }
+
+    private async Task NotifyRolesAsync(IEnumerable<RoleName> roles, CreateNotificationDto dto)
+    {
+        var tasks = roles.Distinct().Select(role => _notificationService.SendByRoleAsync(role, dto));
+        await Task.WhenAll(tasks);
+    }
+
+    private async Task TryNotifyRolesAsync(IEnumerable<RoleName> roles, CreateNotificationDto dto)
+    {
+        try
+        {
+            await NotifyRolesAsync(roles, dto);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Notification Warning] {ex.Message}");
+        }
+    }
+
+    private static IEnumerable<RoleName> GetServiceRoles()
+    {
+        return new[] { RoleName.Admin, RoleName.Manager };
     }
 
     [HttpGet]
@@ -37,6 +62,17 @@ public class ServicesController : ControllerBase
         {
             var ok = await _service.CreateAsync(dto);
             if (!ok) return BadRequest();
+
+            await TryNotifyRolesAsync(
+                GetServiceRoles(),
+                new CreateNotificationDto
+                {
+                    Title = "Service created",
+                    Content = $"Service {dto.Name} was created.",
+                    Type = NotificationAction.ServiceCreated,
+                    ReferenceLink = "admin/services"
+                });
+
             return Ok();
         }
         catch (ArgumentException ex)
@@ -53,6 +89,17 @@ public class ServicesController : ControllerBase
         {
             var ok = await _service.UpdateAsync(id, dto);
             if (!ok) return NotFound();
+
+            await TryNotifyRolesAsync(
+                GetServiceRoles(),
+                new CreateNotificationDto
+                {
+                    Title = "Service updated",
+                    Content = $"Service #{id} was updated.",
+                    Type = NotificationAction.ServiceUpdated,
+                    ReferenceLink = $"admin/services/{id}"
+                });
+
             return NoContent();
         }
         catch (ArgumentException ex)
@@ -67,6 +114,17 @@ public class ServicesController : ControllerBase
     {
         var ok = await _service.DeleteAsync(id);
         if (!ok) return NotFound();
+
+        await TryNotifyRolesAsync(
+            GetServiceRoles(),
+            new CreateNotificationDto
+            {
+                Title = "Service deleted",
+                Content = $"Service #{id} was deleted.",
+                Type = NotificationAction.ServiceDeleted,
+                ReferenceLink = "admin/services"
+            });
+
         return NoContent();
     }
 
@@ -76,6 +134,20 @@ public class ServicesController : ControllerBase
     {
         var ok = await _service.ToggleActiveAsync(id);
         if (!ok) return NotFound();
+
+        var service = await _service.GetByIdAsync(id);
+        var isActive = service?.IsActive ?? true;
+
+        await TryNotifyRolesAsync(
+            GetServiceRoles(),
+            new CreateNotificationDto
+            {
+                Title = isActive ? "Service activated" : "Service deactivated",
+                Content = $"Service #{id} is now {(isActive ? "active" : "inactive")}.",
+                Type = NotificationAction.ServiceActivated,
+                ReferenceLink = $"admin/services/{id}"
+            });
+
         return Ok(new { message = "Service active status toggled successfully." });
     }
 
@@ -85,6 +157,17 @@ public class ServicesController : ControllerBase
     {
         var ok = await _service.RestoreAsync(id);
         if (!ok) return NotFound();
+
+        await TryNotifyRolesAsync(
+            GetServiceRoles(),
+            new CreateNotificationDto
+            {
+                Title = "Service restored",
+                Content = $"Service #{id} was restored.",
+                Type = NotificationAction.ServiceRestored,
+                ReferenceLink = $"admin/services/{id}"
+            });
+
         return Ok(new { message = "Service restored successfully." });
     }
 }

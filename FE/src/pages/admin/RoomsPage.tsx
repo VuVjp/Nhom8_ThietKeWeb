@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { EyeIcon, PlusIcon, PencilSquareIcon, ArrowPathIcon, ArrowUturnLeftIcon } from '@heroicons/react/24/outline';
+import { EyeIcon, PlusIcon, PencilSquareIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { Input } from '../../components/Input';
@@ -17,6 +17,7 @@ import { equipmentsApi, type EquipmentItem } from '../../api/equipmentsApi';
 import { roomInventoriesApi } from '../../api/roomInventoriesApi';
 import { paginate, queryIncludes, sortBy } from '../../utils/table';
 import { usePermissionCheck } from '../../hooks/usePermissionCheck';
+import { BrushCleaningIcon } from 'lucide-react';
 
 interface CreateRoomDraft {
     roomNumber: string;
@@ -289,7 +290,7 @@ export function RoomsPage() {
                                 }
                             })();
                         }}>
-                        <ArrowUturnLeftIcon className={`h-4 w-4`} /> {row.cleaningRequested === true ? 'Cancel Request' : 'Request Cleaning'}
+                        <BrushCleaningIcon className={`h-4 w-4`} /> {row.cleaningRequested === true ? 'Cancel Request' : 'Request Cleaning'}
                     </button>
                 </div>
             ),
@@ -484,12 +485,12 @@ export function RoomsPage() {
 
     return (
         <div className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                     <h2 className="text-2xl font-bold text-slate-900">Room Management</h2>
                     <p className="text-sm text-slate-500">Manage status, cleaning and room inventory operations.</p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2 sm:justify-end">
                     <button
                         onClick={() => void loadRooms()}
                         className="p-2 text-slate-500 hover:text-cyan-600 transition bg-white border border-slate-200 rounded-xl"
@@ -512,7 +513,7 @@ export function RoomsPage() {
                             setCreateMode('single');
                             setOpenCreate(true);
                         }}
-                        className="inline-flex items-center gap-2 rounded-xl bg-cyan-700 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-800"
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-cyan-700 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-800 sm:w-auto"
                     >
                         <PlusIcon className="h-4 w-4" /> Create Room
                     </button>
@@ -531,7 +532,7 @@ export function RoomsPage() {
                             setCreateMode('bulk');
                             setOpenCreate(true);
                         }}
-                        className="inline-flex items-center gap-2 rounded-xl border border-cyan-700 px-4 py-2 text-sm font-semibold text-cyan-700 hover:bg-cyan-50"
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-cyan-700 px-4 py-2 text-sm font-semibold text-cyan-700 hover:bg-cyan-50 sm:w-auto"
                     >
                         <PlusIcon className="h-4 w-4" /> Bulk Create
                     </button>
@@ -603,29 +604,29 @@ export function RoomsPage() {
                                         <div className="grid gap-3 sm:grid-cols-3">
                                             <div className="space-y-1.5">
                                                 <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Start number</label>
-                                                <Input 
-                                                    type="number" 
-                                                    placeholder="101" 
-                                                    value={bulkStartRoom} 
-                                                    onChange={(e) => setBulkStartRoom(e.target.value)} 
+                                                <Input
+                                                    type="number"
+                                                    placeholder="101"
+                                                    value={bulkStartRoom}
+                                                    onChange={(e) => setBulkStartRoom(e.target.value)}
                                                 />
                                             </div>
                                             <div className="space-y-1.5">
                                                 <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">End number</label>
-                                                <Input 
-                                                    type="number" 
-                                                    placeholder="110" 
-                                                    value={bulkEndRoom} 
-                                                    onChange={(e) => setBulkEndRoom(e.target.value)} 
+                                                <Input
+                                                    type="number"
+                                                    placeholder="110"
+                                                    value={bulkEndRoom}
+                                                    onChange={(e) => setBulkEndRoom(e.target.value)}
                                                 />
                                             </div>
                                             <div className="space-y-1.5">
                                                 <label className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Step</label>
-                                                <Input 
-                                                    type="number" 
-                                                    placeholder="1" 
-                                                    value={bulkStep} 
-                                                    onChange={(e) => setBulkStep(e.target.value)} 
+                                                <Input
+                                                    type="number"
+                                                    placeholder="1"
+                                                    value={bulkStep}
+                                                    onChange={(e) => setBulkStep(e.target.value)}
                                                 />
                                             </div>
                                         </div>

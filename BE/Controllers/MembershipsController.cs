@@ -10,10 +10,35 @@ namespace HotelManagement.Controllers;
 public class MembershipsController : ControllerBase
 {
     private readonly IMembershipService _service;
+    private readonly INotificationService _notificationService;
 
-    public MembershipsController(IMembershipService service)
+    public MembershipsController(IMembershipService service, INotificationService notificationService)
     {
         _service = service;
+        _notificationService = notificationService;
+    }
+
+    private async Task NotifyRolesAsync(IEnumerable<RoleName> roles, CreateNotificationDto dto)
+    {
+        var tasks = roles.Distinct().Select(role => _notificationService.SendByRoleAsync(role, dto));
+        await Task.WhenAll(tasks);
+    }
+
+    private async Task TryNotifyRolesAsync(IEnumerable<RoleName> roles, CreateNotificationDto dto)
+    {
+        try
+        {
+            await NotifyRolesAsync(roles, dto);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Notification Warning] {ex.Message}");
+        }
+    }
+
+    private static IEnumerable<RoleName> GetMembershipRoles()
+    {
+        return new[] { RoleName.Admin, RoleName.Manager };
     }
 
     [HttpGet]
@@ -37,6 +62,17 @@ public class MembershipsController : ControllerBase
     {
         var success = await _service.CreateAsync(dto);
         if (!success) return BadRequest("Tạo hạng thành viên thất bại.");
+
+        await TryNotifyRolesAsync(
+            GetMembershipRoles(),
+            new CreateNotificationDto
+            {
+                Title = "Membership created",
+                Content = $"Membership tier {dto.TierName} was created.",
+                Type = NotificationAction.MembershipCreated,
+                ReferenceLink = "admin/memberships"
+            });
+
         return Ok("Tạo hạng thành viên thành công.");
     }
 
@@ -45,6 +81,17 @@ public class MembershipsController : ControllerBase
     {
         var success = await _service.UpdateAsync(id, dto);
         if (!success) return NotFound("Cập nhật thất bại hoặc không tìm thấy hạng thành viên.");
+
+        await TryNotifyRolesAsync(
+            GetMembershipRoles(),
+            new CreateNotificationDto
+            {
+                Title = "Membership updated",
+                Content = $"Membership tier #{id} was updated.",
+                Type = NotificationAction.MembershipUpdated,
+                ReferenceLink = $"admin/memberships/{id}"
+            });
+
         return Ok("Cập nhật thành công.");
     }
 
@@ -53,6 +100,17 @@ public class MembershipsController : ControllerBase
     {
         var success = await _service.DeleteAsync(id);
         if (!success) return NotFound("Xóa thất bại hoặc không tìm thấy hạng thành viên.");
+
+        await TryNotifyRolesAsync(
+            GetMembershipRoles(),
+            new CreateNotificationDto
+            {
+                Title = "Membership deleted",
+                Content = $"Membership tier #{id} was deleted.",
+                Type = NotificationAction.MembershipDeleted,
+                ReferenceLink = "admin/memberships"
+            });
+
         return Ok("Xóa thành công.");
     }
 }

@@ -13,31 +13,32 @@ import { Input } from '../../components/Input';
 import { Select } from '../../components/Select';
 import { toApiError } from '../../api/httpClient';
 import { auditLogApi } from '../../api/auditLogApi';
-import type { AuditLog } from '../../api/auditLogApi';
+import type { AuditLogDailyGroup, AuditLogEvent } from '../../api/auditLogApi';
 import { paginate, queryIncludes } from '../../utils/table';
 
 const ACTION_COLORS: Record<string, { bg: string; text: string }> = {
-    Create:       { bg: 'bg-emerald-100', text: 'text-emerald-800' },
-    Update:       { bg: 'bg-cyan-100',    text: 'text-cyan-800'    },
-    Delete:       { bg: 'bg-red-100',     text: 'text-red-800'     },
-    Login:        { bg: 'bg-blue-100',    text: 'text-blue-800'    },
-    Logout:       { bg: 'bg-slate-100',   text: 'text-slate-600'   },
-    StatusChange: { bg: 'bg-amber-100',   text: 'text-amber-800'   },
-    Other:        { bg: 'bg-violet-100',  text: 'text-violet-800'  },
+    CREATE: { bg: 'bg-emerald-100', text: 'text-emerald-800' },
+    UPDATE: { bg: 'bg-cyan-100', text: 'text-cyan-800' },
+    DELETE: { bg: 'bg-red-100', text: 'text-red-800' },
+    LOGIN: { bg: 'bg-blue-100', text: 'text-blue-800' },
+    LOGOUT: { bg: 'bg-slate-100', text: 'text-slate-600' },
+    STATUS_CHANGE: { bg: 'bg-amber-100', text: 'text-amber-800' },
+    OTHER: { bg: 'bg-violet-100', text: 'text-violet-800' },
 };
 
 function ActionBadge({ action }: { action: string }) {
-    const style = ACTION_COLORS[action] ?? ACTION_COLORS['Other'];
+    const normalized = action.toUpperCase();
+    const style = ACTION_COLORS[normalized] ?? ACTION_COLORS['OTHER'];
     return (
         <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${style.bg} ${style.text}`}>
-            {action}
+            {normalized}
         </span>
     );
 }
 
 function formatDateTime(iso: string) {
     try {
-        return new Intl.DateTimeFormat('vi-VN', {
+        return new Intl.DateTimeFormat('en-US', {
             year: 'numeric', month: '2-digit', day: '2-digit',
             hour: '2-digit', minute: '2-digit', second: '2-digit',
         }).format(new Date(iso));
@@ -46,11 +47,64 @@ function formatDateTime(iso: string) {
     }
 }
 
-const PAGE_SIZE = 15;
-const ACTION_OPTIONS = ['All', 'Create', 'Update', 'Delete', 'Login', 'Logout', 'StatusChange', 'Other'];
+function formatJson(value: unknown) {
+    if (value === null || value === undefined) {
+        return 'null';
+    }
+
+    if (typeof value === 'string') {
+        return value;
+    }
+
+    try {
+        return JSON.stringify(value, null, 2);
+    } catch {
+        return String(value);
+    }
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function buildDiff(oldValue: unknown, newValue: unknown): { oldData: unknown; newData: unknown; hasChanges: boolean } {
+    if (JSON.stringify(oldValue) === JSON.stringify(newValue)) {
+        return { oldData: null, newData: null, hasChanges: false };
+    }
+
+    if (isPlainObject(oldValue) && isPlainObject(newValue)) {
+        const keys = new Set([...Object.keys(oldValue), ...Object.keys(newValue)]);
+        const oldResult: Record<string, unknown> = {};
+        const newResult: Record<string, unknown> = {};
+        let changed = false;
+
+        for (const key of keys) {
+            const nested = buildDiff(oldValue[key], newValue[key]);
+            if (!nested.hasChanges) {
+                continue;
+            }
+
+            oldResult[key] = nested.oldData;
+            newResult[key] = nested.newData;
+            changed = true;
+        }
+
+        return {
+            oldData: changed ? oldResult : null,
+            newData: changed ? newResult : null,
+            hasChanges: changed,
+        };
+    }
+
+    return { oldData: oldValue ?? null, newData: newValue ?? null, hasChanges: true };
+}
+
+const DEFAULT_PAGE_SIZE = 15;
+const PAGE_SIZE_OPTIONS = [10, 15, 30, 50];
+const ACTION_OPTIONS = ['All', 'CREATE', 'UPDATE', 'DELETE', 'LOGIN', 'LOGOUT', 'STATUS_CHANGE', 'OTHER'];
 
 export function AuditLogPage() {
-    const [logs, setLogs] = useState<AuditLog[]>([]);
+    const [groups, setGroups] = useState<AuditLogDailyGroup[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     const [searchQuery, setSearchQuery] = useState('');
@@ -59,12 +113,13 @@ export function AuditLogPage() {
     const [dateFrom, setDateFrom] = useState('');
     const [dateTo, setDateTo] = useState('');
     const [page, setPage] = useState(1);
+    const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
 
     const loadLogs = useCallback(async () => {
         setIsLoading(true);
         try {
             const data = await auditLogApi.getAll();
-            setLogs(data || []);
+            setGroups(data || []);
         } catch (error) {
             const apiError = toApiError(error);
             toast.error(apiError.message || 'Failed to load audit logs');
@@ -82,8 +137,12 @@ export function AuditLogPage() {
         setPage(1);
     }, [searchQuery, actionFilter, entityFilter, dateFrom, dateTo]);
 
+    const logs = useMemo(() => {
+        return groups.flatMap((group) => group.events ?? []);
+    }, [groups]);
+
     const entityTypes = useMemo(() => {
-        const unique = new Set(logs.map((l) => l.entityType).filter(Boolean));
+        const unique = new Set(logs.map((item) => item.entityType).filter(Boolean));
         return ['All', ...Array.from(unique).sort()];
     }, [logs]);
 
@@ -91,22 +150,22 @@ export function AuditLogPage() {
         return logs.filter((log) => {
             const matchSearch =
                 !searchQuery.trim() ||
-                queryIncludes(log.userName ?? '', searchQuery) ||
-                queryIncludes(log.userEmail ?? '', searchQuery) ||
-                queryIncludes(log.description ?? '', searchQuery);
+                queryIncludes(String(log.context?.['userName'] ?? ''), searchQuery) ||
+                queryIncludes(String(log.context?.['userEmail'] ?? ''), searchQuery) ||
+                queryIncludes(log.message ?? '', searchQuery);
 
-            const matchAction  = actionFilter === 'All' || log.action === actionFilter;
-            const matchEntity  = entityFilter === 'All' || !entityFilter || log.entityType === entityFilter;
+            const matchAction = actionFilter === 'All' || log.actionType === actionFilter;
+            const matchEntity = entityFilter === 'All' || !entityFilter || log.entityType === entityFilter;
 
-            const logDate = new Date(log.createdAt);
+            const logDate = new Date(log.timestamp);
             const matchFrom = !dateFrom || logDate >= new Date(dateFrom);
-            const matchTo   = !dateTo   || logDate <= new Date(dateTo + 'T23:59:59');
+            const matchTo = !dateTo || logDate <= new Date(dateTo + 'T23:59:59');
 
             return matchSearch && matchAction && matchEntity && matchFrom && matchTo;
         });
     }, [logs, searchQuery, actionFilter, entityFilter, dateFrom, dateTo]);
 
-    const paged = paginate(filtered, page, PAGE_SIZE);
+    const paged = paginate(filtered, page, pageSize);
 
     const clearFilters = () => {
         setSearchQuery('');
@@ -117,59 +176,84 @@ export function AuditLogPage() {
     };
 
     const hasActiveFilter = searchQuery || actionFilter !== 'All' || entityFilter || dateFrom || dateTo;
+    const startItem = filtered.length === 0 ? 0 : (page - 1) * pageSize + 1;
+    const endItem = Math.min(page * pageSize, filtered.length);
 
     const columns = [
         {
             key: 'createdAt',
             label: 'Time',
-            render: (row: AuditLog) => (
+            render: (row: AuditLogEvent) => (
                 <span className="whitespace-nowrap text-xs text-slate-500">
-                    {formatDateTime(row.createdAt)}
+                    {formatDateTime(row.timestamp)}
                 </span>
             ),
         },
         {
             key: 'user',
-            label: 'User',
-            render: (row: AuditLog) => (
-                <div>
-                    <p className="text-sm font-medium text-slate-800">{row.userName || '—'}</p>
-                    <p className="text-xs text-slate-400">{row.userEmail || ''}</p>
+            label: 'Actor',
+            render: (row: AuditLogEvent) => (
+                <div className="space-y-1 rounded-lg border border-slate-200 bg-slate-50 p-2">
+                    <p className="text-sm font-semibold text-slate-800">{String(row.context?.['userName'] ?? 'Unknown')}</p>
+                    <p className="text-xs text-slate-500">{String(row.context?.['userEmail'] ?? 'No email')}</p>
+                    <div className="flex flex-wrap gap-1 text-[11px] text-slate-500">
+                        <span className="rounded bg-white px-1.5 py-0.5">ID: {String(row.context?.['userId'] ?? 'N/A')}</span>
+                        <span className="rounded bg-white px-1.5 py-0.5">IP: {String(row.context?.['ipAddress'] ?? 'N/A')}</span>
+                    </div>
                 </div>
             ),
         },
         {
             key: 'action',
             label: 'Action',
-            render: (row: AuditLog) => <ActionBadge action={row.action} />,
+            render: (row: AuditLogEvent) => <ActionBadge action={row.actionType} />,
         },
         {
             key: 'entityType',
             label: 'Entity',
-            render: (row: AuditLog) => (
+            render: (row: AuditLogEvent) => (
                 <div className="text-xs">
                     <span className="font-semibold text-slate-700">{row.entityType || '—'}</span>
-                    {row.entityId && (
-                        <span className="ml-1 text-slate-400">#{row.entityId}</span>
-                    )}
                 </div>
             ),
         },
         {
-            key: 'description',
-            label: 'Description',
-            render: (row: AuditLog) => (
-                <p className="max-w-xs truncate text-sm text-slate-600" title={row.description}>
-                    {row.description || '—'}
+            key: 'message',
+            label: 'Message',
+            render: (row: AuditLogEvent) => (
+                <p className="max-w-xs whitespace-pre-wrap wrap-break-word text-sm text-slate-600" title={row.message}>
+                    {row.message || '—'}
                 </p>
             ),
         },
         {
-            key: 'ipAddress',
-            label: 'IP Address',
-            render: (row: AuditLog) => (
-                <span className="font-mono text-xs text-slate-400">{row.ipAddress || '—'}</span>
-            ),
+            key: 'changesSummary',
+            label: 'Changes',
+            render: (row: AuditLogEvent) => {
+                const diff = buildDiff(row.changes?.oldData, row.changes?.newData);
+
+                if (!diff.hasChanges) {
+                    return <span className="text-xs text-slate-400">No changes</span>;
+                }
+
+                return (
+                    <details className="rounded-lg border border-slate-200 bg-white">
+                        <summary className="cursor-pointer select-none px-3 py-2 text-xs font-semibold text-cyan-700 hover:bg-cyan-50">
+                            View changes
+                        </summary>
+                        <div className="grid gap-2 border-t border-slate-200 p-2 md:grid-cols-2">
+                            <div className="rounded-lg border border-rose-200 bg-rose-50 p-2">
+                                <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-rose-700">Old Data</p>
+                                <pre className="overflow-auto whitespace-pre-wrap break-all text-[11px] text-rose-900">{formatJson(diff.oldData)}</pre>
+                            </div>
+                            <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-2">
+                                <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-emerald-700">New Data</p>
+                                <pre className="overflow-auto whitespace-pre-wrap break-all text-[11px] text-emerald-900">{formatJson(diff.newData)}</pre>
+                            </div>
+                        </div>
+                    </details>
+                );
+            },
         },
     ];
 
@@ -179,7 +263,7 @@ export function AuditLogPage() {
             <div className="flex items-center justify-between">
                 <div>
                     <h2 className="text-2xl font-bold text-slate-900">Audit Log</h2>
-                    <p className="text-sm text-slate-500">Track all system activities and user actions.</p>
+                    <p className="text-sm text-slate-500">Track protected write operations and entity changes.</p>
                 </div>
                 <button
                     onClick={() => void loadLogs()}
@@ -193,10 +277,10 @@ export function AuditLogPage() {
             {/* Stats strip */}
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 {[
-                    { label: 'Total Logs',   value: logs.length,                                     color: 'text-slate-800' },
-                    { label: 'Filtered',     value: filtered.length,                                 color: 'text-cyan-700'  },
-                    { label: 'Actions Today',value: logs.filter(l => new Date(l.createdAt).toDateString() === new Date().toDateString()).length, color: 'text-emerald-700' },
-                    { label: 'Unique Users', value: new Set(logs.map(l => l.userId)).size,           color: 'text-amber-700' },
+                    { label: 'Daily Buckets', value: groups.length, color: 'text-slate-800' },
+                    { label: 'Filtered Events', value: filtered.length, color: 'text-cyan-700' },
+                    { label: 'Actions Today', value: logs.filter(l => new Date(l.timestamp).toDateString() === new Date().toDateString()).length, color: 'text-emerald-700' },
+                    { label: 'Unique Users', value: new Set(groups.map(g => g.userId)).size, color: 'text-amber-700' },
                 ].map((stat) => (
                     <div key={stat.label} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
                         <p className="text-xs font-medium text-slate-400">{stat.label}</p>
@@ -224,7 +308,7 @@ export function AuditLogPage() {
                         <MagnifyingGlassIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                         <input
                             className="w-full rounded-lg border border-slate-200 py-2 pl-9 pr-3 text-sm outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-100"
-                            placeholder="Search by user, email or description..."
+                            placeholder="Search by user, email or message..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
@@ -255,7 +339,7 @@ export function AuditLogPage() {
                     </div>
                 </div>
                 <p className="mt-3 text-xs text-slate-400">
-                    Showing <span className="font-semibold text-slate-600">{filtered.length}</span> / {logs.length} records
+                    Showing <span className="font-semibold text-slate-600">{filtered.length}</span> / {logs.length} events
                 </p>
             </div>
 
@@ -275,8 +359,28 @@ export function AuditLogPage() {
                 </div>
             ) : (
                 <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden p-4">
+                    <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-100 bg-slate-50 px-3 py-2">
+                        <p className="text-xs text-slate-500">
+                            Showing <span className="font-semibold text-slate-700">{startItem}-{endItem}</span> of{' '}
+                            <span className="font-semibold text-slate-700">{filtered.length}</span> events
+                        </p>
+                        <div className="flex items-center gap-2 text-xs text-slate-500">
+                            <span>Rows per page</span>
+                            <Select
+                                value={String(pageSize)}
+                                onChange={(e) => {
+                                    setPageSize(Number(e.target.value));
+                                    setPage(1);
+                                }}
+                            >
+                                {PAGE_SIZE_OPTIONS.map((size) => (
+                                    <option key={size} value={size}>{size}</option>
+                                ))}
+                            </Select>
+                        </div>
+                    </div>
                     <Table columns={columns} rows={paged} />
-                    <Pagination page={page} pageSize={PAGE_SIZE} total={filtered.length} onPageChange={setPage} />
+                    <Pagination page={page} pageSize={pageSize} total={filtered.length} onPageChange={setPage} />
                 </div>
             )}
         </div>

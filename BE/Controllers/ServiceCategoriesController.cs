@@ -9,10 +9,35 @@ namespace HotelManagement.Controllers;
 public class ServiceCategoriesController : ControllerBase
 {
     private readonly IServiceCategoryService _service;
+    private readonly INotificationService _notificationService;
 
-    public ServiceCategoriesController(IServiceCategoryService service)
+    public ServiceCategoriesController(IServiceCategoryService service, INotificationService notificationService)
     {
         _service = service;
+        _notificationService = notificationService;
+    }
+
+    private async Task NotifyRolesAsync(IEnumerable<RoleName> roles, CreateNotificationDto dto)
+    {
+        var tasks = roles.Distinct().Select(role => _notificationService.SendByRoleAsync(role, dto));
+        await Task.WhenAll(tasks);
+    }
+
+    private async Task TryNotifyRolesAsync(IEnumerable<RoleName> roles, CreateNotificationDto dto)
+    {
+        try
+        {
+            await NotifyRolesAsync(roles, dto);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Notification Warning] {ex.Message}");
+        }
+    }
+
+    private static IEnumerable<RoleName> GetRoles()
+    {
+        return new[] { RoleName.Admin, RoleName.Manager };
     }
 
     [HttpGet]
@@ -41,6 +66,17 @@ public class ServiceCategoriesController : ControllerBase
     {
         var ok = await _service.CreateAsync(dto);
         if (!ok) return BadRequest();
+
+        await TryNotifyRolesAsync(
+            GetRoles(),
+            new CreateNotificationDto
+            {
+                Title = "Service category created",
+                Content = $"Service category {dto.Name} was created.",
+                Type = NotificationAction.ServiceCategoryCreated,
+                ReferenceLink = "admin/service-categories"
+            });
+
         return Ok();
     }
 
@@ -50,6 +86,17 @@ public class ServiceCategoriesController : ControllerBase
     {
         var ok = await _service.UpdateAsync(id, dto);
         if (!ok) return NotFound();
+
+        await TryNotifyRolesAsync(
+            GetRoles(),
+            new CreateNotificationDto
+            {
+                Title = "Service category updated",
+                Content = $"Service category #{id} was updated.",
+                Type = NotificationAction.ServiceCategoryUpdated,
+                ReferenceLink = $"admin/service-categories/{id}"
+            });
+
         return NoContent();
     }
 
@@ -61,6 +108,17 @@ public class ServiceCategoriesController : ControllerBase
         {
             var ok = await _service.DeleteAsync(id);
             if (!ok) return NotFound();
+
+            await TryNotifyRolesAsync(
+                GetRoles(),
+                new CreateNotificationDto
+                {
+                    Title = "Service category deleted",
+                    Content = $"Service category #{id} was deleted.",
+                    Type = NotificationAction.ServiceCategoryDeleted,
+                    ReferenceLink = "admin/service-categories"
+                });
+
             return NoContent();
         }
         catch (InvalidOperationException ex)
@@ -75,6 +133,17 @@ public class ServiceCategoriesController : ControllerBase
     {
         var ok = await _service.ToggleActiveAsync(id);
         if (!ok) return NotFound();
+
+        await TryNotifyRolesAsync(
+            GetRoles(),
+            new CreateNotificationDto
+            {
+                Title = "Service category active status changed",
+                Content = $"Service category #{id} active status was toggled.",
+                Type = NotificationAction.ServiceCategoryActivated,
+                ReferenceLink = $"admin/service-categories/{id}"
+            });
+
         return Ok(new { message = "Category active status toggled successfully." });
     }
 
@@ -84,6 +153,17 @@ public class ServiceCategoriesController : ControllerBase
     {
         var ok = await _service.RestoreAsync(id);
         if (!ok) return NotFound();
+
+        await TryNotifyRolesAsync(
+            GetRoles(),
+            new CreateNotificationDto
+            {
+                Title = "Service category restored",
+                Content = $"Service category #{id} was restored.",
+                Type = NotificationAction.ServiceCategoryRestored,
+                ReferenceLink = $"admin/service-categories/{id}"
+            });
+
         return Ok(new { message = "Category restored successfully." });
     }
 }
