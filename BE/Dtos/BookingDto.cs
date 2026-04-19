@@ -33,6 +33,11 @@ public class UpdateBookingDto
     public string InvoiceType { get; set; } = "Consolidated";
 }
 
+public class ChangeBookingStatusDto
+{
+    public string Status { get; set; } = string.Empty;
+}
+
 public class ActiveRoomDto
 {
     public int BookingDetailId { get; set; }

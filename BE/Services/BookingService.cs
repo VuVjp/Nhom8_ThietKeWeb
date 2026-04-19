@@ -291,7 +291,7 @@ public class BookingService : IBookingService
         }
 
         var booking = await _repository.GetBookingByIdWithDetailsAsync(id, includeRoom: true);
-
+      
         if (booking == null)
         {
             return false;

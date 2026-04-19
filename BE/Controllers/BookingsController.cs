@@ -77,14 +77,30 @@ public class BookingsController : ControllerBase
 
     [HttpPatch("{id}/status")]
     [Permission(PermissionNames.ManageBookings)]
-    public async Task<IActionResult> ChangeStatus(int id, [FromBody] string status)
+    public async Task<IActionResult> ChangeStatus(int id, [FromBody] ChangeBookingStatusDto dto)
     {
-        var ok = await _service.ChangeBookingStatusAsync(id, status);
-        if (!ok)
+        if (dto == null || string.IsNullOrWhiteSpace(dto.Status))
         {
-            return NotFound();
+            return BadRequest(new { message = "Status is required." });
         }
 
-        return NoContent();
+        try
+        {
+            var ok = await _service.ChangeBookingStatusAsync(id, dto.Status);
+            if (!ok)
+            {
+                return NotFound();
+            }
+
+            return NoContent();
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 }

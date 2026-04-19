@@ -51,9 +51,7 @@ export const receptionApi = {
   },
 
   changeBookingStatus: async (id: number, status: BookingStatus): Promise<void> => {
-    // Backend expects just a JSON string for [FromBody] string status
-    const formattedStatus = `"${status}"`;
-    await httpClient.patch(`/Bookings/${id}/status`, formattedStatus, {
+    await httpClient.patch(`/Bookings/${id}/status`, { status }, {
       headers: {
         'Content-Type': 'application/json'
       }
