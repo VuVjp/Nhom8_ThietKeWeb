@@ -70,8 +70,8 @@ public class BookingRepository : IBookingRepository
     public async Task<Booking?> GetBookingByIdWithDetailsAsync(int id, bool includeRoom = false)
     {
         IQueryable<Booking> query = _context.Bookings
-            // .Include(item => item.User)
-            //     .ThenInclude(u => u!.Membership)
+             .Include(item => item.User)
+                 .ThenInclude(u => u!.Membership)
             .Include(item => item.BookingDetails)
                 .ThenInclude(detail => detail.OrderServices)
                     .ThenInclude(os => os.OrderServiceDetails)
@@ -114,14 +114,14 @@ public class BookingRepository : IBookingRepository
     }
 
     public async Task<List<Booking>> GetAllWithDetailsAsync()
-{
-    return await _context.Bookings
-        .AsNoTracking()
-        .Include(booking => booking.BookingDetails)
-            .ThenInclude(detail => detail.Room)
-        .OrderByDescending(booking => booking.Id)
-        .ToListAsync();
-}
+    {
+        return await _context.Bookings
+            .AsNoTracking()
+            .Include(booking => booking.BookingDetails)
+                .ThenInclude(detail => detail.Room)
+            .OrderByDescending(booking => booking.Id)
+            .ToListAsync();
+    }
 
     public async Task<List<int>> GetOverdueCheckInBookingIdsAsync(DateTime cutoffTime)
     {

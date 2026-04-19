@@ -62,9 +62,9 @@ export function InvoicesPage() {
     };
 
     const columns = [
-        { 
-            key: 'invoiceCode', 
-            label: 'Code', 
+        {
+            key: 'invoiceCode',
+            label: 'Code',
             render: (row: Invoice) => (
                 <div className="flex flex-col">
                     <span className="font-mono font-medium">{row.invoiceCode}</span>
@@ -74,35 +74,37 @@ export function InvoicesPage() {
                         </span>
                     )}
                 </div>
-            ) 
+            )
         },
-        { key: 'guest', label: 'Guest / Room', render: (row: Invoice) => (
-            <div>
-                <p className="font-semibold text-slate-900">{row.guestName || '—'}</p>
-                <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-xs text-slate-500">{row.bookingCode || '—'}</span>
-                    {row.roomNumber && (
-                        <span className="text-xs font-bold text-cyan-600 bg-cyan-50 px-1.5 rounded">Room {row.roomNumber}</span>
-                    )}
+        {
+            key: 'guest', label: 'Guest / Room', render: (row: Invoice) => (
+                <div>
+                    <p className="font-semibold text-slate-900">{row.guestName || '—'}</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-xs text-slate-500">{row.bookingCode || '—'}</span>
+                        {row.roomNumber && (
+                            <span className="text-xs font-bold text-cyan-600 bg-cyan-50 px-1.5 rounded">Room {row.roomNumber}</span>
+                        )}
+                    </div>
                 </div>
-            </div>
-        ) },
-        { 
-            key: 'amount', 
-            label: 'Total Amount', 
+            )
+        },
+        {
+            key: 'amount',
+            label: 'Total Amount',
             render: (row: Invoice) => (
                 <span className="font-bold text-cyan-700">
                     ${row.finalTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                 </span>
-            ) 
+            )
         },
         {
             key: 'status',
             label: 'Status',
             render: (row: Invoice) => (
-                <Badge 
-                    value={row.status} 
-                    variant={row.status === 'Completed' ? 'success' : 'warning'} 
+                <Badge
+                    value={row.status}
+                    variant={row.status === 'Completed' ? 'success' : row.status === 'Cancelled' ? 'destructive' : row.status === 'Pending' ? 'warning' : 'default'}
                 />
             )
         },
@@ -146,43 +148,43 @@ export function InvoicesPage() {
                         <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Search</label>
                         <div className="relative">
                             <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                            <Input 
-                                className="pl-9" 
-                                placeholder="Code, Guest, Booking..." 
-                                value={search} 
+                            <Input
+                                className="pl-9"
+                                placeholder="Code, Guest, Booking..."
+                                value={search}
                                 onChange={(e) => {
                                     setSearch(e.target.value);
                                     setPage(1);
-                                }} 
+                                }}
                             />
                         </div>
                     </div>
                     <div className="lg:col-span-4 space-y-1.5">
                         <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Date Range (Created)</label>
                         <div className="flex gap-2">
-                            <Input 
-                                type="date" 
+                            <Input
+                                type="date"
                                 className="min-w-0 flex-1 px-2"
-                                value={startDate} 
+                                value={startDate}
                                 onChange={(e) => {
                                     setStartDate(e.target.value);
                                     setPage(1);
-                                }} 
+                                }}
                             />
-                            <Input 
+                            <Input
                                 type="date"
                                 className="min-w-0 flex-1 px-2"
-                                value={endDate} 
+                                value={endDate}
                                 onChange={(e) => {
                                     setEndDate(e.target.value);
                                     setPage(1);
-                                }} 
+                                }}
                             />
                         </div>
                     </div>
                     <div className="lg:col-span-2 space-y-1.5 min-w-0">
                         <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Status</label>
-                        <select 
+                        <select
                             className="w-full px-4 py-2 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all outline-none appearance-none truncate"
                             value={statusFilter}
                             onChange={(e) => {
@@ -197,7 +199,7 @@ export function InvoicesPage() {
                     </div>
                     <div className="lg:col-span-2 space-y-1.5 min-w-0">
                         <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Sort By</label>
-                        <select 
+                        <select
                             className="w-full px-4 py-2 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all outline-none appearance-none truncate"
                             value={`${sortBy}-${sortOrder}`}
                             onChange={(e) => {
@@ -230,7 +232,7 @@ export function InvoicesPage() {
             {/* Table Container */}
             <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm transition-all hover:shadow-md relative">
                 <Table columns={columns} rows={rows} />
-                
+
                 {isLoading && (
                     <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] flex flex-col items-center justify-center z-10">
                         <div className="w-10 h-10 border-4 border-cyan-600 border-t-transparent rounded-full animate-spin"></div>
@@ -255,14 +257,14 @@ export function InvoicesPage() {
                             Page <span className="font-bold text-slate-900">{page}</span> of <span className="font-bold text-slate-900">{Math.ceil(total / 10)}</span>
                         </p>
                         <div className="flex gap-2">
-                            <button 
+                            <button
                                 disabled={page <= 1}
                                 onClick={() => setPage(p => p - 1)}
                                 className="px-3 py-1 rounded-lg border border-slate-200 bg-white text-xs font-semibold disabled:opacity-30 hover:bg-slate-50 transition"
                             >
                                 Prev
                             </button>
-                            <button 
+                            <button
                                 disabled={page * 10 >= total}
                                 onClick={() => setPage(p => p + 1)}
                                 className="px-3 py-1 rounded-lg border border-slate-200 bg-white text-xs font-semibold disabled:opacity-30 hover:bg-slate-50 transition"

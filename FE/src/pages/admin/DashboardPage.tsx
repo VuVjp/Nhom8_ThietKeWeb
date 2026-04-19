@@ -404,21 +404,23 @@ export function DashboardPage() {
                         <h3 className="text-lg font-bold text-slate-900">Service Queue</h3>
                         <div className="mt-6 space-y-4">
                             {pendingServices.map((order) => (
-                                <div key={order.id} className="flex items-center gap-4 rounded-xl border border-cyan-100 bg-cyan-50/30 p-3">
-                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-cyan-100 text-cyan-700">
-                                        <ClockIcon className="h-5 w-5" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <div className="flex justify-between">
-                                            <p className="text-sm font-bold text-slate-900">Order #{order.id}</p>
-                                            <span className="text-[10px] font-bold text-cyan-600">{new Date(order.orderDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                <a href={`/admin/reception/order-services/${order.id}`} key={order.id} className="block">
+                                    <div key={order.id} className="flex items-center gap-4 rounded-xl border border-cyan-100 bg-cyan-50/30 p-3">
+                                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-cyan-100 text-cyan-700">
+                                            <ClockIcon className="h-5 w-5" />
                                         </div>
-                                        <p className="text-xs text-slate-500">Room {order.roomNumber} • {order.guestName}</p>
+                                        <div className="flex-1">
+                                            <div className="flex justify-between">
+                                                <p className="text-sm font-bold text-slate-900">Order #{order.id}</p>
+                                                <span className="text-[10px] font-bold text-cyan-600">{new Date(order.orderDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                            </div>
+                                            <p className="text-xs text-slate-500">Room {order.roomNumber} • {order.guestName}</p>
+                                        </div>
+                                        <button className="rounded-lg bg-white p-1 text-slate-400 hover:text-cyan-600 shadow-sm border border-slate-100">
+                                            <ChevronRightIcon className="h-4 w-4" />
+                                        </button>
                                     </div>
-                                    <button className="rounded-lg bg-white p-1 text-slate-400 hover:text-cyan-600 shadow-sm border border-slate-100">
-                                        <ChevronRightIcon className="h-4 w-4" />
-                                    </button>
-                                </div>
+                                </a>
                             ))}
                             {pendingServices.length === 0 && (
                                 <div className="py-8 text-center text-sm text-slate-400">No pending services.</div>
