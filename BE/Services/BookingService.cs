@@ -113,7 +113,7 @@ public class BookingService : IBookingService
             GuestName = dto.GuestName.Trim(),
             GuestPhone = string.IsNullOrWhiteSpace(dto.GuestPhone) ? null : dto.GuestPhone.Trim(),
             GuestEmail = string.IsNullOrWhiteSpace(dto.GuestEmail) ? null : dto.GuestEmail.Trim(),
-            Status = "Confirmed",
+            Status = "Pending",
             BookingCode = GenerateBookingCode(),
             BookingDetails = rooms.Select(room => new BookingDetail
             {
@@ -123,7 +123,7 @@ public class BookingService : IBookingService
                 CheckOutDate = dto.CheckOutDate,
                 PricePerNight = room.RoomType!.BasePrice,
             }).ToList(),
-            InvoiceType = dto.InvoiceType ?? "Consolidated",
+            InvoiceType = dto.InvoiceType ?? "Consolidated"
         };
 
         booking.TotalPrice = CalculateTotalAmount(booking.BookingDetails);
@@ -147,6 +147,7 @@ public class BookingService : IBookingService
             }
         }
         booking.FinalPrice = booking.TotalPrice - (booking.Discount ?? 0);
+        booking.Deposit = booking.FinalPrice * 0.3m;
 
         await _repository.AddBookingAsync(booking);
         await _repository.SaveChangesAsync();
@@ -291,7 +292,7 @@ public class BookingService : IBookingService
         }
 
         var booking = await _repository.GetBookingByIdWithDetailsAsync(id, includeRoom: true);
-      
+
         if (booking == null)
         {
             return false;

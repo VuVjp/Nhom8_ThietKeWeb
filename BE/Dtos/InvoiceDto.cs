@@ -13,6 +13,9 @@ public class InvoiceDto
     public decimal DiscountAmount { get; set; }
     public decimal TaxAmount { get; set; }
     public decimal FinalTotal { get; set; }
+    public decimal PaidAmount { get; set; }
+    public decimal AllocatedDeposit { get; set; }
+    public decimal RemainingAmount { get; set; }
     public string? Status { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? CompletedAt { get; set; }

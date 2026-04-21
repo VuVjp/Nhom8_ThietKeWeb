@@ -4,6 +4,7 @@ using HotelManagement.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BE.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260421134706_AddMomoPaymentFlow")]
+    partial class AddMomoPaymentFlow
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -257,7 +260,7 @@ namespace BE.Migrations
                         .HasColumnName("guest_email");
 
                     b.Property<string>("GuestName")
-                        .HasColumnType("nvarchar(450)")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("guest_name");
 
                     b.Property<string>("GuestPhone")
@@ -291,8 +294,6 @@ namespace BE.Migrations
 
                     b.HasIndex("BookingCode")
                         .IsUnique();
-
-                    b.HasIndex("GuestName");
 
                     b.HasIndex("UserId");
 
@@ -461,10 +462,10 @@ namespace BE.Migrations
                         .HasColumnName("final_total");
 
                     b.Property<string>("InvoiceCode")
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Status")
-                        .HasColumnType("nvarchar(450)")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("status");
 
                     b.Property<decimal?>("TaxAmount")
@@ -472,8 +473,7 @@ namespace BE.Migrations
                         .HasColumnName("tax_amount");
 
                     b.Property<decimal?>("TotalLossDamageAmount")
-                        .HasColumnType("decimal(18,2)")
-                        .HasColumnName("total_loss_damage_amount");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal?>("TotalRoomAmount")
                         .HasColumnType("decimal(18,2)")
@@ -486,14 +486,6 @@ namespace BE.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("BookingId");
-
-                    b.HasIndex("CreatedAt");
-
-                    b.HasIndex("InvoiceCode")
-                        .IsUnique()
-                        .HasFilter("[InvoiceCode] IS NOT NULL");
-
-                    b.HasIndex("Status");
 
                     b.ToTable("Invoices", (string)null);
                 });

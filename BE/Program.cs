@@ -138,6 +138,8 @@ builder.Services.AddCors(options =>
     });
 });
 
+builder.Services.AddHttpClient<IMomoService, MomoService>();
+
 builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 
@@ -195,6 +197,7 @@ builder.Services.AddScoped<IServiceService, ServiceService>();
 builder.Services.AddScoped<IOrderServiceRepository, OrderServiceRepository>();
 builder.Services.AddScoped<IOrderServiceService, OrderServiceService>();
 builder.Services.AddScoped<IInvoiceRepository, InvoiceRepository>();
+builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 builder.Services.AddScoped<IInvoiceService, InvoiceService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 

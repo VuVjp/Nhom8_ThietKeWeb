@@ -115,6 +115,12 @@ public class InvoiceService : IInvoiceService
 
         await CalculateAmountsAsync(invoice, booking);
 
+        var outstandingAmount = await GetOutstandingAmountAsync(invoice.Id);
+        if (outstandingAmount > 0)
+        {
+            throw new ConflictException($"Invoice #{invoice.Id} still has outstanding amount: {outstandingAmount:N0}");
+        }
+
         invoice.Status = "Completed";
         invoice.CompletedAt = DateTime.Now;
 
@@ -122,7 +128,101 @@ public class InvoiceService : IInvoiceService
         return true;
     }
 
-    // ================= UPDATE AMOUNTS =================
+    public async Task<decimal> GetPaidAmountAsync(int invoiceId)
+    {
+        return await _context.Set<Payment>()
+            .Where(p => p.InvoiceId == invoiceId)
+            .Where(p => p.Status == null || p.Status == "Completed")
+            .SumAsync(p => (decimal?)p.AmountPaid) ?? 0m;
+    }
+
+    public async Task<decimal> GetAllocatedDepositAsync(int invoiceId)
+    {
+        var invoice = await _context.Set<Invoice>()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(i => i.Id == invoiceId);
+
+        if (invoice?.BookingId == null)
+        {
+            return 0m;
+        }
+
+        var booking = await _context.Set<Booking>()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(b => b.Id == invoice.BookingId.Value);
+
+        var deposit = booking?.Deposit ?? 0m;
+        if (deposit <= 0)
+        {
+            return 0m;
+        }
+
+        var bookingInvoices = await _context.Set<Invoice>()
+            .AsNoTracking()
+            .Where(i => i.BookingId == invoice.BookingId.Value)
+            .Select(i => new
+            {
+                i.Id,
+                FinalTotal = i.FinalTotal ?? 0m
+            })
+            .ToListAsync();
+
+        if (bookingInvoices.Count == 0)
+        {
+            return 0m;
+        }
+
+        var totalFinal = bookingInvoices.Sum(i => Math.Max(0m, i.FinalTotal));
+        if (totalFinal <= 0)
+        {
+            return 0m;
+        }
+
+        var ordered = bookingInvoices
+            .OrderByDescending(i => i.FinalTotal)
+            .ThenBy(i => i.Id)
+            .ToList();
+
+        var allocations = new Dictionary<int, decimal>(ordered.Count);
+        decimal remaining = Math.Round(deposit, 2, MidpointRounding.AwayFromZero);
+
+        for (int idx = 0; idx < ordered.Count; idx++)
+        {
+            var current = ordered[idx];
+            decimal allocation;
+
+            if (idx == ordered.Count - 1)
+            {
+                allocation = remaining;
+            }
+            else
+            {
+                allocation = Math.Round(deposit * (Math.Max(0m, current.FinalTotal) / totalFinal), 2, MidpointRounding.AwayFromZero);
+                remaining -= allocation;
+            }
+
+            allocation = Math.Max(0m, Math.Min(allocation, Math.Max(0m, current.FinalTotal)));
+            allocations[current.Id] = allocation;
+        }
+
+        return allocations.TryGetValue(invoiceId, out var value) ? value : 0m;
+    }
+
+    public async Task<decimal> GetOutstandingAmountAsync(int invoiceId)
+    {
+        var invoice = await _repository.GetByIdAsync(invoiceId);
+        if (invoice == null)
+        {
+            throw new NotFoundException($"Invoice with ID {invoiceId} not found");
+        }
+
+        var finalTotal = invoice.FinalTotal ?? 0m;
+        var paidAmount = await GetPaidAmountAsync(invoiceId);
+        var allocatedDeposit = await GetAllocatedDepositAsync(invoiceId);
+
+        return Math.Max(0m, finalTotal - paidAmount - allocatedDeposit);
+    }
+
     public async Task UpdateInvoiceAmountsAsync(int bookingId)
     {
         var booking = await _bookingRepository.GetBookingByIdWithDetailsAsync(bookingId, true);

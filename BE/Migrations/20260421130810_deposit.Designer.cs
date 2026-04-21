@@ -4,6 +4,7 @@ using HotelManagement.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BE.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260421130810_deposit")]
+    partial class deposit
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -257,7 +260,7 @@ namespace BE.Migrations
                         .HasColumnName("guest_email");
 
                     b.Property<string>("GuestName")
-                        .HasColumnType("nvarchar(450)")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("guest_name");
 
                     b.Property<string>("GuestPhone")
@@ -291,8 +294,6 @@ namespace BE.Migrations
 
                     b.HasIndex("BookingCode")
                         .IsUnique();
-
-                    b.HasIndex("GuestName");
 
                     b.HasIndex("UserId");
 
@@ -461,10 +462,10 @@ namespace BE.Migrations
                         .HasColumnName("final_total");
 
                     b.Property<string>("InvoiceCode")
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Status")
-                        .HasColumnType("nvarchar(450)")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("status");
 
                     b.Property<decimal?>("TaxAmount")
@@ -472,8 +473,7 @@ namespace BE.Migrations
                         .HasColumnName("tax_amount");
 
                     b.Property<decimal?>("TotalLossDamageAmount")
-                        .HasColumnType("decimal(18,2)")
-                        .HasColumnName("total_loss_damage_amount");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal?>("TotalRoomAmount")
                         .HasColumnType("decimal(18,2)")
@@ -486,14 +486,6 @@ namespace BE.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("BookingId");
-
-                    b.HasIndex("CreatedAt");
-
-                    b.HasIndex("InvoiceCode")
-                        .IsUnique()
-                        .HasFilter("[InvoiceCode] IS NOT NULL");
-
-                    b.HasIndex("Status");
 
                     b.ToTable("Invoices", (string)null);
                 });
@@ -725,59 +717,25 @@ namespace BE.Migrations
                         .HasColumnType("decimal(18,2)")
                         .HasColumnName("amount_paid");
 
-                    b.Property<int?>("BookingId")
-                        .HasColumnType("int")
-                        .HasColumnName("booking_id");
-
                     b.Property<int?>("InvoiceId")
                         .HasColumnType("int")
                         .HasColumnName("invoice_id");
-
-                    b.Property<string>("MomoOrderId")
-                        .HasColumnType("nvarchar(450)")
-                        .HasColumnName("momo_order_id");
 
                     b.Property<DateTime?>("PaymentDate")
                         .HasColumnType("datetime2")
                         .HasColumnName("payment_date");
 
-                    b.Property<string>("PaymentForType")
-                        .HasColumnType("varchar(50)")
-                        .HasColumnName("payment_for_type");
-
                     b.Property<string>("PaymentMethod")
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("payment_method");
 
-                    b.Property<string>("RawIpn")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("raw_ipn");
-
-                    b.Property<string>("RequestId")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("request_id");
-
-                    b.Property<string>("Status")
-                        .HasColumnType("varchar(50)")
-                        .HasColumnName("status");
-
                     b.Property<string>("TransactionCode")
-                        .HasColumnType("nvarchar(450)")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("transaction_code");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("BookingId");
-
                     b.HasIndex("InvoiceId");
-
-                    b.HasIndex("MomoOrderId")
-                        .IsUnique()
-                        .HasFilter("[momo_order_id] IS NOT NULL");
-
-                    b.HasIndex("TransactionCode")
-                        .IsUnique()
-                        .HasFilter("[transaction_code] IS NOT NULL");
 
                     b.ToTable("Payments", (string)null);
                 });
@@ -1426,17 +1384,10 @@ namespace BE.Migrations
 
             modelBuilder.Entity("HotelManagement.Entities.Payment", b =>
                 {
-                    b.HasOne("HotelManagement.Entities.Booking", "Booking")
-                        .WithMany()
-                        .HasForeignKey("BookingId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("HotelManagement.Entities.Invoice", "Invoice")
                         .WithMany("Payments")
                         .HasForeignKey("InvoiceId")
                         .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("Booking");
 
                     b.Navigation("Invoice");
                 });
