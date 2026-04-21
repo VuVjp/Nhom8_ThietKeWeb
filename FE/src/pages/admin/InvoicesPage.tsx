@@ -223,58 +223,56 @@ export function InvoicesPage() {
                             title="Reset Filters"
                             className="flex h-[38px] w-full items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:bg-slate-50 bg-slate-50"
                         >
-                            <ArrowPathIcon className="h-4 w-4" />
+                            <ArrowPathIcon className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
                         </button>
                     </div>
                 </div>
             </div>
 
-            {/* Table Container */}
-            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm transition-all hover:shadow-md relative">
-                <Table columns={columns} rows={rows} />
-
-                {isLoading && (
-                    <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] flex flex-col items-center justify-center z-10">
-                        <div className="w-10 h-10 border-4 border-cyan-600 border-t-transparent rounded-full animate-spin"></div>
-                        <p className="mt-4 text-sm font-bold text-slate-600 animate-pulse">Loading invoices...</p>
+            {/* Content Section */}
+            {isLoading ? (
+                <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-slate-200 shadow-sm">
+                    <div className="w-10 h-10 border-4 border-cyan-600 border-t-transparent rounded-full animate-spin"></div>
+                    <p className="mt-4 text-sm font-bold text-slate-600 animate-pulse">Loading invoices...</p>
+                </div>
+            ) : rows.length === 0 ? (
+                <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm p-16 text-center">
+                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 text-slate-400 mb-4">
+                        <MagnifyingGlassIcon className="h-8 w-8" />
                     </div>
-                )}
-
-                {!isLoading && rows.length === 0 && (
-                    <div className="p-16 text-center">
-                        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 text-slate-400 mb-4">
-                            <MagnifyingGlassIcon className="h-8 w-8" />
+                    <h3 className="text-lg font-bold text-slate-900">No invoices found</h3>
+                    <p className="text-slate-500 text-sm mt-1">Try adjusting your filters or search terms.</p>
+                </div>
+            ) : (
+                <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm transition-all hover:shadow-md relative">
+                    <Table columns={columns} rows={rows} />
+                    
+                    {/* Pagination */}
+                    {total > 0 && (
+                        <div className="p-4 border-t border-slate-100 flex items-center justify-between bg-slate-50/30">
+                            <p className="text-xs text-slate-500 font-medium">
+                                Page <span className="font-bold text-slate-900">{page}</span> of <span className="font-bold text-slate-900">{Math.ceil(total / 10)}</span>
+                            </p>
+                            <div className="flex gap-2">
+                                <button
+                                    disabled={page <= 1}
+                                    onClick={() => setPage(p => p - 1)}
+                                    className="px-3 py-1 rounded-lg border border-slate-200 bg-white text-xs font-semibold disabled:opacity-30 hover:bg-slate-50 transition"
+                                >
+                                    Prev
+                                </button>
+                                <button
+                                    disabled={page * 10 >= total}
+                                    onClick={() => setPage(p => p + 1)}
+                                    className="px-3 py-1 rounded-lg border border-slate-200 bg-white text-xs font-semibold disabled:opacity-30 hover:bg-slate-50 transition"
+                                >
+                                    Next
+                                </button>
+                            </div>
                         </div>
-                        <h3 className="text-lg font-bold text-slate-900">No invoices found</h3>
-                        <p className="text-slate-500 text-sm mt-1">Try adjusting your filters or search terms.</p>
-                    </div>
-                )}
-
-                {/* Pagination */}
-                {total > 0 && (
-                    <div className="p-4 border-t border-slate-100 flex items-center justify-between bg-slate-50/30">
-                        <p className="text-xs text-slate-500 font-medium">
-                            Page <span className="font-bold text-slate-900">{page}</span> of <span className="font-bold text-slate-900">{Math.ceil(total / 10)}</span>
-                        </p>
-                        <div className="flex gap-2">
-                            <button
-                                disabled={page <= 1}
-                                onClick={() => setPage(p => p - 1)}
-                                className="px-3 py-1 rounded-lg border border-slate-200 bg-white text-xs font-semibold disabled:opacity-30 hover:bg-slate-50 transition"
-                            >
-                                Prev
-                            </button>
-                            <button
-                                disabled={page * 10 >= total}
-                                onClick={() => setPage(p => p + 1)}
-                                className="px-3 py-1 rounded-lg border border-slate-200 bg-white text-xs font-semibold disabled:opacity-30 hover:bg-slate-50 transition"
-                            >
-                                Next
-                            </button>
-                        </div>
-                    </div>
-                )}
-            </div>
+                    )}
+                </div>
+            )}
         </div>
     );
 }

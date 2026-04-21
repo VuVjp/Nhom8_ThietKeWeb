@@ -12,9 +12,15 @@ public class InvoiceService : IInvoiceService
     private readonly IBookingRepository _bookingRepository;
     private readonly IVoucherRepository _voucherRepository;
     private readonly Data.AppDbContext _context;
-    private readonly decimal _taxRate = 0.1m; // 10% tax
+    private readonly decimal _taxRate = 0.1m;
 
-    public InvoiceService(IInvoiceRepository repository, IBookingRepository bookingRepository, IVoucherRepository voucherRepository, Data.AppDbContext context)
+    private readonly Random _random = new();
+
+    public InvoiceService(
+        IInvoiceRepository repository,
+        IBookingRepository bookingRepository,
+        IVoucherRepository voucherRepository,
+        Data.AppDbContext context)
     {
         _repository = repository;
         _bookingRepository = bookingRepository;
@@ -22,9 +28,20 @@ public class InvoiceService : IInvoiceService
         _context = context;
     }
 
+    private string GenerateInvoiceCode(string prefix = "INV", int? suffixId = null)
+    {
+        var timestamp = DateTime.Now.ToString("yyyyMMdd-HHmmssfff");
+        var randomStr = _random.Next(1000, 9999).ToString();
+
+        return suffixId.HasValue
+            ? $"{prefix}-{suffixId}-{timestamp}-{randomStr}"
+            : $"{prefix}-{timestamp}-{randomStr}";
+    }
+
+    // ================= CREATE =================
     public async Task<Invoice> CreateInvoiceAsync(int bookingId)
     {
-        var booking = await _bookingRepository.GetBookingByIdWithDetailsAsync(bookingId, includeRoom: true);
+        var booking = await _bookingRepository.GetBookingByIdWithDetailsAsync(bookingId, true);
         if (booking == null) throw new Exception("Booking not found");
 
         if (booking.InvoiceType == "Split")
@@ -32,26 +49,27 @@ public class InvoiceService : IInvoiceService
             foreach (var detail in booking.BookingDetails)
             {
                 var existing = await _repository.GetByBookingDetailIdAsync(detail.Id);
-                if (existing == null)
+                if (existing != null) continue;
+
+                var invoice = new Invoice
                 {
-                    var invoice = new Invoice
-                    {
-                        BookingId = bookingId,
-                        InvoiceCode = $"INV-{detail.Id}-{DateTime.Now:yyyyMMdd-HHmmss}",
-                        CreatedAt = DateTime.Now,
-                        Status = "Pending"
-                    };
-                    await _repository.AddAsync(invoice);
-                    await _repository.SaveChangesAsync(); // Save to get ID
-                    
-                    detail.InvoiceId = invoice.Id;
-                    await CalculateAmountsAsync(invoice, booking);
-                    _repository.Update(invoice);
-                }
+                    BookingId = bookingId,
+                    InvoiceCode = GenerateInvoiceCode("INV", detail.Id),
+                    CreatedAt = DateTime.Now,
+                    Status = "Pending"
+                };
+
+                await _repository.AddAsync(invoice);
+                await _repository.SaveChangesAsync();
+
+                detail.InvoiceId = invoice.Id;
+                await CalculateAmountsAsync(invoice, booking);
             }
+
             await _repository.SaveChangesAsync();
-            var firstDetail = booking.BookingDetails.First();
-            return (await _repository.GetByBookingDetailIdAsync(firstDetail.Id))!;
+
+            var first = booking.BookingDetails.First();
+            return (await _repository.GetByBookingDetailIdAsync(first.Id))!;
         }
         else
         {
@@ -61,7 +79,7 @@ public class InvoiceService : IInvoiceService
             var invoice = new Invoice
             {
                 BookingId = bookingId,
-                InvoiceCode = $"INV-{DateTime.Now:yyyyMMdd-HHmmss}",
+                InvoiceCode = GenerateInvoiceCode(),
                 CreatedAt = DateTime.Now,
                 Status = "Pending"
             };
@@ -69,59 +87,45 @@ public class InvoiceService : IInvoiceService
             await _repository.AddAsync(invoice);
             await _repository.SaveChangesAsync();
 
-            // Link ALL rooms to this consolidated invoice
-            foreach (var detail in booking.BookingDetails)
-            {
-                detail.InvoiceId = invoice.Id;
-            }
+            foreach (var d in booking.BookingDetails)
+                d.InvoiceId = invoice.Id;
 
             await CalculateAmountsAsync(invoice, booking);
-            _repository.Update(invoice);
+
             await _repository.SaveChangesAsync();
             return invoice;
         }
     }
 
-    public async Task<Invoice?> GetInvoiceByBookingIdAsync(int bookingId)
-    {
-        return await _repository.GetByBookingIdAsync(bookingId);
-    }
+    // ================= READ =================
+    public Task<Invoice?> GetInvoiceByIdAsync(int id) => _repository.GetByIdAsync(id);
+    public Task<IEnumerable<Invoice>> GetAllInvoicesAsync() => _repository.GetAllAsync();
+    public Task<Invoice?> GetInvoiceByBookingIdAsync(int bookingId) => _repository.GetByBookingIdAsync(bookingId);
+    public Task<PaginatedResultDto<Invoice>> GetPagedInvoicesAsync(InvoiceQueryDto query)
+        => _repository.GetPagedInvoicesAsync(query);
 
-    public async Task<Invoice?> GetInvoiceByIdAsync(int id)
-    {
-        return await _repository.GetByIdAsync(id);
-    }
-
-    public async Task<IEnumerable<Invoice>> GetAllInvoicesAsync()
-    {
-        return await _repository.GetAllAsync();
-    }
-
-    public async Task<PaginatedResultDto<Invoice>> GetPagedInvoicesAsync(InvoiceQueryDto query)
-    {
-        return await _repository.GetPagedInvoicesAsync(query);
-    }
-
+    // ================= COMPLETE =================
     public async Task<bool> CompleteInvoiceByIdAsync(int id)
     {
         var invoice = await _repository.GetByIdAsync(id);
         if (invoice == null || invoice.Status == "Completed") return false;
 
-        var booking = await _bookingRepository.GetBookingByIdWithDetailsAsync(invoice.BookingId!.Value, includeRoom: true);
+        var booking = invoice.Booking;
         if (booking == null) return false;
 
         await CalculateAmountsAsync(invoice, booking);
+
         invoice.Status = "Completed";
         invoice.CompletedAt = DateTime.Now;
-        
-        _repository.Update(invoice);
+
         await _repository.SaveChangesAsync();
         return true;
     }
 
+    // ================= UPDATE AMOUNTS =================
     public async Task UpdateInvoiceAmountsAsync(int bookingId)
     {
-        var booking = await _bookingRepository.GetBookingByIdWithDetailsAsync(bookingId, includeRoom: true);
+        var booking = await _bookingRepository.GetBookingByIdWithDetailsAsync(bookingId, true);
         if (booking == null) return;
 
         var invoices = await _context.Set<Invoice>()
@@ -130,185 +134,143 @@ public class InvoiceService : IInvoiceService
 
         foreach (var invoice in invoices)
         {
-            if (invoice.Status != "Completed")
-            {
-                await CalculateAmountsAsync(invoice, booking);
-                _repository.Update(invoice);
-            }
+            if (invoice.Status == "Completed") continue;
+            await CalculateAmountsAsync(invoice, booking);
         }
 
         await _repository.SaveChangesAsync();
     }
 
+    // ================= SPLIT ALL =================
     public async Task<bool> SplitInvoiceAsync(int invoiceId)
     {
         var invoice = await _repository.GetByIdAsync(invoiceId);
-        if (invoice == null || invoice.BookingId == null || invoice.Status == "Completed") return false;
+        if (invoice == null || invoice.Status == "Completed") return false;
 
-        var booking = await _bookingRepository.GetBookingByIdWithDetailsAsync(invoice.BookingId.Value, includeRoom: true);
+        var booking = invoice.Booking;
         if (booking == null || booking.BookingDetails.Count < 2) return false;
 
-        // "Split All" logic: every room gets its own invoice
-        // Skip the first room (it stays on the current invoice)
-        var details = booking.BookingDetails.OrderBy(d => d.Id).ToList();
-        var moveDetails = details.Skip(1).ToList();
+        var moveDetails = booking.BookingDetails.OrderBy(x => x.Id).Skip(1).ToList();
 
         foreach (var detail in moveDetails)
         {
             var newInvoice = new Invoice
             {
                 BookingId = booking.Id,
-                InvoiceCode = $"INV-{detail.Id}-{DateTime.Now:yyyyMMdd-HHmmss}",
+                InvoiceCode = GenerateInvoiceCode("INV", detail.Id),
                 CreatedAt = DateTime.Now,
                 Status = "Pending"
             };
-            await _repository.AddAsync(newInvoice);
-            await _repository.SaveChangesAsync();
 
-            detail.InvoiceId = newInvoice.Id;
-            await CalculateAmountsAsync(newInvoice, booking);
-            _repository.Update(newInvoice);
+            await _repository.AddAsync(newInvoice);
+            detail.Invoice = newInvoice;
         }
 
-        // Recalculate original
-        await CalculateAmountsAsync(invoice, booking);
-        _repository.Update(invoice);
         await _repository.SaveChangesAsync();
 
+        foreach (var detail in moveDetails)
+        {
+            if (detail.Invoice == null) continue;
+            await CalculateAmountsAsync(detail.Invoice, booking);
+        }
+
+        await CalculateAmountsAsync(invoice, booking);
+
+        await _repository.SaveChangesAsync();
         return true;
     }
 
+    // ================= SPLIT MULTIPLE =================
     public async Task<bool> SplitMultipleAsync(int invoiceId, List<int> roomDetailIds)
     {
-        var sourceInvoice = await _repository.GetByIdAsync(invoiceId);
-        if (sourceInvoice == null || sourceInvoice.BookingId == null || sourceInvoice.Status == "Completed" || roomDetailIds == null || roomDetailIds.Count == 0) return false;
+        var source = await _repository.GetByIdAsync(invoiceId);
+        if (source == null || source.Status == "Completed") return false;
 
-        var booking = await _bookingRepository.GetBookingByIdWithDetailsAsync(sourceInvoice.BookingId.Value, includeRoom: true);
+        var booking = source.Booking;
         if (booking == null) return false;
-
-        // Ensure we are not moving ALL rooms (must leave at least one)
-        var currentRooms = booking.BookingDetails.Where(bd => bd.InvoiceId == invoiceId).Select(bd => bd.Id).ToList();
-        if (roomDetailIds.All(rid => currentRooms.Contains(rid)) && roomDetailIds.Count == currentRooms.Count)
-        {
-            return false; // Cannot move all rooms
-        }
 
         var newInvoice = new Invoice
         {
             BookingId = booking.Id,
-            InvoiceCode = $"INV-P-{DateTime.Now:yyyyMMdd-HHmmss}",
+            InvoiceCode = GenerateInvoiceCode("INV-P"),
             CreatedAt = DateTime.Now,
             Status = "Pending"
         };
+
         await _repository.AddAsync(newInvoice);
         await _repository.SaveChangesAsync();
 
-        foreach (var rid in roomDetailIds)
+        foreach (var id in roomDetailIds)
         {
-            var detail = booking.BookingDetails.FirstOrDefault(bd => bd.Id == rid);
-            if (detail != null)
-            {
-                detail.InvoiceId = newInvoice.Id;
-            }
+            var detail = booking.BookingDetails.FirstOrDefault(x => x.Id == id);
+            if (detail != null) detail.InvoiceId = newInvoice.Id;
         }
 
         await CalculateAmountsAsync(newInvoice, booking);
-        await CalculateAmountsAsync(sourceInvoice, booking);
-        
-        _repository.Update(newInvoice);
-        _repository.Update(sourceInvoice);
-        await _repository.SaveChangesAsync();
+        await CalculateAmountsAsync(source, booking);
 
+        await _repository.SaveChangesAsync();
         return true;
     }
 
+    // ================= CALCULATE =================
     private async Task CalculateAmountsAsync(Invoice invoice, Booking booking)
     {
-        // Filter elements based on which rooms are assigned to this specific invoice
-        var targetDetails = booking.BookingDetails.Where(bd => bd.InvoiceId == invoice.Id).ToList();
+        var details = booking.BookingDetails
+            .Where(bd => bd.InvoiceId == invoice.Id)
+            .ToList();
 
-        // 1. Room Amount
-        decimal totalRoomAmount = 0;
-        foreach (var detail in targetDetails)
+        decimal room = 0;
+
+        foreach (var d in details)
         {
-            var effectiveCheckOut = detail.ActualCheckOutDate ?? detail.CheckOutDate;
-            var duration = effectiveCheckOut - detail.CheckInDate;
+            var end = d.ActualCheckOutDate ?? d.CheckOutDate;
+            var duration = end - d.CheckInDate;
             if (duration <= TimeSpan.Zero) continue;
 
-            if (detail.CheckInDate.Date == effectiveCheckOut.Date)
+            if (d.CheckInDate.Date == end.Date)
             {
-                var hours = (decimal)Math.Ceiling(duration.TotalHours);
-                var hourlyRate = Math.Ceiling(detail.PricePerNight / 24m);
-                totalRoomAmount += Math.Max(1, hours) * hourlyRate;
+                var hours = Math.Ceiling((decimal)duration.TotalHours);
+                var rate = Math.Ceiling(d.PricePerNight / 24m);
+                room += Math.Max(1, hours) * rate;
             }
             else
             {
-                var nights = (decimal)Math.Ceiling(duration.TotalDays);
-                totalRoomAmount += Math.Max(1, nights) * detail.PricePerNight;
+                var nights = Math.Ceiling((decimal)duration.TotalDays);
+                room += Math.Max(1, nights) * d.PricePerNight;
             }
         }
-        invoice.TotalRoomAmount = totalRoomAmount;
 
-        // 2. Service Amount
-        decimal totalServiceAmount = targetDetails
-            .SelectMany(bd => bd.OrderServices)
-            .Sum(os => os.TotalAmount);
-        invoice.TotalServiceAmount = totalServiceAmount;
+        invoice.TotalRoomAmount = room;
 
-        // 3. Loss and Damage Amount
-        decimal totalLossDamageAmount = targetDetails
-            .SelectMany(bd => bd.LossAndDamages)
-            .Sum(ld => ld.PenaltyAmount);
-        invoice.TotalLossDamageAmount = totalLossDamageAmount;
+        var service = details.SelectMany(x => x.OrderServices).Sum(x => x.TotalAmount);
+        var damage = details.SelectMany(x => x.LossAndDamages).Sum(x => x.PenaltyAmount);
 
-        // 4. Discount Amount (Voucher + Membership)
-        decimal discountAmount = 0;
-        
-        // Voucher Discount: Applied to the subtotal of room amount in this specific invoice
+        invoice.TotalServiceAmount = service;
+        invoice.TotalLossDamageAmount = damage;
+
+        decimal discount = 0;
+
         if (booking.VoucherId.HasValue)
         {
-            // Simple rule: Apply the voucher to the FIRST invoice created for this booking 
-            // (the one with the earliest ID that has rooms)
-            var firstInvoiceId = booking.Invoices?.OrderBy(i => i.Id).FirstOrDefault()?.Id ?? invoice.Id;
-            bool canApplyVoucher = invoice.Id == firstInvoiceId;
-
-            if (canApplyVoucher)
-            {
-                var voucher = await _voucherRepository.GetByIdAsync(booking.VoucherId.Value);
-                if (voucher != null)
-                {
-                    if (voucher.DiscountType == "Percentage")
-                    {
-                        discountAmount += Math.Round(totalRoomAmount * (voucher.DiscountValue / 100m), 2);
-                    }
-                    else if (voucher.DiscountType == "Fixed")
-                    {
-                        discountAmount += Math.Min(voucher.DiscountValue, totalRoomAmount);
-                    }
-                }
-            }
+            var voucher = await _voucherRepository.GetByIdAsync(booking.VoucherId.Value);
+            if (voucher != null && voucher.DiscountType == "Percentage")
+                discount += room * (voucher.DiscountValue / 100m);
         }
 
-        // Membership Discount (Applied to Room Amount of this specific invoice)
         if (booking.User?.Membership != null)
         {
-            var membershipDiscountPercent = booking.User.Membership.DiscountPercent ?? 0;
-            if (membershipDiscountPercent > 0)
-            {
-                discountAmount += Math.Round(totalRoomAmount * (membershipDiscountPercent / 100m), 2);
-            }
+            discount += room * ((booking.User.Membership.DiscountPercent ?? 0) / 100m);
         }
-        invoice.DiscountAmount = discountAmount;
 
-        // 5. Tax Amount (10% of subtotal)
-        decimal subtotal = totalRoomAmount + totalServiceAmount + totalLossDamageAmount - discountAmount;
-        invoice.TaxAmount = Math.Round(Math.Max(0, subtotal) * _taxRate, 2);
+        invoice.DiscountAmount = discount;
 
-        // 6. Final Total
+        var subtotal = room + service + damage - discount;
+
+        invoice.TaxAmount = Math.Max(0, subtotal) * _taxRate;
         invoice.FinalTotal = subtotal + invoice.TaxAmount;
     }
-    public async Task<bool> CompleteInvoiceAsync(int invoiceId)
-    {
-        return await CompleteInvoiceByIdAsync(invoiceId);
-    }
+
+    public Task<bool> CompleteInvoiceAsync(int invoiceId)
+        => CompleteInvoiceByIdAsync(invoiceId);
 }

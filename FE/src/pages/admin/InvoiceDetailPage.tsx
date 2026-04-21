@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { ArrowPathIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import { ArrowPathIcon, ExclamationTriangleIcon, ArrowLeftIcon, PrinterIcon } from '@heroicons/react/24/outline';
 import invoicesApi from '../../api/invoicesApi';
 import type { InvoiceDetail } from '../../types/invoices';
 import { toApiError } from '../../api/httpClient';

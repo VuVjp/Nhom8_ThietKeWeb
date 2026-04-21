@@ -76,6 +76,8 @@ public class InvoiceRepository : Repository<Invoice>, IInvoiceRepository
     public async Task<PaginatedResultDto<Invoice>> GetPagedInvoicesAsync(InvoiceQueryDto query)
     {
         var q = _dbSet
+            .AsNoTracking()
+            .AsSplitQuery()
             .Include(i => i.Booking)
                 .ThenInclude(b => b!.BookingDetails)
             .Include(i => i.BookingDetails)

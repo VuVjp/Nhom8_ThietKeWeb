@@ -214,11 +214,13 @@ public class RoomService : IRoomService
 		_repository.Update(room);
 		await _repository.SaveChangesAsync();
 
-		if (newCleaningStatus.Equals("Cleaning", StringComparison.OrdinalIgnoreCase))
+		if (newCleaningStatus.Equals("Cleaning", StringComparison.OrdinalIgnoreCase) || 
+			newCleaningStatus.Equals("Clean", StringComparison.OrdinalIgnoreCase))
 		{
 			// Find the most recent CheckedOut booking for this room
 			var booking = await _context.Bookings
 				.Include(b => b.BookingDetails)
+					.ThenInclude(bd => bd.Room)
 				.Where(b => b.Status == "CheckedOut")
 				.Where(b => b.BookingDetails.Any(bd => bd.RoomId == id))
 				.OrderByDescending(b => b.Id)
@@ -226,8 +228,17 @@ public class RoomService : IRoomService
 
 			if (booking != null)
 			{
-				// Keep the invoice creation (and charge sync) trigger when cleaning starts
-				await _invoiceService.CreateInvoiceAsync(booking.Id);
+				// Check if ALL rooms in this booking are either Cleaning or Clean
+				bool allRoomsReady = booking.BookingDetails.All(bd => 
+					bd.Room != null && 
+					(bd.Room.CleaningStatus.Equals("Cleaning", StringComparison.OrdinalIgnoreCase) || 
+					 bd.Room.CleaningStatus.Equals("Clean", StringComparison.OrdinalIgnoreCase)));
+
+				if (allRoomsReady)
+				{
+					// Trigger the invoice creation (and charge sync) only when all rooms are ready
+					await _invoiceService.CreateInvoiceAsync(booking.Id);
+				}
 			}
 		}
 	}

@@ -177,6 +177,7 @@ public class AppDbContext : DbContext
             e.Property(x => x.FinalPrice).HasColumnName("final_price").HasColumnType("decimal(18,2)");
             e.Property(x => x.InvoiceType).HasColumnName("invoice_type").HasDefaultValue("Consolidated");
             e.HasIndex(x => x.BookingCode).IsUnique();
+            e.HasIndex(x => x.GuestName);
         });
 
         modelBuilder.Entity<Equipment>(e =>
@@ -209,7 +210,12 @@ public class AppDbContext : DbContext
             e.Property(x => x.DiscountAmount).HasColumnName("discount_amount").HasColumnType("decimal(18,2)");
             e.Property(x => x.TaxAmount).HasColumnName("tax_amount").HasColumnType("decimal(18,2)");
             e.Property(x => x.FinalTotal).HasColumnName("final_total").HasColumnType("decimal(18,2)");
+            e.Property(x => x.TotalLossDamageAmount).HasColumnName("total_loss_damage_amount").HasColumnType("decimal(18,2)");
             e.Property(x => x.Status).HasColumnName("status");
+            
+            e.HasIndex(x => x.InvoiceCode).IsUnique();
+            e.HasIndex(x => x.Status);
+            e.HasIndex(x => x.CreatedAt);
         });
 
         modelBuilder.Entity<LossAndDamage>(e =>
