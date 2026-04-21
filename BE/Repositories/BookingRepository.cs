@@ -1,4 +1,5 @@
 using HotelManagement.Data;
+using HotelManagement.Dtos;
 using HotelManagement.Entities;
 using HotelManagement.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -123,15 +124,40 @@ public class BookingRepository : IBookingRepository
             .ToListAsync();
     }
 
-    public async Task<List<int>> GetOverdueCheckInBookingIdsAsync(DateTime cutoffTime)
+    public async Task<OverdueBookingResult> GetOverdueCheckInBookingIdsAsync(
+    DateTime cutoffTimeConfirmed,
+    DateTime cutoffTimePending)
     {
-        return await _context.Bookings
+        var data = await _context.Bookings
             .AsNoTracking()
-            .Where(booking => booking.Status == "Pending" || booking.Status == "Confirmed")
-            .Where(booking => booking.BookingDetails.Any(detail => detail.CheckInDate <= cutoffTime))
-            .Select(booking => booking.Id)
+            .Where(b =>
+                (b.Status == "Pending" &&
+                    b.BookingDetails.Any(d => d.CheckInDate <= cutoffTimePending))
+                ||
+                (b.Status == "Confirmed" &&
+                    b.BookingDetails.Any(d => d.CheckInDate <= cutoffTimeConfirmed))
+            )
+            .Select(b => new
+            {
+                b.Id,
+                b.Status
+            })
             .ToListAsync();
+
+        return new OverdueBookingResult
+        {
+            PendingBookingIds = data
+                .Where(x => x.Status == "Pending")
+                .Select(x => x.Id)
+                .ToList(),
+
+            ConfirmedBookingIds = data
+                .Where(x => x.Status == "Confirmed")
+                .Select(x => x.Id)
+                .ToList()
+        };
     }
+
 
     public async Task<BookingDetail?> GetBookingDetailWithBookingAsync(int id)
     {

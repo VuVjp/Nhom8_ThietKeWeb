@@ -172,6 +172,7 @@ public class AppDbContext : DbContext
             e.Property(x => x.BookingCode).HasColumnName("booking_code");
             e.Property(x => x.VoucherId).HasColumnName("voucher_id");
             e.Property(x => x.Status).HasColumnName("status");
+            e.Property(x => x.Deposit).HasColumnName("deposit").HasColumnType("decimal(18,2)");
             e.Property(x => x.TotalPrice).HasColumnName("total_price").HasColumnType("decimal(18,2)");
             e.Property(x => x.Discount).HasColumnName("discount").HasColumnType("decimal(18,2)");
             e.Property(x => x.FinalPrice).HasColumnName("final_price").HasColumnType("decimal(18,2)");
@@ -271,10 +272,24 @@ public class AppDbContext : DbContext
         {
             e.Property(x => x.Id).HasColumnName("id");
             e.Property(x => x.InvoiceId).HasColumnName("invoice_id");
+            e.Property(x => x.BookingId).HasColumnName("booking_id");
             e.Property(x => x.PaymentMethod).HasColumnName("payment_method");
             e.Property(x => x.AmountPaid).HasColumnName("amount_paid").HasColumnType("decimal(18,2)");
             e.Property(x => x.TransactionCode).HasColumnName("transaction_code");
+            e.Property(x => x.MomoOrderId).HasColumnName("momo_order_id");
+            e.Property(x => x.RequestId).HasColumnName("request_id");
+            e.Property(x => x.PaymentForType).HasColumnName("payment_for_type").HasColumnType("varchar(50)");
+            e.Property(x => x.Status).HasColumnName("status").HasColumnType("varchar(50)");
+            e.Property(x => x.RawIpn).HasColumnName("raw_ipn").HasColumnType("nvarchar(max)");
             e.Property(x => x.PaymentDate).HasColumnName("payment_date");
+
+            e.HasIndex(x => x.TransactionCode)
+                .IsUnique()
+                .HasFilter("[transaction_code] IS NOT NULL");
+
+            e.HasIndex(x => x.MomoOrderId)
+                .IsUnique()
+                .HasFilter("[momo_order_id] IS NOT NULL");
         });
 
         modelBuilder.Entity<Permission>(e =>
@@ -481,6 +496,9 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<Payment>()
             .HasOne(p => p.Invoice).WithMany(i => i.Payments).HasForeignKey(p => p.InvoiceId).OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<Payment>()
+            .HasOne(p => p.Booking).WithMany().HasForeignKey(p => p.BookingId).OnDelete(DeleteBehavior.SetNull);
 
         modelBuilder.Entity<OrderService>()
             .HasOne(os => os.BookingDetail).WithMany(bd => bd.OrderServices).HasForeignKey(os => os.BookingDetailId).OnDelete(DeleteBehavior.SetNull);

@@ -39,7 +39,7 @@ public class InvoicesController : ControllerBase
     public async Task<ActionResult<IEnumerable<InvoiceDto>>> GetAll()
     {
         var invoices = await _invoiceService.GetAllInvoicesAsync();
-        var dtos = invoices.Select(i => MapToDto(i));
+        var dtos = await Task.WhenAll(invoices.Select(MapToDtoAsync));
         return Ok(dtos);
     }
 
@@ -47,7 +47,7 @@ public class InvoicesController : ControllerBase
     public async Task<ActionResult<PaginatedResultDto<InvoiceDto>>> GetPaged([FromQuery] InvoiceQueryDto query)
     {
         var result = await _invoiceService.GetPagedInvoicesAsync(query);
-        var dtos = result.Items.Select(i => MapToDto(i)).ToList();
+        var dtos = (await Task.WhenAll(result.Items.Select(MapToDtoAsync))).ToList();
 
         return Ok(new PaginatedResultDto<InvoiceDto>
         {
@@ -58,11 +58,15 @@ public class InvoicesController : ControllerBase
         });
     }
 
-    private static InvoiceDto MapToDto(Entities.Invoice i)
+    private async Task<InvoiceDto> MapToDtoAsync(Entities.Invoice i)
     {
         // For the paged list, we show the first room number if it's a split invoice
         var isSplit = i.BookingDetails.Count < (i.Booking?.BookingDetails.Count ?? 0);
         var roomNumber = i.BookingDetails.FirstOrDefault()?.Room?.RoomNumber;
+
+        var paidAmount = await _invoiceService.GetPaidAmountAsync(i.Id);
+        var allocatedDeposit = await _invoiceService.GetAllocatedDepositAsync(i.Id);
+        var remainingAmount = Math.Max(0m, (i.FinalTotal ?? 0m) - paidAmount - allocatedDeposit);
 
         return new InvoiceDto
         {
@@ -77,6 +81,9 @@ public class InvoicesController : ControllerBase
             DiscountAmount = i.DiscountAmount ?? 0,
             TaxAmount = i.TaxAmount ?? 0,
             FinalTotal = i.FinalTotal ?? 0,
+            PaidAmount = paidAmount,
+            AllocatedDeposit = allocatedDeposit,
+            RemainingAmount = remainingAmount,
             Status = i.Status,
             CreatedAt = i.CreatedAt,
             CompletedAt = i.CompletedAt,
@@ -96,6 +103,9 @@ public class InvoicesController : ControllerBase
 
         var targetDetails = invoice.BookingDetails.ToList();
         var isSplit = targetDetails.Count < (booking.BookingDetails.Count);
+        var paidAmount = await _invoiceService.GetPaidAmountAsync(invoice.Id);
+        var allocatedDeposit = await _invoiceService.GetAllocatedDepositAsync(invoice.Id);
+        var remainingAmount = Math.Max(0m, (invoice.FinalTotal ?? 0m) - paidAmount - allocatedDeposit);
 
         var dto = new InvoiceDetailDto
         {
@@ -110,6 +120,9 @@ public class InvoicesController : ControllerBase
             DiscountAmount = invoice.DiscountAmount ?? 0,
             TaxAmount = invoice.TaxAmount ?? 0,
             FinalTotal = invoice.FinalTotal ?? 0,
+            PaidAmount = paidAmount,
+            AllocatedDeposit = allocatedDeposit,
+            RemainingAmount = remainingAmount,
             Status = invoice.Status,
             CreatedAt = invoice.CreatedAt,
             CompletedAt = invoice.CompletedAt,

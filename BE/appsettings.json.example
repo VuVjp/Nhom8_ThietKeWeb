@@ -50,5 +50,17 @@
         "Enabled": true,
         "CheckInGraceMinutes": 60,
         "ScanIntervalMinutes": 5
+    },
+    "Momo": {
+        "PartnerCode": "MOMO",
+        "AccessKey": "F8BBA842ECF85",
+        "RequestType": "captureWallet",
+        "ExtraData": "",
+        "StoreId": "Test Store",
+        "PartnerName": "MoMo Payment",
+        "SecretKey": "K951B6PE1waDMi640xX08PD3vg6EkVlz",
+        "Endpoint": "https://test-payment.momo.vn/v2/gateway/api/create",
+        "RedirectUrl": "http://localhost:5173",
+        "IpnUrl": "https://localhost:5082/api/momo/ipn"
     }
 }

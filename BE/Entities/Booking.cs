@@ -13,6 +13,7 @@ public class Booking
     public decimal TotalPrice { get; set; }
     public decimal? Discount { get; set; }
     public decimal FinalPrice { get; set; }
+    public decimal? Deposit { get; set; }
     public string InvoiceType { get; set; } = "Consolidated"; // Consolidated or Split
 
     public User? User { get; set; }

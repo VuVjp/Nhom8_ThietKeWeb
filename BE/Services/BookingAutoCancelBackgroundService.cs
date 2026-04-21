@@ -31,7 +31,7 @@ public class BookingAutoCancelBackgroundService : BackgroundService
             {
                 if (currentSettings.Enabled)
                 {
-                    await ProcessOverdueBookingsAsync(currentSettings.CheckInGraceMinutes, stoppingToken);
+                    await ProcessOverdueBookingsAsync(currentSettings.CheckInGraceMinutes, currentSettings.PendingGraceMinutes, stoppingToken);
                 }
             }
             catch (Exception ex)
@@ -43,25 +43,46 @@ public class BookingAutoCancelBackgroundService : BackgroundService
         }
     }
 
-    private async Task ProcessOverdueBookingsAsync(int checkInGraceMinutes, CancellationToken cancellationToken)
+    private async Task ProcessOverdueBookingsAsync(int checkInGraceMinutes, int pendingGraceMinutes, CancellationToken cancellationToken)
     {
-        var graceMinutes = Math.Max(1, checkInGraceMinutes);
-        var cutoffTime = DateTime.Now.AddMinutes(-graceMinutes);
+        var graceMinutesCheckIn = Math.Max(1, checkInGraceMinutes);
+        var graceMinutesPending = Math.Max(1, pendingGraceMinutes);
+        var cutoffTimeConfirmed = DateTime.Now.AddMinutes(-graceMinutesCheckIn);
+        var cutoffTimePending = DateTime.Now.AddMinutes(-graceMinutesPending);
 
         using var scope = _scopeFactory.CreateScope();
         var bookingRepository = scope.ServiceProvider.GetRequiredService<IBookingRepository>();
         var bookingService = scope.ServiceProvider.GetRequiredService<IBookingService>();
 
-        var overdueBookingIds = await bookingRepository.GetOverdueCheckInBookingIdsAsync(cutoffTime);
+        var overdueBookingIds = await bookingRepository.GetOverdueCheckInBookingIdsAsync(cutoffTimeConfirmed, cutoffTimePending);
+        var pendingBookings = overdueBookingIds.PendingBookingIds;
+        var confirmedBookings = overdueBookingIds.ConfirmedBookingIds;
 
-        if (overdueBookingIds.Count == 0)
+        if (overdueBookingIds.PendingBookingIds.Count == 0 && overdueBookingIds.ConfirmedBookingIds.Count == 0)
         {
             return;
         }
 
         var cancelledCount = 0;
 
-        foreach (var bookingId in overdueBookingIds)
+        foreach (var bookingId in pendingBookings)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            try
+            {
+                var updated = await bookingService.ChangeBookingStatusAsync(bookingId, "Cancelled");
+                if (updated)
+                {
+                    cancelledCount++;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Skip auto-cancel for booking {BookingId}.", bookingId);
+            }
+        }
+        foreach (var bookingId in confirmedBookings)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -81,10 +102,7 @@ public class BookingAutoCancelBackgroundService : BackgroundService
 
         if (cancelledCount > 0)
         {
-            _logger.LogInformation(
-                "Auto-cancelled {CancelledCount} overdue booking(s) with check-in older than {GraceMinutes} minutes.",
-                cancelledCount,
-                graceMinutes);
+            _logger.LogInformation("Auto-cancelled {CancelledCount} overdue bookings ({PendingCount} pending, {ConfirmedCount} confirmed).", cancelledCount, pendingBookings.Count, confirmedBookings.Count);
         }
     }
 }
