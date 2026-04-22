@@ -14,6 +14,10 @@ public class Booking
     public decimal? Discount { get; set; }
     public decimal FinalPrice { get; set; }
     public decimal? Deposit { get; set; }
+    public int? AppliedMembershipId { get; set; }
+    public string? AppliedMembershipTierName { get; set; }
+    public decimal? MembershipDiscountPercentApplied { get; set; }
+    public decimal? MembershipDiscountAmountApplied { get; set; }
     public string InvoiceType { get; set; } = "Consolidated"; // Consolidated or Split
 
     public User? User { get; set; }

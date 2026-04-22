@@ -39,7 +39,11 @@ public class InvoicesController : ControllerBase
     public async Task<ActionResult<IEnumerable<InvoiceDto>>> GetAll()
     {
         var invoices = await _invoiceService.GetAllInvoicesAsync();
-        var dtos = await Task.WhenAll(invoices.Select(MapToDtoAsync));
+        var dtos = new List<InvoiceDto>();
+        foreach (var invoice in invoices)
+        {
+            dtos.Add(await MapToDtoAsync(invoice));
+        }
         return Ok(dtos);
     }
 
@@ -47,7 +51,11 @@ public class InvoicesController : ControllerBase
     public async Task<ActionResult<PaginatedResultDto<InvoiceDto>>> GetPaged([FromQuery] InvoiceQueryDto query)
     {
         var result = await _invoiceService.GetPagedInvoicesAsync(query);
-        var dtos = (await Task.WhenAll(result.Items.Select(MapToDtoAsync))).ToList();
+        var dtos = new List<InvoiceDto>();
+        foreach (var invoice in result.Items)
+        {
+            dtos.Add(await MapToDtoAsync(invoice));
+        }
 
         return Ok(new PaginatedResultDto<InvoiceDto>
         {
@@ -218,11 +226,10 @@ public class InvoicesController : ControllerBase
 
     private decimal CalculateRoomSubtotal(Entities.BookingDetail detail)
     {
-        var effectiveCheckOut = detail.ActualCheckOutDate ?? detail.CheckOutDate;
-        var duration = effectiveCheckOut - detail.CheckInDate;
+        var duration = detail.CheckOutDate - detail.CheckInDate;
         if (duration <= TimeSpan.Zero) return 0;
 
-        if (detail.CheckInDate.Date == effectiveCheckOut.Date)
+        if (detail.CheckInDate.Date == detail.CheckOutDate.Date)
         {
             var hours = (decimal)Math.Ceiling(duration.TotalHours);
             var hourlyRate = Math.Ceiling(detail.PricePerNight / 24m);

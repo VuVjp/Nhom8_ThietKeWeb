@@ -7,6 +7,7 @@ import { Modal } from '../../../components/Modal';
 import { Pagination } from '../../../components/Pagination';
 import { toApiError } from '../../../api/httpClient';
 import { receptionApi } from '../../../api/receptionApi';
+import momoApi from '../../../api/momoApi';
 import type { Booking, BookingStatus, RoomAvailability } from '../../../types/models';
 import { PencilSquareIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import { formatDate } from '../../../utils/format';
@@ -38,6 +39,8 @@ export function BookingsListPage() {
     const [editAvailableRooms, setEditAvailableRooms] = useState<RoomAvailability[]>([]);
     const [isLoadingEditRooms] = useState(false);
     const [isSavingEdit, setIsSavingEdit] = useState(false);
+    const [activePaymentBookingId, setActivePaymentBookingId] = useState<number | null>(null);
+    const [activePaymentMethod, setActivePaymentMethod] = useState<'cash' | 'momo' | null>(null);
 
     const loadBookings = useCallback(async () => {
         setIsLoading(true);
@@ -65,6 +68,60 @@ export function BookingsListPage() {
         } catch (error) {
             const apiError = toApiError(error);
             toast.error(apiError.message || 'Failed to update status');
+        }
+    };
+
+    const handleBookingCashPayment = async (booking: Booking) => {
+        if (booking.status !== 'Pending') {
+            toast.error('Only pending bookings can receive deposit payment.');
+            return;
+        }
+
+        setActivePaymentBookingId(booking.id);
+        setActivePaymentMethod('cash');
+        try {
+            await momoApi.payCash({
+                type: 'booking',
+                targetId: booking.id,
+            });
+            toast.success('Cash deposit recorded. Booking confirmed.');
+            setBookings((prev) => prev.map((b) => (b.id === booking.id ? { ...b, status: 'Confirmed' } : b)));
+        } catch (error) {
+            const apiError = toApiError(error);
+            toast.error(apiError.message || 'Failed to process cash payment');
+        } finally {
+            setActivePaymentBookingId(null);
+            setActivePaymentMethod(null);
+        }
+    };
+
+    const handleBookingMomoPayment = async (booking: Booking) => {
+        if (booking.status !== 'Pending') {
+            toast.error('Only pending bookings can receive deposit payment.');
+            return;
+        }
+
+        setActivePaymentBookingId(booking.id);
+        setActivePaymentMethod('momo');
+        try {
+            const response = await momoApi.createPayment({
+                type: 'booking',
+                targetId: booking.id,
+            });
+
+            if (!response.payUrl) {
+                toast.error('Unable to create MoMo payment link.');
+                return;
+            }
+
+            window.open(response.payUrl, '_blank', 'noopener,noreferrer');
+            toast.success('Opened MoMo payment page in a new tab.');
+        } catch (error) {
+            const apiError = toApiError(error);
+            toast.error(apiError.message || 'Failed to create MoMo payment');
+        } finally {
+            setActivePaymentBookingId(null);
+            setActivePaymentMethod(null);
         }
     };
 
@@ -301,13 +358,31 @@ export function BookingsListPage() {
             label: 'Actions',
             render: (row: Booking) =>
                 row.status === 'Pending' ? (
-                    <button
-                        type="button"
-                        className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-xs"
-                        onClick={() => openEditModal(row)}
-                    >
-                        <PencilSquareIcon className="h-4 w-4" /> Edit
-                    </button>
+                    <div className="flex flex-wrap items-center gap-2">
+                        <button
+                            type="button"
+                            className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-xs"
+                            onClick={() => openEditModal(row)}
+                        >
+                            <PencilSquareIcon className="h-4 w-4" /> Edit
+                        </button>
+                        <button
+                            type="button"
+                            className="inline-flex items-center rounded-lg bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
+                            onClick={() => void handleBookingCashPayment(row)}
+                            disabled={activePaymentBookingId === row.id}
+                        >
+                            {activePaymentBookingId === row.id && activePaymentMethod === 'cash' ? 'Processing...' : 'Cash Deposit'}
+                        </button>
+                        <button
+                            type="button"
+                            className="inline-flex items-center rounded-lg bg-cyan-700 px-2.5 py-1 text-xs font-semibold text-white hover:bg-cyan-800 disabled:opacity-60"
+                            onClick={() => void handleBookingMomoPayment(row)}
+                            disabled={activePaymentBookingId === row.id}
+                        >
+                            {activePaymentBookingId === row.id && activePaymentMethod === 'momo' ? 'Creating link...' : 'MoMo Transfer'}
+                        </button>
+                    </div>
                 ) : (
                     <span className="text-xs text-slate-400">Locked</span>
                 ),

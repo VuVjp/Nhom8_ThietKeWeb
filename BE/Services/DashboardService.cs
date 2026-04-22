@@ -43,6 +43,14 @@ public class DashboardService : IDashboardService
         public string? CleaningStatus { get; set; }
     }
 
+    private sealed class PaymentProjection
+    {
+        public decimal AmountPaid { get; set; }
+        public DateTime? PaymentDate { get; set; }
+        public string? Status { get; set; }
+        public string? PaymentForType { get; set; }
+    }
+
     public DashboardService(AppDbContext context)
     {
         _context = context;
@@ -99,6 +107,17 @@ public class DashboardService : IDashboardService
             })
             .ToListAsync();
 
+        var payments = await _context.Payments
+            .AsNoTracking()
+            .Select(payment => new PaymentProjection
+            {
+                AmountPaid = payment.AmountPaid,
+                PaymentDate = payment.PaymentDate,
+                Status = payment.Status,
+                PaymentForType = payment.PaymentForType,
+            })
+            .ToListAsync();
+
         var criticalAlerts = await _context.LossAndDamages
             .AsNoTracking()
             .OrderByDescending(item => item.CreatedAt)
@@ -121,17 +140,15 @@ public class DashboardService : IDashboardService
             .Where(item => !string.IsNullOrWhiteSpace(item.Status) && RevenueBookingStatuses.Contains(item.Status!))
             .ToList();
 
-        var completedOrders = orders
-            .Where(item => item.Status == OrderServiceStatus.Completed)
+        var successfulPayments = payments
+            .Where(IsSuccessfulPayment)
             .ToList();
 
-        var bookingRevenue = confirmedBookings.Sum(item => item.FinalPrice);
-        var serviceRevenue = completedOrders.Sum(item => item.TotalAmount);
-        var totalRevenue = bookingRevenue + serviceRevenue;
+        var totalRevenue = successfulPayments.Sum(item => item.AmountPaid);
 
         var occupancy = BuildOccupancySummary(rooms);
 
-        var revenueChartData = BuildRevenueChartData(startDate, normalizedDays, confirmedBookings, completedOrders);
+        var revenueChartData = BuildRevenueChartData(startDate, normalizedDays, successfulPayments);
 
         var statusChartData = new List<DashboardRoomStatusPointDto>
         {
@@ -205,39 +222,46 @@ public class DashboardService : IDashboardService
     private static List<DashboardRevenuePointDto> BuildRevenueChartData(
         DateTime startDate,
         int days,
-        IEnumerable<BookingProjection> confirmedBookings,
-        IEnumerable<OrderProjection> completedOrders)
+        IEnumerable<PaymentProjection> successfulPayments)
     {
-        var bookingDaily = confirmedBookings
-            .Where(item => item.CheckInDate != null)
-            .GroupBy(item => item.CheckInDate!.Value.Date)
-            .ToDictionary(group => group.Key, group => group.Sum(item => item.FinalPrice));
+        var paymentDaily = successfulPayments
+            .Where(item => item.PaymentDate != null)
+            .GroupBy(item => item.PaymentDate!.Value.Date)
+            .ToDictionary(group => group.Key, group => group.Sum(item => item.AmountPaid));
 
-        var bookingCountDaily = confirmedBookings
-            .Where(item => item.CheckInDate != null)
-            .GroupBy(item => item.CheckInDate!.Value.Date)
+        var bookingCountDaily = successfulPayments
+            .Where(item => item.PaymentDate != null)
+            .Where(item => string.Equals(item.PaymentForType, "booking", StringComparison.OrdinalIgnoreCase))
+            .GroupBy(item => item.PaymentDate!.Value.Date)
             .ToDictionary(group => group.Key, group => group.Count());
-
-        var serviceDaily = completedOrders
-            .GroupBy(item => item.OrderDate.Date)
-            .ToDictionary(group => group.Key, group => group.Sum(item => item.TotalAmount));
 
         var result = new List<DashboardRevenuePointDto>(days);
         for (var i = 0; i < days; i++)
         {
             var date = startDate.AddDays(i).Date;
-            bookingDaily.TryGetValue(date, out var bookingRevenue);
-            serviceDaily.TryGetValue(date, out var serviceRevenue);
+            paymentDaily.TryGetValue(date, out var paymentRevenue);
             bookingCountDaily.TryGetValue(date, out var bookingCount);
 
             result.Add(new DashboardRevenuePointDto
             {
                 Name = date.ToString("dd/MM"),
-                Revenue = bookingRevenue + serviceRevenue,
+                Revenue = paymentRevenue,
                 Bookings = bookingCount,
             });
         }
 
         return result;
+    }
+
+    private static bool IsSuccessfulPayment(PaymentProjection payment)
+    {
+        if (payment.PaymentDate == null)
+        {
+            return false;
+        }
+
+        // Backward compatibility: older rows may not have status but are already valid payments.
+        return string.IsNullOrWhiteSpace(payment.Status)
+            || string.Equals(payment.Status, "Completed", StringComparison.OrdinalIgnoreCase);
     }
 }

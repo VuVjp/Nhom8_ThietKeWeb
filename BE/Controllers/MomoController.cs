@@ -107,6 +107,31 @@ public class MomoController : ControllerBase
             throw new ConflictException("No outstanding amount to pay.");
         }
 
+        var existingPendingPayment = await FindPendingMomoPaymentAsync(paymentType, bookingId, invoiceId);
+        if (existingPendingPayment != null)
+        {
+            if (!string.IsNullOrWhiteSpace(existingPendingPayment.PayUrl))
+            {
+                _logger.LogInformation(
+                    "Reuse pending MoMo pay URL: type={Type}, targetId={TargetId}, orderId={OrderId}",
+                    paymentType,
+                    request.TargetId,
+                    existingPendingPayment.MomoOrderId);
+
+                return Ok(new
+                {
+                    payUrl = existingPendingPayment.PayUrl,
+                    orderId = existingPendingPayment.MomoOrderId,
+                    requestId = existingPendingPayment.RequestId,
+                    amount = Convert.ToInt64(Math.Round(existingPendingPayment.AmountPaid, 0, MidpointRounding.AwayFromZero)),
+                    type = paymentType,
+                    reused = true,
+                });
+            }
+
+            throw new ConflictException("A pending MoMo payment already exists but has no reusable pay URL. Please wait for completion or mark it failed before creating a new payment.");
+        }
+
         var amountLong = Convert.ToInt64(Math.Round(amount, 0, MidpointRounding.AwayFromZero));
         var momoOrderId = Guid.NewGuid().ToString("N");
         var requestId = Guid.NewGuid().ToString("N");
@@ -144,6 +169,7 @@ public class MomoController : ControllerBase
             TransactionCode = null,
             MomoOrderId = momoResponse.OrderId,
             RequestId = momoResponse.RequestId,
+            PayUrl = momoResponse.PayUrl,
             PaymentForType = paymentType,
             Status = "Pending",
             PaymentDate = null,
@@ -300,5 +326,150 @@ public class MomoController : ControllerBase
             await dbTransaction.RollbackAsync();
             throw;
         }
+    }
+
+    [HttpPost("cash")]
+    public async Task<IActionResult> CashPayment([FromBody] CashPaymentRequestDto request)
+    {
+        if (request == null || request.TargetId <= 0 || string.IsNullOrWhiteSpace(request.Type))
+        {
+            throw new BadRequestException("Type and targetId are required.");
+        }
+
+        var paymentType = request.Type.Trim().ToLowerInvariant();
+        decimal amount;
+        int? bookingId = null;
+        int? invoiceId = null;
+
+        if (paymentType == BookingType)
+        {
+            var booking = await _bookingRepository.GetBookingByIdWithDetailsAsync(request.TargetId);
+            if (booking == null)
+            {
+                throw new NotFoundException($"Booking with ID {request.TargetId} not found.");
+            }
+
+            if (string.Equals(booking.Status, "Confirmed", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new ConflictException($"Booking #{booking.Id} is already confirmed.");
+            }
+
+            var hasCompletedPayment = await _paymentRepository.HasCompletedBookingPaymentAsync(booking.Id);
+            if (hasCompletedPayment)
+            {
+                throw new ConflictException($"Booking #{booking.Id} is already paid.");
+            }
+
+            amount = request.Amount ?? booking.Deposit ?? 0m;
+            bookingId = booking.Id;
+
+            if (amount <= 0)
+            {
+                throw new ConflictException("No deposit amount to pay.");
+            }
+
+            if (string.Equals(booking.Status, "Pending", StringComparison.OrdinalIgnoreCase))
+            {
+                await _bookingService.ChangeBookingStatusAsync(booking.Id, "Confirmed");
+            }
+        }
+        else if (paymentType == InvoiceType)
+        {
+            var invoice = await _invoiceService.GetInvoiceByIdAsync(request.TargetId);
+            if (invoice == null)
+            {
+                throw new NotFoundException($"Invoice with ID {request.TargetId} not found.");
+            }
+
+            var outstanding = await _invoiceService.GetOutstandingAmountAsync(invoice.Id);
+            if (outstanding <= 0)
+            {
+                throw new ConflictException($"Invoice #{invoice.Id} is already fully paid.");
+            }
+
+            amount = request.Amount ?? outstanding;
+            if (amount <= 0)
+            {
+                throw new ConflictException("Payment amount must be greater than zero.");
+            }
+
+            if (amount > outstanding)
+            {
+                amount = outstanding;
+            }
+
+            bookingId = invoice.BookingId;
+            invoiceId = invoice.Id;
+        }
+        else
+        {
+            throw new BadRequestException("Type must be 'booking' or 'invoice'.");
+        }
+
+        var cashTransactionCode = $"CASH-{Guid.NewGuid():N}";
+        var payment = new Payment
+        {
+            InvoiceId = invoiceId,
+            BookingId = bookingId,
+            PaymentMethod = "Cash",
+            AmountPaid = amount,
+            TransactionCode = cashTransactionCode,
+            MomoOrderId = null,
+            RequestId = null,
+            PaymentForType = paymentType,
+            Status = "Completed",
+            PaymentDate = DateTime.UtcNow,
+            RawIpn = null,
+        };
+
+        await _paymentRepository.AddAsync(payment);
+        await _paymentRepository.SaveChangesAsync();
+
+        if (paymentType == InvoiceType && invoiceId.HasValue)
+        {
+            var remaining = await _invoiceService.GetOutstandingAmountAsync(invoiceId.Value);
+            if (remaining <= 0)
+            {
+                await _invoiceService.CompleteInvoiceByIdAsync(invoiceId.Value);
+            }
+        }
+
+        _logger.LogInformation("Cash payment processed: type={Type}, targetId={TargetId}, amount={Amount}, transactionCode={TransactionCode}", paymentType, request.TargetId, amount, cashTransactionCode);
+
+        return Ok(new
+        {
+            message = "Cash payment processed successfully.",
+            transactionCode = cashTransactionCode,
+            amount,
+            type = paymentType,
+            bookingId,
+            invoiceId,
+        });
+    }
+
+    private async Task<Payment?> FindPendingMomoPaymentAsync(string paymentType, int? bookingId, int? invoiceId)
+    {
+        var query = _dbContext.Payments
+            .AsNoTracking()
+            .Where(p => p.PaymentMethod == "Momo")
+            .Where(p => p.PaymentForType == paymentType)
+            .Where(p => p.Status == "Pending")
+            .Where(p => p.TransactionCode == null)
+            .Where(p => p.MomoOrderId != null);
+
+        if (paymentType == BookingType && bookingId.HasValue)
+        {
+            query = query.Where(p => p.BookingId == bookingId.Value);
+        }
+        else if (paymentType == InvoiceType && invoiceId.HasValue)
+        {
+            query = query.Where(p => p.InvoiceId == invoiceId.Value);
+        }
+        else
+        {
+            return null;
+        }
+
+        return await query.OrderByDescending(p => p.Id).FirstOrDefaultAsync();
     }
 }

@@ -17,13 +17,15 @@ public class BookingService : IBookingService
     };
 
     private readonly IBookingRepository _repository;
+    private readonly IUserRepository _userRepository;
     private readonly IVoucherRepository _voucherRepository;
     private readonly IVoucherService _voucherService;
     private readonly IInvoiceService _invoiceService;
 
-    public BookingService(IBookingRepository repository, IVoucherRepository voucherRepository, IVoucherService voucherService, IInvoiceService invoiceService)
+    public BookingService(IBookingRepository repository, IUserRepository userRepository, IVoucherRepository voucherRepository, IVoucherService voucherService, IInvoiceService invoiceService)
     {
         _repository = repository;
+        _userRepository = userRepository;
         _voucherRepository = voucherRepository;
         _voucherService = voucherService;
         _invoiceService = invoiceService;
@@ -126,7 +128,28 @@ public class BookingService : IBookingService
             InvoiceType = dto.InvoiceType ?? "Consolidated"
         };
 
+        var registeredUser = await ResolveRegisteredUserAsync(dto.GuestEmail, dto.IsExistingGuest);
+        if (registeredUser != null)
+        {
+            booking.UserId = registeredUser.Id;
+            booking.GuestName = string.IsNullOrWhiteSpace(booking.GuestName) ? registeredUser.FullName : booking.GuestName;
+            booking.GuestPhone = string.IsNullOrWhiteSpace(booking.GuestPhone) ? registeredUser.Phone : booking.GuestPhone;
+            booking.GuestEmail = registeredUser.Email;
+        }
+
         booking.TotalPrice = CalculateTotalAmount(booking.BookingDetails);
+        var membershipDiscountAmount = CalculateMembershipDiscountForBooking(registeredUser, booking.TotalPrice);
+
+        if (membershipDiscountAmount > 0)
+        {
+            booking.AppliedMembershipId = registeredUser!.MembershipId;
+            booking.AppliedMembershipTierName = registeredUser.Membership?.TierName;
+            booking.MembershipDiscountPercentApplied = registeredUser.Membership?.DiscountPercent;
+            booking.MembershipDiscountAmountApplied = membershipDiscountAmount;
+        }
+
+        booking.Discount = membershipDiscountAmount;
+
         if (!string.IsNullOrWhiteSpace(dto.VoucherId))
         {
             booking.VoucherId = int.TryParse(dto.VoucherId, out var voucherId) ? voucherId : (int?)null;
@@ -134,20 +157,23 @@ public class BookingService : IBookingService
             if (voucher != null)
             {
                 await _voucherService.ValidateCodeAsync(voucher.Code, booking.TotalPrice);
+                decimal voucherDiscountAmount = 0m;
                 if (voucher.DiscountType == "Percentage")
                 {
-                    booking.Discount = Math.Round(booking.TotalPrice * (voucher.DiscountValue / 100m), 2);
+                    voucherDiscountAmount = Math.Round(booking.TotalPrice * (voucher.DiscountValue / 100m), 2);
                 }
                 else if (voucher.DiscountType == "Fixed")
                 {
-                    booking.Discount = Math.Min(voucher.DiscountValue, booking.TotalPrice);
+                    voucherDiscountAmount = Math.Min(voucher.DiscountValue, booking.TotalPrice);
                 }
+
+                booking.Discount = (booking.Discount ?? 0m) + voucherDiscountAmount;
                 voucher.UsageCount += 1;
                 await _voucherRepository.SaveChangesAsync();
             }
         }
-        booking.FinalPrice = booking.TotalPrice - (booking.Discount ?? 0);
-        booking.Deposit = booking.FinalPrice * 0.3m;
+        booking.FinalPrice = Math.Max(0m, booking.TotalPrice - (booking.Discount ?? 0));
+        booking.Deposit = Math.Round(booking.FinalPrice * 0.3m, 2);
 
         await _repository.AddBookingAsync(booking);
         await _repository.SaveChangesAsync();
@@ -233,23 +259,31 @@ public class BookingService : IBookingService
         }).ToList();
 
         booking.TotalPrice = CalculateTotalAmount(booking.BookingDetails);
+        var membershipDiscountAmount = CalculateMembershipDiscountForBooking(booking.User, booking.TotalPrice);
+        booking.MembershipDiscountAmountApplied = membershipDiscountAmount;
+        booking.Discount = membershipDiscountAmount;
+
         if (booking.VoucherId.HasValue)
         {
             var voucher = await _voucherRepository.GetByIdAsync(booking.VoucherId.Value);
             if (voucher != null)
             {
                 await _voucherService.ValidateCodeAsync(voucher.Code, booking.TotalPrice);
+                decimal voucherDiscountAmount = 0m;
                 if (voucher.DiscountType == "Percentage")
                 {
-                    booking.Discount = Math.Round(booking.TotalPrice * (voucher.DiscountValue / 100m), 2);
+                    voucherDiscountAmount = Math.Round(booking.TotalPrice * (voucher.DiscountValue / 100m), 2);
                 }
                 else if (voucher.DiscountType == "Fixed")
                 {
-                    booking.Discount = Math.Min(voucher.DiscountValue, booking.TotalPrice);
+                    voucherDiscountAmount = Math.Min(voucher.DiscountValue, booking.TotalPrice);
                 }
+
+                booking.Discount = (booking.Discount ?? 0m) + voucherDiscountAmount;
             }
         }
-        booking.FinalPrice = booking.TotalPrice - (booking.Discount ?? 0);
+        booking.FinalPrice = Math.Max(0m, booking.TotalPrice - (booking.Discount ?? 0));
+        booking.Deposit = Math.Round(booking.FinalPrice * 0.3m, 2);
 
         await _repository.SaveChangesAsync();
 
@@ -471,6 +505,38 @@ public class BookingService : IBookingService
         }
 
         return total;
+    }
+
+    private async Task<User?> ResolveRegisteredUserAsync(string? guestEmail, bool isExistingGuest)
+    {
+        if (string.IsNullOrWhiteSpace(guestEmail))
+        {
+            return null;
+        }
+
+        var user = await _userRepository.GetByEmailAsync(guestEmail.Trim());
+        if (isExistingGuest && user == null)
+        {
+            throw new NotFoundException("Existing guest account was not found.");
+        }
+
+        return user;
+    }
+
+    private static decimal CalculateMembershipDiscountForBooking(User? user, decimal totalRoomAmount)
+    {
+        if (user?.Membership == null || user.MembershipId == null)
+        {
+            return 0m;
+        }
+
+        var discountPercent = user.Membership.DiscountPercent ?? 0m;
+        if (discountPercent <= 0)
+        {
+            return 0m;
+        }
+
+        return Math.Round(totalRoomAmount * (discountPercent / 100m), 2);
     }
 
     private static void ValidateDateRange(DateTime checkIn, DateTime checkOut)

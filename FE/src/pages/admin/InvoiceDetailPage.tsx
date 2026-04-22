@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { ArrowPathIcon, ExclamationTriangleIcon, ArrowLeftIcon, PrinterIcon } from '@heroicons/react/24/outline';
 import invoicesApi from '../../api/invoicesApi';
+import momoApi from '../../api/momoApi';
 import type { InvoiceDetail } from '../../types/invoices';
 import { toApiError } from '../../api/httpClient';
 import { Modal } from '../../components/Modal';
@@ -17,6 +18,7 @@ export function InvoiceDetailPage() {
     const [isSplitModalOpen, setIsSplitModalOpen] = useState(false);
     const [isCompleteModalOpen, setIsCompleteModalOpen] = useState(false);
     const [selectedRoomIds, setSelectedRoomIds] = useState<number[]>([]);
+    const [isCreatingMomoPayment, setIsCreatingMomoPayment] = useState(false);
 
     const loadData = useCallback(async () => {
         if (!id) return;
@@ -45,15 +47,45 @@ export function InvoiceDetailPage() {
         
         setIsCompleting(true);
         try {
-            await invoicesApi.complete(Number(id));
-            toast.success("Invoice completed and finalized!");
+            await momoApi.payCash({
+                type: 'invoice',
+                targetId: Number(id),
+            });
+            toast.success("Cash payment recorded successfully!");
             setIsCompleteModalOpen(false);
             void loadData();
         } catch (error) {
             const apiError = toApiError(error);
-            toast.error(apiError.message || "Failed to complete invoice");
+            toast.error(apiError.message || "Failed to process cash payment");
         } finally {
             setIsCompleting(false);
+        }
+    };
+
+    const handleInvoiceMomoPayment = async () => {
+        if (!id || !invoice) {
+            return;
+        }
+
+        setIsCreatingMomoPayment(true);
+        try {
+            const response = await momoApi.createPayment({
+                type: 'invoice',
+                targetId: Number(id),
+            });
+
+            if (!response.payUrl) {
+                toast.error('Unable to create MoMo payment link');
+                return;
+            }
+
+            window.open(response.payUrl, '_blank', 'noopener,noreferrer');
+            toast.success('Opened MoMo transfer page in a new tab.');
+        } catch (error) {
+            const apiError = toApiError(error);
+            toast.error(apiError.message || 'Failed to create MoMo payment');
+        } finally {
+            setIsCreatingMomoPayment(false);
         }
     };
 
@@ -115,7 +147,7 @@ export function InvoiceDetailPage() {
             <Modal
                 open={isCompleteModalOpen}
                 onClose={() => setIsCompleteModalOpen(false)}
-                title="Finalize Invoice"
+                title="Record Cash Payment"
             >
                 <div className="p-2">
                     <div className="flex items-center gap-4 text-amber-600 mb-4 bg-amber-50 p-4 rounded-xl border border-amber-100">
@@ -123,14 +155,13 @@ export function InvoiceDetailPage() {
                             <ExclamationTriangleIcon className="h-8 w-8" />
                         </div>
                         <div>
-                            <p className="font-bold text-amber-900">Irreversible Action</p>
-                            <p className="text-sm text-amber-700">Once completed, this invoice will be locked and cannot be split or modified.</p>
+                            <p className="font-bold text-amber-900">Confirm Cash Collection</p>
+                            <p className="text-sm text-amber-700">This will record a cash payment for this invoice. If fully paid, invoice status will be completed.</p>
                         </div>
                     </div>
                     
                     <p className="text-slate-600 mb-8 px-1">
-                        Are you sure you want to finalize <span className="font-mono font-bold text-slate-900">{invoice.invoiceCode}</span>? 
-                        This will mark the billing process as finished for the associated rooms.
+                        Are you sure you want to record cash payment for <span className="font-mono font-bold text-slate-900">{invoice.invoiceCode}</span>?
                     </p>
 
                     <div className="flex gap-3 justify-end">
@@ -150,7 +181,7 @@ export function InvoiceDetailPage() {
                             ) : (
                                 <span className="h-2 w-2 rounded-full bg-white"></span>
                             )}
-                            {isCompleting ? 'Processing...' : 'Yes, Finalize Now'}
+                            {isCompleting ? 'Processing...' : 'Confirm Cash Payment'}
                         </button>
                     </div>
                 </div>
@@ -249,7 +280,7 @@ export function InvoiceDetailPage() {
                     {invoice.status !== 'Completed' && (
                         <button
                             onClick={() => setIsCompleteModalOpen(true)}
-                            disabled={isCompleting || isSplitting}
+                            disabled={isCompleting || isSplitting || isCreatingMomoPayment}
                             className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 transition shadow-sm disabled:opacity-50"
                         >
                             {isCompleting ? (
@@ -257,12 +288,26 @@ export function InvoiceDetailPage() {
                             ) : (
                                 <span className="h-2 w-2 rounded-full bg-white animate-pulse"></span>
                             )}
-                            {isCompleting ? 'Finalizing...' : 'Complete Invoice'}
+                            {isCompleting ? 'Processing cash...' : 'Cash Payment'}
+                        </button>
+                    )}
+                    {invoice.status !== 'Completed' && (
+                        <button
+                            onClick={() => void handleInvoiceMomoPayment()}
+                            disabled={isCompleting || isSplitting || isCreatingMomoPayment}
+                            className="inline-flex items-center gap-2 rounded-lg bg-cyan-700 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-800 transition shadow-sm disabled:opacity-50"
+                        >
+                            {isCreatingMomoPayment ? (
+                                <ArrowPathIcon className="h-4 w-4 animate-spin" />
+                            ) : (
+                                <span className="h-2 w-2 rounded-full bg-white"></span>
+                            )}
+                            {isCreatingMomoPayment ? 'Creating MoMo link...' : 'MoMo Transfer'}
                         </button>
                     )}
                     <button
                         onClick={handlePrint}
-                        disabled={isCompleting || isSplitting}
+                        disabled={isCompleting || isSplitting || isCreatingMomoPayment}
                         className="inline-flex items-center gap-2 rounded-lg bg-cyan-700 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-800 transition shadow-sm disabled:opacity-50"
                     >
                         <PrinterIcon className="h-4 w-4" /> Print Invoice
@@ -429,6 +474,18 @@ export function InvoiceDetailPage() {
                             <div className="flex justify-between text-sm text-slate-500">
                                 <span>Tax (10%):</span>
                                 <span>${invoice.taxAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                            </div>
+                            <div className="flex justify-between text-sm text-slate-500">
+                                <span>Paid Amount:</span>
+                                <span>${(invoice.paidAmount ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                            </div>
+                            <div className="flex justify-between text-sm text-slate-500">
+                                <span>Allocated Deposit:</span>
+                                <span>${(invoice.allocatedDeposit ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                            </div>
+                            <div className="flex justify-between text-sm font-semibold text-amber-700">
+                                <span>Remaining:</span>
+                                <span>${(invoice.remainingAmount ?? Math.max(0, invoice.finalTotal - (invoice.paidAmount ?? 0) - (invoice.allocatedDeposit ?? 0))).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                             </div>
                             <div className="flex justify-between items-end border-t border-slate-100 pt-3">
                                 <span className="text-lg font-bold text-slate-900">Final Total:</span>

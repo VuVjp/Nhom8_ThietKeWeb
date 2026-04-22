@@ -10,6 +10,9 @@ export interface Invoice {
   discountAmount: number;
   taxAmount: number;
   finalTotal: number;
+  paidAmount?: number;
+  allocatedDeposit?: number;
+  remainingAmount?: number;
   status: string;
   createdAt: string;
   completedAt?: string;

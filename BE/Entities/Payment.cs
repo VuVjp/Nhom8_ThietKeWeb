@@ -10,6 +10,7 @@ public class Payment
     public string? TransactionCode { get; set; }
     public string? MomoOrderId { get; set; }
     public string? RequestId { get; set; }
+    public string? PayUrl { get; set; }
     public string? PaymentForType { get; set; } // booking | invoice
     public string? Status { get; set; } // Pending | Completed | Failed
     public string? RawIpn { get; set; }

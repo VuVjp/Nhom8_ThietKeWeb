@@ -28,7 +28,10 @@ public class UserRepository : Repository<User>, IUserRepository
 
     public async Task<User?> GetByEmailAsync(string email)
     {
-        return await _dbSet.Include(u => u.Role).FirstOrDefaultAsync(u => u.Email == email);
+        return await _dbSet
+            .Include(u => u.Role)
+            .Include(u => u.Membership)
+            .FirstOrDefaultAsync(u => u.Email == email);
     }
 
     public async Task<User?> ChangeRoleUserById(int id, string newRole)

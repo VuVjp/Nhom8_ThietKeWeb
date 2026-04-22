@@ -28,6 +28,13 @@ public class MomoCreatePaymentRequestDto
     public int TargetId { get; set; }
 }
 
+public class CashPaymentRequestDto
+{
+    public string Type { get; set; } = string.Empty; // booking | invoice
+    public int TargetId { get; set; }
+    public decimal? Amount { get; set; }
+}
+
 public class MomoCreatePaymentGatewayRequestDto
 {
     public long Amount { get; set; }

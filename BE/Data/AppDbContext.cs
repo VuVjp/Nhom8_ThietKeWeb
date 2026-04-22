@@ -178,7 +178,6 @@ public class AppDbContext : DbContext
             e.Property(x => x.FinalPrice).HasColumnName("final_price").HasColumnType("decimal(18,2)");
             e.Property(x => x.InvoiceType).HasColumnName("invoice_type").HasDefaultValue("Consolidated");
             e.HasIndex(x => x.BookingCode).IsUnique();
-            e.HasIndex(x => x.GuestName);
         });
 
         modelBuilder.Entity<Equipment>(e =>
@@ -211,12 +210,7 @@ public class AppDbContext : DbContext
             e.Property(x => x.DiscountAmount).HasColumnName("discount_amount").HasColumnType("decimal(18,2)");
             e.Property(x => x.TaxAmount).HasColumnName("tax_amount").HasColumnType("decimal(18,2)");
             e.Property(x => x.FinalTotal).HasColumnName("final_total").HasColumnType("decimal(18,2)");
-            e.Property(x => x.TotalLossDamageAmount).HasColumnName("total_loss_damage_amount").HasColumnType("decimal(18,2)");
             e.Property(x => x.Status).HasColumnName("status");
-            
-            e.HasIndex(x => x.InvoiceCode).IsUnique();
-            e.HasIndex(x => x.Status);
-            e.HasIndex(x => x.CreatedAt);
         });
 
         modelBuilder.Entity<LossAndDamage>(e =>
@@ -284,6 +278,7 @@ public class AppDbContext : DbContext
             e.Property(x => x.TransactionCode).HasColumnName("transaction_code");
             e.Property(x => x.MomoOrderId).HasColumnName("momo_order_id");
             e.Property(x => x.RequestId).HasColumnName("request_id");
+            e.Property(x => x.PayUrl).HasColumnName("pay_url").HasColumnType("nvarchar(max)");
             e.Property(x => x.PaymentForType).HasColumnName("payment_for_type").HasColumnType("varchar(50)");
             e.Property(x => x.Status).HasColumnName("status").HasColumnType("varchar(50)");
             e.Property(x => x.RawIpn).HasColumnName("raw_ipn").HasColumnType("nvarchar(max)");

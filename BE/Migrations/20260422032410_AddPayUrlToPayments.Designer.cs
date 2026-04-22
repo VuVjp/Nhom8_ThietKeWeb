@@ -4,6 +4,7 @@ using HotelManagement.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BE.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260422032410_AddPayUrlToPayments")]
+    partial class AddPayUrlToPayments
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -235,14 +238,6 @@ namespace BE.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int?>("AppliedMembershipId")
-                        .HasColumnType("int")
-                        .HasColumnName("applied_membership_id");
-
-                    b.Property<string>("AppliedMembershipTierName")
-                        .HasColumnType("nvarchar(100)")
-                        .HasColumnName("applied_membership_tier_name");
-
                     b.Property<string>("BookingCode")
                         .IsRequired()
                         .HasColumnType("nvarchar(450)")
@@ -278,14 +273,6 @@ namespace BE.Migrations
                         .HasColumnType("nvarchar(max)")
                         .HasDefaultValue("Consolidated")
                         .HasColumnName("invoice_type");
-
-                    b.Property<decimal?>("MembershipDiscountAmountApplied")
-                        .HasColumnType("decimal(18,2)")
-                        .HasColumnName("membership_discount_amount_applied");
-
-                    b.Property<decimal?>("MembershipDiscountPercentApplied")
-                        .HasColumnType("decimal(5,2)")
-                        .HasColumnName("membership_discount_percent_applied");
 
                     b.Property<string>("Status")
                         .HasColumnType("nvarchar(max)")
@@ -1197,12 +1184,6 @@ namespace BE.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit")
                         .HasColumnName("is_active");
-
-                    b.Property<int>("LoyaltyPoints")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasDefaultValue(0)
-                        .HasColumnName("loyalty_points");
 
                     b.Property<int?>("MembershipId")
                         .HasColumnType("int")
