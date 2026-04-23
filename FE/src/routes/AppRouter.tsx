@@ -34,6 +34,24 @@ import { ArticlesPage } from '../modules/article/pages/ArticlesPage';
 import { ArticleFormPage } from '../modules/article/pages/ArticleFormPage';
 import { ArticleCategoriesPage } from '../modules/article/pages/ArticleCategoriesPage';
 
+<<<<<<< Updated upstream
+=======
+import { ClientLayout } from '../layout/ClientLayout';
+import { HomePage } from '../pages/client/HomePage';
+import { ClientRoomsPage } from '../pages/client/ClientRoomsPage';
+import { ClientAttractionsPage } from '../pages/client/ClientAttractionsPage';
+import { ClientMembershipsPage } from '../pages/client/ClientMembershipsPage';
+import { ClientRoomDetailPage } from '../pages/client/ClientRoomDetailPage';
+import { ClientBookingPage } from '../pages/client/ClientBookingPage';
+import { ClientLoginPage } from '../pages/client/ClientLoginPage';
+import { ClientRegisterPage } from '../pages/client/ClientRegisterPage';
+import { ClientAccountPage } from '../pages/client/ClientAccountPage';
+import { ClientServicesPage } from '../pages/client/ClientServicesPage';
+import { ClientNewsPage } from '../pages/client/ClientNewsPage';
+import { ClientNewsDetailPage } from '../pages/client/ClientNewsDetailPage';
+import { ClientAboutPage } from '../pages/client/ClientAboutPage';
+
+>>>>>>> Stashed changes
 function AdminEntryRedirect() {
     const { user, isAuthReady } = useAppAuth();
 
@@ -151,7 +169,27 @@ export const AppRouter = () => {
                 </Route>
             </Route>
 
+<<<<<<< Updated upstream
             <Route path="/" element={<Navigate to="/admin" replace />} />
+=======
+            <Route element={<ClientLayout />}>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/rooms" element={<ClientRoomsPage />} />
+                <Route path="/rooms/:roomId" element={<ClientRoomDetailPage />} />
+                <Route path="/booking" element={<ClientBookingPage />} />
+                <Route path="/login" element={<ClientLoginPage />} />
+                <Route path="/register" element={<ClientRegisterPage />} />
+                <Route path="/account" element={<ClientAccountPage />} />
+                <Route path="/services" element={<ClientServicesPage />} />
+                <Route path="/news" element={<ClientNewsPage />} />
+                <Route path="/news/:id" element={<ClientNewsDetailPage />} />
+                <Route path="/about" element={<ClientAboutPage />} />
+
+                <Route path="/attractions" element={<ClientAttractionsPage />} />
+                <Route path="/memberships" element={<ClientMembershipsPage />} />
+            </Route>
+
+>>>>>>> Stashed changes
             <Route path="*" element={<NotFoundPage />} />
         </Routes>
     );

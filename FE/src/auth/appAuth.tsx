@@ -68,7 +68,6 @@ function getUserBaseFromToken(): Omit<AppUser, 'permissions'> | null {
     const roleClaim =
         payload?.role ??
         payload?.['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
-    const role = roleClaim ?? 'Guest';
 
     const idClaim =
         payload?.nameid ??

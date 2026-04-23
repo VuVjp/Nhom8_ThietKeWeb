@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
+<<<<<<< Updated upstream
 import { ArrowLeftIcon, PrinterIcon, ArrowPathIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+=======
+import { ArrowLeftIcon, ArrowPathIcon, ExclamationTriangleIcon, PrinterIcon } from '@heroicons/react/24/outline';
+>>>>>>> Stashed changes
 import invoicesApi from '../../api/invoicesApi';
 import type { InvoiceDetail } from '../../types/invoices';
 import { toApiError } from '../../api/httpClient';

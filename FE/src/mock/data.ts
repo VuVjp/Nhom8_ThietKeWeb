@@ -9,7 +9,7 @@ export const notificationsSeed: NotificationItem[] = [
 ];
 
 const roomTypes = ['Standard', 'Deluxe', 'Suite'] as const;
-const roomStatuses = ['Available', 'Occupied', 'Cleaning', 'Inspecting'] as const;
+const roomStatuses = ['Available', 'Occupied', 'Maintenance', 'InsClean'] as const;
 const cleaningStates = ['Clean', 'Dirty', 'Inspecting'] as const;
 
 export const roomsSeed: Room[] = Array.from({ length: 24 }).map((_, idx) => ({
