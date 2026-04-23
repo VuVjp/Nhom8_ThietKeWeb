@@ -8,6 +8,7 @@ import { vouchersApi } from '../../../api/vouchersApi';
 import type { RoomAvailability, Voucher } from '../../../types/models';
 import { SparklesIcon, CheckCircleIcon, ArrowRightIcon, UserIcon, IdentificationIcon, TicketIcon, XMarkIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 import { useNavigate } from 'react-router-dom';
+import { roomTypesApi, type RoomTypeItem } from '../../../api/roomTypesApi';
 
 export function CreateBookingPage() {
     const navigate = useNavigate();
@@ -47,6 +48,10 @@ export function CreateBookingPage() {
     const [voucherCode, setVoucherCode] = useState('');
     const [isCheckingVoucher, setIsCheckingVoucher] = useState(false);
     const [appliedVoucher, setAppliedVoucher] = useState<Voucher | null>(null);
+    
+    // Filtering State
+    const [roomTypes, setRoomTypes] = useState<RoomTypeItem[]>([]);
+    const [selectedRoomTypeFilter, setSelectedRoomTypeFilter] = useState<string>('All');
 
     const getCalculatedDates = () => {
         if (bookingType === 'daily') return { start: checkInDate, end: checkOutDate };
@@ -138,6 +143,13 @@ export function CreateBookingPage() {
         try {
             const rooms = await receptionApi.getAvailableRooms(start, end);
             setAvailableRooms(rooms || []);
+            
+            // Fetch room types for filtering if not fetched yet
+            if (roomTypes.length === 0) {
+                const types = await roomTypesApi.getAll();
+                setRoomTypes(types);
+            }
+            
             setStep(2);
         } catch (error) {
             const apiError = toApiError(error);
@@ -295,21 +307,37 @@ export function CreateBookingPage() {
 
                 {step === 2 && (
                     <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                            <div className="mb-4 text-sm text-slate-600">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
+                            <div className="text-sm text-slate-600">
                                 Found <span className="font-bold text-cyan-700">{availableRooms.length}</span> rooms available.
                             </div>
-                            <button
-                                onClick={() => void handleSearchRooms()}
-                                className="p-2 text-slate-500 hover:text-cyan-600 transition bg-white border border-slate-200 rounded-xl"
-                                title="Refresh"
-                            >
-                                <ArrowPathIcon className={`h-5 w-5 ${isSearching ? 'animate-spin' : ''}`} />
-                            </button>
+                            
+                            <div className="flex items-center gap-3 w-full sm:w-auto">
+                                <select 
+                                    value={selectedRoomTypeFilter}
+                                    onChange={(e) => setSelectedRoomTypeFilter(e.target.value)}
+                                    className="text-sm border border-slate-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all bg-white"
+                                >
+                                    <option value="All">All Room Types</option>
+                                    {roomTypes.map(t => (
+                                        <option key={t.id} value={t.name}>{t.name}</option>
+                                    ))}
+                                </select>
+
+                                <button
+                                    onClick={() => void handleSearchRooms()}
+                                    className="p-2 text-slate-500 hover:text-cyan-600 transition bg-white border border-slate-200 rounded-xl"
+                                    title="Refresh"
+                                >
+                                    <ArrowPathIcon className={`h-5 w-5 ${isSearching ? 'animate-spin' : ''}`} />
+                                </button>
+                            </div>
                         </div>
 
                         <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
-                            {availableRooms.map((room) => {
+                            {availableRooms
+                                .filter(r => selectedRoomTypeFilter === 'All' || r.roomTypeName === selectedRoomTypeFilter)
+                                .map((room) => {
                                 const isSelected = selectedRoomIds.includes(room.roomId);
                                 return (
                                     <div

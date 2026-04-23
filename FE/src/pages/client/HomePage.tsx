@@ -19,8 +19,13 @@ export function HomePage() {
         const fetchRooms = async () => {
             try {
                 const data = await roomTypesApi.getAll();
-                // Take top 3 active
-                setRoomTypes(data.filter((rt: RoomTypeItem) => rt.isActive).slice(0, 3));
+                // Sort by basePrice descending and take top 3
+                setRoomTypes(
+                    data
+                        .filter((rt: RoomTypeItem) => rt.isActive)
+                        .sort((a, b) => b.basePrice - a.basePrice)
+                        .slice(0, 3)
+                );
             } catch (error) {
                 console.error("Failed to load rooms", error);
             } finally {
@@ -185,9 +190,9 @@ export function HomePage() {
                                             <div className="flex gap-4 text-xs font-bold text-slate-400 uppercase tracking-wider mb-6">
                                                 <span>{rt.capacityAdults + rt.capacityChildren} GUESTS</span>
                                                 <span>•</span>
-                                                <span>KING BED</span>
+                                                <span>{rt.bedType || 'STANDARD BED'}</span>
                                                 <span>•</span>
-                                                <span>VIEW</span>
+                                                <span>{rt.view || 'STANDARD VIEW'}</span>
                                             </div>
                                             <Link to={`/rooms/${rt.id}`} className="w-full text-center border-2 border-slate-900 text-slate-900 hover:bg-slate-900 hover:text-white py-3 font-bold uppercase tracking-widest text-xs transition-colors">
                                                 Book Now

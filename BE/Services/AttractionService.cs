@@ -2,16 +2,20 @@ using HotelManagement.Entities;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System;
+using HotelManagement.Services.Interfaces;
+using HotelManagement.Dtos;
 
 namespace HotelManagement.Services;
 
 public class AttractionService : IAttractionService
 {
 	private readonly IAttractionRepository _repository;
+	private readonly ICloudinaryService _cloudinaryService;
 
-	public AttractionService(IAttractionRepository repository)
+	public AttractionService(IAttractionRepository repository, ICloudinaryService cloudinaryService)
 	{
 		_repository = repository;
+		_cloudinaryService = cloudinaryService;
 	}
 
 	public async Task<IEnumerable<AttractionDto>> GetAllAsync()
@@ -25,6 +29,7 @@ public class AttractionService : IAttractionService
 			DistanceKm = a.DistanceKm,
 			Latitude = a.Latitude,
 			Longitude = a.Longitude,
+			ImageUrl = a.ImageUrl,
 			IsActive = a.IsActive,
 			MapEmbedLink = a.MapEmbedLink
 		});
@@ -44,6 +49,7 @@ public class AttractionService : IAttractionService
 			DistanceKm = a.DistanceKm,
 			Latitude = a.Latitude,
 			Longitude = a.Longitude,
+			ImageUrl = a.ImageUrl,
 			IsActive = a.IsActive,
 			MapEmbedLink = a.MapEmbedLink
 		};
@@ -61,6 +67,11 @@ public class AttractionService : IAttractionService
 			IsActive = dto.IsActive,
 			MapEmbedLink = dto.MapEmbedLink
 		};
+
+		if (dto.File != null)
+		{
+			entity.ImageUrl = await _cloudinaryService.UploadImageAsync(dto.File, $"attractions");
+		}
 
 		await _repository.AddAsync(entity);
 		await _repository.SaveChangesAsync();
@@ -81,6 +92,11 @@ public class AttractionService : IAttractionService
 		attraction.Longitude = dto.Longitude;
 		if (dto.IsActive.HasValue) attraction.IsActive = dto.IsActive.Value;
 		attraction.MapEmbedLink = dto.MapEmbedLink;
+
+		if (dto.File != null)
+		{
+			attraction.ImageUrl = await _cloudinaryService.UploadImageAsync(dto.File, $"attractions");
+		}
 
 		_repository.Update(attraction);
 		await _repository.SaveChangesAsync();

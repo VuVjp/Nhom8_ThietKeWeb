@@ -22,6 +22,9 @@ public class BookingAutoCancelBackgroundService : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        // Give the host some time to start up
+        await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
+
         while (!stoppingToken.IsCancellationRequested)
         {
             var currentSettings = _settings.CurrentValue;

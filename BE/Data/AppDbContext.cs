@@ -128,7 +128,7 @@ public class AppDbContext : DbContext
         {
             e.Property(x => x.Id).HasColumnName("id");
             e.Property(x => x.Name).HasColumnName("name");
-            e.Property(x => x.DistanceKm).HasColumnName("distance_km").HasColumnType("decimal(5,2)");
+            e.Property(x => x.DistanceKm).HasColumnName("distance_km").HasColumnType("decimal(18,2)");
             e.Property(x => x.Description).HasColumnName("description");
             e.Property(x => x.MapEmbedLink).HasColumnName("map_embed_link");
             e.Property(x => x.IsActive).HasColumnName("is_active");

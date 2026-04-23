@@ -1,4 +1,4 @@
-﻿using HotelManagement.Entities;
+using HotelManagement.Entities;
 using HotelManagement.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
@@ -60,7 +60,7 @@ public class AttractionsController : ControllerBase
 
 	[Permission(PermissionNames.ManageAttractions)]
 	[HttpPost]
-	public async Task<IActionResult> Create([FromBody] CreateAttractionDto dto)
+	public async Task<IActionResult> Create([FromForm] CreateAttractionDto dto)
 	{
 		var success = await _service.CreateAsync(dto);
 		if (!success) return BadRequest("Tạo địa điểm thất bại.");
@@ -80,7 +80,7 @@ public class AttractionsController : ControllerBase
 
 	[Permission(PermissionNames.ManageAttractions)]
 	[HttpPut("{id}")]
-	public async Task<IActionResult> Update(int id, [FromBody] UpdateAttractionDto dto)
+	public async Task<IActionResult> Update(int id, [FromForm] UpdateAttractionDto dto)
 	{
 		var success = await _service.UpdateAsync(id, dto);
 		if (!success) return NotFound("Cập nhật thất bại hoặc không tìm thấy địa điểm.");

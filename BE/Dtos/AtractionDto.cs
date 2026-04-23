@@ -9,4 +9,5 @@ public class AttractionDto
 
     public string Latitude { get; set; } = string.Empty;
     public string Longitude { get; set; } = string.Empty;
+    public string? ImageUrl { get; set; }
 }

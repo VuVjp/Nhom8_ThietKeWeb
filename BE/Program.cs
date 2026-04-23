@@ -180,7 +180,7 @@ builder.Services.AddScoped<IVoucherRepository, VoucherRepository>();
 builder.Services.AddScoped<IVoucherService, VoucherService>();
 builder.Services.AddScoped<IBookingRepository, BookingRepository>();
 builder.Services.AddScoped<IBookingService, BookingService>();
-builder.Services.AddHostedService<BookingAutoCancelBackgroundService>(); // TODO: Fix database schema issue with Memberships.is_active
+builder.Services.AddHostedService<BookingAutoCancelBackgroundService>();
 builder.Services.AddHostedService<AuditLogCleanupBackgroundService>();
 builder.Services.AddScoped<ILossAndDamageRepository, LossAndDamageRepository>();
 builder.Services.AddScoped<ILossAndDamageService, LossAndDamageService>();

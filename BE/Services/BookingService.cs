@@ -473,9 +473,10 @@ public class BookingService : IBookingService
             RoomIds = orderedDetails
                 .Select(item => item.RoomId)
                 .Where(id => id.HasValue)
-                .Select(id => id.GetValueOrDefault())
+                .Select(id => id!.Value)
                 .Distinct()
                 .ToList(),
+            CreatedAt = booking.CreatedAt,
         };
     }
 

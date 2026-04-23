@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Http;
+
 public class CreateAttractionDto 
 {
     public string Name { get; set; } = string.Empty;
@@ -8,4 +10,5 @@ public class CreateAttractionDto
 
     public string Latitude { get; set; } = string.Empty;
     public string Longitude { get; set; } = string.Empty;
+    public IFormFile? File { get; set; }
 }

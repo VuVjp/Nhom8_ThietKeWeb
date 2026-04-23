@@ -20,6 +20,9 @@ public class AuditLogCleanupBackgroundService : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        // Give the host some time to start up
+        await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
+
         await CleanupOnceAsync(stoppingToken);
 
         using var timer = new PeriodicTimer(CleanupInterval);

@@ -87,6 +87,7 @@ export interface Booking {
   voucherDiscount: number;
   roomIds: number[];
   roomNumbers: string[];
+  createdAt: string;
 }
 
 export interface RoomAvailability {
@@ -97,7 +98,7 @@ export interface RoomAvailability {
 }
 
 export interface Voucher {
-  id: number;
+  id: number | string;
   code: string;
   discountType: 'Percentage' | 'Fixed' | string;
   discountValue: number;

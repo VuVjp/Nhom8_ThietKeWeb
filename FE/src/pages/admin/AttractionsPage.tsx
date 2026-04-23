@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+    import { useCallback, useEffect, useMemo, useState } from 'react';
 import { PlusIcon, TrashIcon, PencilSquareIcon, MapPinIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { Input } from '../../components/Input';
@@ -8,6 +8,7 @@ import { Modal } from '../../components/Modal';
 import { attractionsApi, type Attraction } from '../../api/attractionsApi';
 import { paginate, queryIncludes } from '../../utils/table';
 import { toApiError } from '../../api/httpClient';
+import { ImageUpload } from '../../components/ImageUpload';
 
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -65,6 +66,8 @@ export function AttractionsPage() {
     const [mapEmbedLink, setMapEmbedLink] = useState('');
     const [latitude, setLatitude] = useState('');
     const [longitude, setLongitude] = useState('');
+    const [file, setFile] = useState<File | null>(null);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
     const [suggestions, setSuggestions] = useState<any[]>([]);
     const [isSearchingMap, setIsSearchingMap] = useState(false);
@@ -125,6 +128,21 @@ export function AttractionsPage() {
     const paged = paginate(filtered, page, pageSize);
 
     const columns = [
+        {
+            key: 'image',
+            label: 'Image',
+            render: (row: Attraction) => (
+                <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-slate-100 border border-slate-200">
+                    {row.imageUrl ? (
+                        <img src={row.imageUrl} alt={row.name} className="h-full w-full object-cover" />
+                    ) : (
+                        <div className="flex h-full w-full items-center justify-center text-slate-400">
+                            <MapPinIcon className="h-6 w-6" />
+                        </div>
+                    )}
+                </div>
+            )
+        },
         { key: 'name', label: 'Attraction', render: (row: Attraction) => {
             const mapLink = row.latitude && row.longitude && !isNaN(Number(row.latitude)) 
                 ? `https://www.google.com/maps/search/?api=1&query=${row.latitude},${row.longitude}`
@@ -193,6 +211,8 @@ export function AttractionsPage() {
         setMapEmbedLink('');
         setLatitude('');
         setLongitude('');
+        setFile(null);
+        setPreviewUrl(null);
         setSuggestions([]);
         setShowSuggestions(false);
         setOpenModal(true);
@@ -207,6 +227,8 @@ export function AttractionsPage() {
         setMapEmbedLink(item.mapEmbedLink ?? '');
         setLatitude(item.latitude);
         setLongitude(item.longitude);
+        setFile(null);
+        setPreviewUrl(item.imageUrl || null);
         setSuggestions([]);
         setShowSuggestions(false);
         setOpenModal(true);
@@ -227,7 +249,8 @@ export function AttractionsPage() {
                 isActive,
                 mapEmbedLink: mapEmbedLink.trim(),
                 latitude: latitude.trim(),
-                longitude: longitude.trim()
+                longitude: longitude.trim(),
+                ...(file && { file })
             };
 
             if (editingItem) {
@@ -308,11 +331,11 @@ export function AttractionsPage() {
                         <div className="flex items-center justify-between">
                             <label className="text-sm font-medium text-slate-700">Name <span className="text-red-500">*</span></label>
                             <a 
-                                href={name.trim() ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(name.trim())}` : 'https://www.google.com/maps'}
+                                href={latitude && longitude ? `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}` : (name.trim() ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(name.trim())}` : 'https://www.google.com/maps')}
                                 target="_blank"
                                 rel="noreferrer"
                                 className="text-xs text-cyan-600 hover:text-cyan-800 hover:underline flex items-center gap-1"
-                                title={name.trim() ? "Search this name on Google Maps" : "Open Google Maps"}
+                                title={latitude && longitude ? "View coordinates on Google Maps" : (name.trim() ? "Search this name on Google Maps" : "Open Google Maps")}
                             >
                                 <MapPinIcon className="h-3 w-3" />
                                 Search on Map App
@@ -363,6 +386,15 @@ export function AttractionsPage() {
                             rows={3}
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-slate-700">Image</label>
+                        <ImageUpload
+                            value={file}
+                            onChange={(val) => setFile(Array.isArray(val) ? val[0] : val)}
+                            currentUrl={previewUrl || undefined}
+                            label="Click or drag image to upload"
                         />
                     </div>
                     <div className="grid gap-3 sm:grid-cols-2">
@@ -417,7 +449,7 @@ export function AttractionsPage() {
                             <Input value={longitude} onChange={(e) => setLongitude(e.target.value)} placeholder="e.g. -73.9654" />
                         </div>
                     </div>
-                    <div className="space-y-2">
+                    {/* <div className="space-y-2">
                         <label className="text-sm font-medium text-slate-700">Map Embed Link</label>
                         <Input value={mapEmbedLink} onChange={(e) => setMapEmbedLink(e.target.value)} placeholder="e.g. https://maps.example.com/embed" />
                         {mapEmbedLink && (
@@ -430,7 +462,7 @@ export function AttractionsPage() {
                                 />
                             </div>
                         )}
-                    </div>
+                    </div> */}
                     
                     <div className="flex justify-end gap-2 pt-4">
                         <button type="button" onClick={() => setOpenModal(false)} className="rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">Cancel</button>

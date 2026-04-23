@@ -19,6 +19,7 @@ public class Booking
     public decimal? MembershipDiscountPercentApplied { get; set; }
     public decimal? MembershipDiscountAmountApplied { get; set; }
     public string InvoiceType { get; set; } = "Consolidated"; // Consolidated or Split
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
 
     public User? User { get; set; }
     public Voucher? Voucher { get; set; }

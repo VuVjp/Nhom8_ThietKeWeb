@@ -131,8 +131,7 @@ public class BookingRepository : IBookingRepository
         var data = await _context.Bookings
             .AsNoTracking()
             .Where(b =>
-                (b.Status == "Pending" &&
-                    b.BookingDetails.Any(d => d.CheckInDate <= cutoffTimePending))
+                (b.Status == "Pending" && b.CreatedAt <= cutoffTimePending)
                 ||
                 (b.Status == "Confirmed" &&
                     b.BookingDetails.Any(d => d.CheckInDate <= cutoffTimeConfirmed))
