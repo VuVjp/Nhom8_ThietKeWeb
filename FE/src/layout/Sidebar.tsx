@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { HomeIcon, BuildingOffice2Icon, ArchiveBoxIcon, ExclamationTriangleIcon, SparklesIcon, UsersIcon, ShieldCheckIcon, WrenchScrewdriverIcon, Squares2X2Icon, RectangleStackIcon, ChevronDownIcon, CalendarDaysIcon, TicketIcon, StarIcon, CubeIcon } from '@heroicons/react/24/outline';
+import { HomeIcon, BuildingOffice2Icon, ArchiveBoxIcon, ExclamationTriangleIcon, SparklesIcon, UsersIcon, ShieldCheckIcon, WrenchScrewdriverIcon, Squares2X2Icon, RectangleStackIcon, ChevronDownIcon, CalendarDaysIcon, TicketIcon, StarIcon, CubeIcon, PaperAirplaneIcon } from '@heroicons/react/24/outline';
 import { NavLink, useLocation } from 'react-router-dom';
 import type { AppPermission } from '../auth/auth.types';
 import { useAppAuth } from '../auth/useAppAuth';
+import { Newspaper } from 'lucide-react';
 
 interface SidebarProps {
   collapsed: boolean;
@@ -46,6 +47,15 @@ const navItems: SidebarNavItem[] = [
       { to: '/admin/service-categories', label: 'Categories', permissions: ['MANAGE_SERVICES'] as AppPermission[] },
     ]
   },
+  {
+    label: 'Articles',
+    icon: Newspaper,
+    permissions: ['MANAGE_ARTICLES'] as AppPermission[],
+    children: [
+      { to: '/admin/articles', label: 'Article Catalog', permissions: ['MANAGE_ARTICLES'] as AppPermission[] },
+      { to: '/admin/article-categories', label: 'Categories', permissions: ['MANAGE_ARTICLES'] as AppPermission[] },
+    ]
+  },
   { to: '/admin/rooms', label: 'Rooms', icon: BuildingOffice2Icon, permissions: ['MANAGE_ROOMS'] as AppPermission[] },
   { to: '/admin/room-types', label: 'Room Types', icon: RectangleStackIcon, permissions: ['MANAGE_ROOM_TYPES'] as AppPermission[] },
   { to: '/admin/inventory', label: 'Inventory', icon: ArchiveBoxIcon, permissions: ['MANAGE_INVENTORY'] as AppPermission[] },
@@ -54,7 +64,7 @@ const navItems: SidebarNavItem[] = [
   { to: '/admin/loss', label: 'Loss & Compensation', icon: ExclamationTriangleIcon, permissions: ['APPROVE_LOSS'] as AppPermission[] },
   { to: '/admin/cleaning', label: 'Inspecting & Cleaning', icon: SparklesIcon, permissions: ['UPDATE_CLEANING'] as AppPermission[] },
   { to: '/admin/vouchers', label: 'Vouchers', icon: TicketIcon, permissions: ['MANAGE_VOUCHERS'] as AppPermission[] },
-  { to: '/admin/memberships', label: 'Memberships', icon: StarIcon },
+  { to: '/admin/memberships', label: 'Memberships', icon: StarIcon, permissions: ['MANAGE_MEMBERSHIPS'] as AppPermission[] },
   { to: '/admin/attractions', label: 'Attractions', icon: Squares2X2Icon, permissions: ['MANAGE_ATTRACTIONS'] as AppPermission[] },
   { to: '/admin/users', label: 'Users', icon: UsersIcon, permissions: ['MANAGE_USERS'] as AppPermission[] },
   { to: '/admin/roles', label: 'Roles', icon: ShieldCheckIcon, permissions: ['MANAGE_ROLES'] as AppPermission[] },

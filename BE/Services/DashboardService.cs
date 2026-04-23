@@ -107,6 +107,8 @@ public class DashboardService : IDashboardService
             })
             .ToListAsync();
 
+        var auditLogCount = await _context.AuditLogs.CountAsync();
+
         var payments = await _context.Payments
             .AsNoTracking()
             .Select(payment => new PaymentProjection
@@ -189,7 +191,7 @@ public class DashboardService : IDashboardService
             TotalRevenue = totalRevenue,
             BookingCount = confirmedBookings.Count,
             OccupancyRate = occupancy.Total == 0 ? 0 : (int)Math.Round((double)occupancy.Occupied / occupancy.Total * 100),
-            AuditLogTotal = 0,
+            AuditLogTotal = auditLogCount,
             Occupancy = occupancy,
             RevenueChartData = revenueChartData,
             StatusChartData = statusChartData,

@@ -17,6 +17,7 @@ public class MomoController : ControllerBase
     private readonly IInvoiceService _invoiceService;
     private readonly IPaymentRepository _paymentRepository;
     private readonly AppDbContext _dbContext;
+    private readonly IUserManagementService _userManagementService;
     private readonly ILogger<MomoController> _logger;
 
     private const string BookingType = "booking";
@@ -28,6 +29,7 @@ public class MomoController : ControllerBase
         IBookingService bookingService,
         IInvoiceService invoiceService,
         IPaymentRepository paymentRepository,
+        IUserManagementService userManagementService,
         AppDbContext dbContext,
         ILogger<MomoController> logger)
     {
@@ -36,6 +38,7 @@ public class MomoController : ControllerBase
         _bookingService = bookingService;
         _invoiceService = invoiceService;
         _paymentRepository = paymentRepository;
+        _userManagementService = userManagementService;
         _dbContext = dbContext;
         _logger = logger;
     }
@@ -277,6 +280,10 @@ public class MomoController : ControllerBase
                 {
                     await _bookingService.ChangeBookingStatusAsync(booking.Id, "Confirmed");
                 }
+                if (booking.UserId.HasValue)
+                {
+                    await _userManagementService.AddLoyaltyPointsAsync(booking.UserId.Value, paidAmount);
+                }
             }
             else if (resolvedType == InvoiceType)
             {
@@ -302,6 +309,19 @@ public class MomoController : ControllerBase
                 if (remaining <= 0)
                 {
                     await _invoiceService.CompleteInvoiceByIdAsync(invoice.Id);
+                }
+
+                if (invoice.Booking != null && invoice.Booking.UserId.HasValue)
+                {
+                    await _userManagementService.AddLoyaltyPointsAsync(invoice.Booking.UserId.Value, paidAmount);
+                }
+                else if (invoice.BookingId.HasValue)
+                {
+                    var invoiceBooking = await _bookingRepository.GetBookingByIdWithDetailsAsync(invoice.BookingId.Value);
+                    if (invoiceBooking?.UserId != null)
+                    {
+                        await _userManagementService.AddLoyaltyPointsAsync(invoiceBooking.UserId.Value, paidAmount);
+                    }
                 }
 
                 await dbTransaction.CommitAsync();
@@ -431,6 +451,23 @@ public class MomoController : ControllerBase
             if (remaining <= 0)
             {
                 await _invoiceService.CompleteInvoiceByIdAsync(invoiceId.Value);
+            }
+            var invoice = await _invoiceService.GetInvoiceByIdAsync(invoiceId.Value);
+            if (invoice?.BookingId != null)
+            {
+                var invoiceBooking = await _bookingRepository.GetBookingByIdWithDetailsAsync(invoice.BookingId.Value);
+                if (invoiceBooking?.UserId != null)
+                {
+                    await _userManagementService.AddLoyaltyPointsAsync(invoiceBooking.UserId.Value, amount);
+                }
+            }
+        }
+        else if (paymentType == BookingType && bookingId.HasValue)
+        {
+            var booking = await _bookingRepository.GetBookingByIdWithDetailsAsync(bookingId.Value);
+            if (booking?.UserId != null)
+            {
+                await _userManagementService.AddLoyaltyPointsAsync(booking.UserId.Value, amount);
             }
         }
 

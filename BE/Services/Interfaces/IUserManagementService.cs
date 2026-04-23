@@ -10,4 +10,5 @@ public interface IUserManagementService
     Task ToggleUserActiveByIdAsync(int userId);
     Task ResetPasswordAndSendEmailAsync(int userId);
     Task<validateUserResponseDto> ValidateUserAsync(string email);
+    Task AddLoyaltyPointsAsync(int userId, decimal amountPaid);
 }

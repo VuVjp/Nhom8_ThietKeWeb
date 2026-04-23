@@ -177,10 +177,14 @@ public class AppDbContext : DbContext
             e.Property(x => x.Discount).HasColumnName("discount").HasColumnType("decimal(18,2)");
             e.Property(x => x.FinalPrice).HasColumnName("final_price").HasColumnType("decimal(18,2)");
             e.Property(x => x.InvoiceType).HasColumnName("invoice_type").HasDefaultValue("Consolidated");
+            e.Property(x => x.AppliedMembershipId).HasColumnName("applied_membership_id");
+            e.Property(x => x.AppliedMembershipTierName).HasColumnName("applied_membership_tier_name");
+            e.Property(x => x.MembershipDiscountAmountApplied).HasColumnName("membership_discount_amount_applied").HasColumnType("decimal(18,2)");
+            e.Property(x => x.MembershipDiscountPercentApplied).HasColumnName("membership_discount_percent_applied").HasColumnType("decimal(18,2)");
             e.HasIndex(x => x.BookingCode).IsUnique();
         });
 
-        modelBuilder.Entity<Equipment>(e =>
+        modelBuilder.Entity<Equipment>(e =>     
         {
             e.Property(x => x.Id).HasColumnName("id");
             e.Property(x => x.ItemCode).HasColumnName("item_code");
@@ -385,6 +389,7 @@ public class AppDbContext : DbContext
             e.Property(x => x.Phone).HasColumnName("phone");
             e.Property(x => x.PasswordHash).HasColumnName("password_hash");
             e.Property(x => x.IsActive).HasColumnName("is_active");
+            e.Property(x => x.LoyaltyPoints).HasColumnName("loyalty_points");
             e.Property(x => x.GoogleId).HasColumnName("google_id");
             e.Property(x => x.AvatarUrl).HasColumnName("avatar_url");
             e.HasIndex(x => x.Email).IsUnique();

@@ -37,6 +37,7 @@ export function RoomTypesPage() {
     const [createPrimaryIndex, setCreatePrimaryIndex] = useState<number | string>(0);
     const [editFiles, setEditFiles] = useState<File[]>([]);
     const [editActiveIndex, setEditActiveIndex] = useState<number | string>(0);
+    const [viewAmenitiesTarget, setViewAmenitiesTarget] = useState<RoomTypeItem | null>(null);
 
     const getDefaultActiveImageId = (images: RoomTypeItem['images']) => {
         if (!images || images.length === 0) {
@@ -232,12 +233,21 @@ export function RoomTypesPage() {
             label: 'Amenities',
             render: (row: RoomTypeItem) =>
                 row.amenities.length > 0 ? (
-                    <div className="flex flex-wrap gap-1">
-                        {row.amenities.map((amenity) => (
-                            <span key={amenity.id} className="rounded-full bg-cyan-50 px-2 py-1 text-xs text-cyan-700">
+                    <div 
+                        className="flex flex-wrap gap-1 max-w-[300px] cursor-pointer hover:opacity-80 transition"
+                        onClick={() => setViewAmenitiesTarget(row)}
+                        title="Click to view all amenities"
+                    >
+                        {row.amenities.slice(0, 5).map((amenity) => (
+                            <span key={amenity.id} className="rounded-full bg-cyan-50 px-2 py-1 text-xs text-cyan-700 whitespace-nowrap">
                                 {amenity.name}
                             </span>
                         ))}
+                        {row.amenities.length > 5 && (
+                            <span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600">
+                                +{row.amenities.length - 5}
+                            </span>
+                        )}
                     </div>
                 ) : (
                     <span className="text-slate-400">-</span>
@@ -607,6 +617,36 @@ export function RoomTypesPage() {
                             {isSaving ? 'Saving...' : 'Save'}
                         </button>
                     </div>
+                </div>
+            </Modal>
+
+            <Modal
+                open={Boolean(viewAmenitiesTarget)}
+                title={`Amenities: ${viewAmenitiesTarget?.name}`}
+                onClose={() => setViewAmenitiesTarget(null)}
+            >
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    {viewAmenitiesTarget?.amenities.map((amenity) => (
+                        <div key={amenity.id} className="flex items-center gap-3 rounded-xl border border-slate-100 bg-slate-50 p-3">
+                            {amenity.iconUrl ? (
+                                <img src={amenity.iconUrl} alt={amenity.name} className="h-10 w-10 rounded-lg object-cover shadow-sm" />
+                            ) : (
+                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-200 text-slate-400">
+                                    <PhotoIcon className="h-5 w-5" />
+                                </div>
+                            )}
+                            <span className="text-sm font-medium text-slate-700">{amenity.name}</span>
+                        </div>
+                    ))}
+                </div>
+                <div className="mt-6 flex justify-end">
+                    <button
+                        type="button"
+                        className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+                        onClick={() => setViewAmenitiesTarget(null)}
+                    >
+                        Close
+                    </button>
                 </div>
             </Modal>
         </div>

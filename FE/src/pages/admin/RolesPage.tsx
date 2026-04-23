@@ -56,10 +56,17 @@ export function RolesPage() {
       key: 'permissions',
       label: 'Permissions',
       render: (row: RoleItem) => (
-        <div className="flex flex-wrap gap-1">
-          {row.permissions.map((permission) => (
-            <span key={permission} className="rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-700">{permission}</span>
+        <div className="flex flex-wrap gap-1 max-w-[500px]">
+          {row.permissions.slice(0, 8).map((permission) => (
+            <span key={permission} className="rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-700 whitespace-nowrap">
+              {permission}
+            </span>
           ))}
+          {row.permissions.length > 8 && (
+            <span className="rounded-full bg-cyan-100 px-2 py-1 text-xs font-semibold text-cyan-700">
+              +{row.permissions.length - 8} more
+            </span>
+          )}
         </div>
       ),
     },

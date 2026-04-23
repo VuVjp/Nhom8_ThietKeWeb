@@ -37,6 +37,8 @@ export function CreateBookingPage() {
     const [guestEmail, setGuestEmail] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [guestVerified, setGuestVerified] = useState(false);
+    const [membershipTierName, setMembershipTierName] = useState('');
+    const [membershipDiscountPercent, setMembershipDiscountPercent] = useState(0);
 
     // Invoicing State
     const [invoiceType, setInvoiceType] = useState<'Consolidated' | 'Split'>('Consolidated');
@@ -162,8 +164,10 @@ export function CreateBookingPage() {
             setGuestName(info.fullName);
             setGuestPhone(info.phone);
             setGuestEmail(info.email);
+            setMembershipTierName(info.membershipTierName || 'Normal');
+            setMembershipDiscountPercent(info.discountPercent || 0);
             setGuestVerified(true);
-            toast.success('Email is valid and guest information has been automatically filled.');
+            toast.success(`Verified: ${info.fullName} (${info.membershipTierName || 'Normal'} Member)`);
         } catch (error) {
             const apiError = toApiError(error);
             toast.error(apiError.message || 'Email does not exist.');
@@ -189,7 +193,9 @@ export function CreateBookingPage() {
         try {
             const { start, end } = getCalculatedDates();
             const baseTotal = calculatedTotal();
-            const discount = getDiscountAmount(baseTotal);
+            const voucherDiscount = getDiscountAmount(baseTotal);
+            const membershipDiscount = guestType === 'existing' ? (baseTotal * membershipDiscountPercent) / 100 : 0;
+            const finalTotal = baseTotal - voucherDiscount - membershipDiscount;
 
             await receptionApi.createBooking({
                 IsExistingGuest: guestType === 'existing',
@@ -199,7 +205,7 @@ export function CreateBookingPage() {
                 checkInDate: start,
                 checkOutDate: end,
                 roomIds: selectedRoomIds,
-                totalAmount: baseTotal - discount,
+                totalAmount: finalTotal,
                 voucherId: appliedVoucher ? appliedVoucher?.id + "" : null,
                 invoiceType,
             });
@@ -351,7 +357,9 @@ export function CreateBookingPage() {
                 {step === 3 && (() => {
                     const { start, end } = getCalculatedDates();
                     const baseTotal = calculatedTotal();
-                    const discount = getDiscountAmount(baseTotal);
+                    const voucherDiscount = getDiscountAmount(baseTotal);
+                    const membershipDiscount = guestType === 'existing' ? (baseTotal * membershipDiscountPercent) / 100 : 0;
+                    const finalTotal = baseTotal - voucherDiscount - membershipDiscount;
 
                     return (
                         <div className="grid gap-8 md:grid-cols-2">
@@ -522,22 +530,30 @@ export function CreateBookingPage() {
                                             <span className="font-medium">{selectedRoomIds.length} rooms</span>
                                         </div>
 
+                                        {(appliedVoucher || (guestType === 'existing' && membershipDiscountPercent > 0)) && (
+                                            <div className="flex justify-between border-b border-slate-200 py-2">
+                                                <span className="text-slate-500">Base Total</span>
+                                                <span className="font-medium">${baseTotal.toLocaleString()}</span>
+                                            </div>
+                                        )}
+
+                                        {guestType === 'existing' && membershipDiscountPercent > 0 && (
+                                            <div className="flex justify-between border-b border-slate-200 py-2">
+                                                <span className="text-slate-500">Membership Discount ({membershipTierName})</span>
+                                                <span className="font-medium text-emerald-600">-{membershipDiscountPercent}% (-${membershipDiscount.toLocaleString()})</span>
+                                            </div>
+                                        )}
+
                                         {appliedVoucher && (
-                                            <>
-                                                <div className="flex justify-between border-b border-slate-200 py-2">
-                                                    <span className="text-slate-500">Base Total</span>
-                                                    <span className="font-medium">${baseTotal.toLocaleString()}</span>
-                                                </div>
-                                                <div className="flex justify-between border-b border-slate-200 py-2">
-                                                    <span className="text-slate-500">Discount ({voucherCode})</span>
-                                                    <span className="font-medium text-emerald-600">-${discount.toLocaleString()}</span>
-                                                </div>
-                                            </>
+                                            <div className="flex justify-between border-b border-slate-200 py-2">
+                                                <span className="text-slate-500">Voucher Discount ({voucherCode})</span>
+                                                <span className="font-medium text-emerald-600">-${voucherDiscount.toLocaleString()}</span>
+                                            </div>
                                         )}
 
                                         <div className="flex justify-between pt-2 text-lg">
                                             <span className="font-bold text-slate-800">Total Price</span>
-                                            <span className="font-bold text-cyan-700">${(baseTotal - discount).toLocaleString()}</span>
+                                            <span className="font-bold text-cyan-700">${finalTotal.toLocaleString()}</span>
                                         </div>
                                     </div>
 

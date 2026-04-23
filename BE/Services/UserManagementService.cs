@@ -1,5 +1,6 @@
 using HotelManagement.Dtos;
 using HotelManagement.Entities;
+using HotelManagement.Repositories.Interfaces;
 using System.Security.Cryptography;
 public class UserManagementService : IUserManagementService
 {
@@ -7,13 +8,15 @@ public class UserManagementService : IUserManagementService
     private readonly IRoleRepository _roleRepository;
     private readonly IUserRepository _userRepository;
     private readonly IEmailService _emailService;
+    private readonly IMembershipRepository _membershipRepository;
 
-    public UserManagementService(IUserManagementRepository userManagementRepository, IRoleRepository roleRepository, IUserRepository userRepository, IEmailService emailService)
+    public UserManagementService(IUserManagementRepository userManagementRepository, IRoleRepository roleRepository, IUserRepository userRepository, IEmailService emailService, IMembershipRepository membershipRepository)
     {
         _userManagementRepository = userManagementRepository;
         _roleRepository = roleRepository;
         _userRepository = userRepository;
         _emailService = emailService;
+        _membershipRepository = membershipRepository;
     }
 
     private static string GenerateRandomPassword(int length = 12)
@@ -81,7 +84,9 @@ public class UserManagementService : IUserManagementService
         {
             FullName = user.FullName,
             Phone = user.Phone,
-            Email = user.Email
+            Email = user.Email,
+            MembershipTierName = user.Membership?.TierName ?? "Normal",
+            DiscountPercent = user.Membership?.DiscountPercent ?? 0
         };
     }
 
@@ -154,5 +159,32 @@ public class UserManagementService : IUserManagementService
             + "<p>Please log in and change your password immediately.</p>";
 
         await _emailService.SendAsync(user.Email, "Your new account password", body);
+    }
+
+    public async Task AddLoyaltyPointsAsync(int userId, decimal amountPaid)
+    {
+        if (amountPaid <= 0) return;
+
+        var user = await _userManagementRepository.GetByIdAsync(userId);
+        if (user == null || !user.IsActive) return;
+
+        int pointsEarned = (int)Math.Floor(amountPaid / 1000m); // 1 point per 1,000 VND paid
+        if (pointsEarned <= 0) return;
+
+        user.LoyaltyPoints += pointsEarned;
+
+        var allTiers = await _membershipRepository.GetAllAsync();
+        var matchingTier = allTiers
+            .Where(m => m.IsActive && m.MinPoints <= user.LoyaltyPoints)
+            .OrderByDescending(m => m.MinPoints)
+            .FirstOrDefault();
+
+        if (matchingTier != null && user.MembershipId != matchingTier.Id)
+        {
+            user.MembershipId = matchingTier.Id;
+        }
+
+        _userManagementRepository.Update(user);
+        await _userManagementRepository.SaveChangesAsync();
     }
 }

@@ -313,28 +313,47 @@ export function BookingsListPage() {
 
 
     const columns = [
-        { key: 'id', label: 'Booking ID', render: (row: Booking) => `#${row.id}` },
-        { key: 'guestName', label: 'Guest Name', render: (row: Booking) => row.guestName },
-        { key: 'guestPhone', label: 'Phone', render: (row: Booking) => row.guestPhone || '-' },
-        { key: 'guestEmail', label: 'Email', render: (row: Booking) => row.guestEmail || '-' },
+        { key: 'id', label: 'ID', render: (row: Booking) => <span className="font-medium text-slate-900">#{row.id}</span> },
+        { 
+            key: 'guestInfo', 
+            label: 'Guest Info', 
+            render: (row: Booking) => (
+                <div>
+                    <div className="font-semibold text-slate-900">{row.guestName}</div>
+                    <div className="text-xs text-slate-500">{row.guestPhone || 'No phone'} &bull; {row.guestEmail || 'No email'}</div>
+                </div>
+            )
+        },
         {
             key: 'dates',
-            label: 'Dates',
-            render: (row: Booking) => {
-                return formatDate(row.checkInDate) + ' - ' + formatDate(row.checkOutDate);
-            }
+            label: 'Stay',
+            render: (row: Booking) => (
+                <div>
+                    <div className="text-sm text-slate-900">{formatDate(row.checkInDate)}</div>
+                    <div className="text-xs text-slate-500">to {formatDate(row.checkOutDate)}</div>
+                </div>
+            )
         },
         {
             key: 'roomDetails',
-            label: 'Room Details',
+            label: 'Rooms',
             render: (row: Booking) => (
-                <div className="text-xs leading-5">
-                    <div><span className="font-medium text-slate-800">Rooms:</span> {row.roomNumbers?.join(', ') || 'Unassigned'}</div>
-                    <div><span className="font-medium text-slate-800">Count:</span> {row.roomNumbers?.length ?? 0}</div>
+                <div>
+                    <div className="font-medium text-slate-900">{row.roomNumbers?.join(', ') || 'Unassigned'}</div>
+                    <div className="text-xs text-slate-500">{row.roomNumbers?.length ?? 0} room(s)</div>
                 </div>
             ),
         },
-        { key: 'totalAmount', label: 'Total', render: (row: Booking) => `$${row.totalAmount?.toLocaleString()}` },
+        { 
+            key: 'finances', 
+            label: 'Finances', 
+            render: (row: Booking) => (
+                <div className="text-right">
+                    <div className="font-semibold text-emerald-600">${row.totalAmount?.toLocaleString()}</div>
+                    <div className="text-xs text-slate-500">Dep: ${row.deposit?.toLocaleString()}</div>
+                </div>
+            )
+        },
         {
             key: 'status',
             label: 'Status',
@@ -356,36 +375,37 @@ export function BookingsListPage() {
         {
             key: 'actions',
             label: 'Actions',
-            render: (row: Booking) =>
-                row.status === 'Pending' ? (
+            render: (row: Booking) => {
+                const isPending = row.status === 'Pending';
+                return (
                     <div className="flex flex-wrap items-center gap-2">
                         <button
                             type="button"
-                            className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-xs"
+                            className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
                             onClick={() => openEditModal(row)}
+                            disabled={!isPending}
                         >
                             <PencilSquareIcon className="h-4 w-4" /> Edit
                         </button>
                         <button
                             type="button"
-                            className="inline-flex items-center rounded-lg bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
+                            className="inline-flex items-center rounded-lg bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed"
                             onClick={() => void handleBookingCashPayment(row)}
-                            disabled={activePaymentBookingId === row.id}
+                            disabled={!isPending || activePaymentBookingId === row.id}
                         >
                             {activePaymentBookingId === row.id && activePaymentMethod === 'cash' ? 'Processing...' : 'Cash Deposit'}
                         </button>
                         <button
                             type="button"
-                            className="inline-flex items-center rounded-lg bg-cyan-700 px-2.5 py-1 text-xs font-semibold text-white hover:bg-cyan-800 disabled:opacity-60"
+                            className="inline-flex items-center rounded-lg bg-cyan-700 px-2.5 py-1 text-xs font-semibold text-white hover:bg-cyan-800 disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed"
                             onClick={() => void handleBookingMomoPayment(row)}
-                            disabled={activePaymentBookingId === row.id}
+                            disabled={!isPending || activePaymentBookingId === row.id}
                         >
                             {activePaymentBookingId === row.id && activePaymentMethod === 'momo' ? 'Creating link...' : 'MoMo Transfer'}
                         </button>
                     </div>
-                ) : (
-                    <span className="text-xs text-slate-400">Locked</span>
-                ),
+                );
+            },
         },
     ];
 

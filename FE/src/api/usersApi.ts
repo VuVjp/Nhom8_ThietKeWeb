@@ -103,12 +103,18 @@ export const usersApi = {
             phone?: string;
             Phone?: string;
             email?: string;
+            MembershipTierName?: string;
+            DiscountPercent?: number;
+            membershipTierName?: string;
+            discountPercent?: number;
             Email?: string;
         }>(`usermanagement/validate?email=${encodeURIComponent(email)}`);
         return {
             fullName: data.fullName ?? data.FullName ?? '',
             phone: data.phone ?? data.Phone ?? '',
             email: data.email ?? data.Email ?? email,
+            membershipTierName: data.membershipTierName ?? data.membershipTierName ?? '',
+            discountPercent: data.discountPercent ?? data.discountPercent ?? 0,
         };
     },
 };

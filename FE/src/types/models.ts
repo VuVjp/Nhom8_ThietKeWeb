@@ -82,6 +82,7 @@ export interface Booking {
   checkOutDate: string;
   status: BookingStatus;
   totalAmount: number;
+  deposit: number;
   roomIds: number[];
   roomNumbers: string[];
 }

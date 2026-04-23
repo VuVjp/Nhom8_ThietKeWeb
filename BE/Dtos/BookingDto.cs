@@ -56,6 +56,7 @@ public class BookingSummaryDto
     public DateTime CheckOutDate { get; set; }
     public string Status { get; set; } = string.Empty;
     public decimal TotalAmount { get; set; }
+    public decimal Deposit { get; set; }
     public List<string> RoomNumbers { get; set; } = new();
     public List<int> RoomIds { get; set; } = new();
 }

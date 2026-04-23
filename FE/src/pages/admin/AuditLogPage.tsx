@@ -237,18 +237,22 @@ export function AuditLogPage() {
                 }
 
                 return (
-                    <details className="rounded-lg border border-slate-200 bg-white">
+                    <details className="w-[400px] rounded-lg border border-slate-200 bg-white">
                         <summary className="cursor-pointer select-none px-3 py-2 text-xs font-semibold text-cyan-700 hover:bg-cyan-50">
                             View changes
                         </summary>
                         <div className="grid gap-2 border-t border-slate-200 p-2 md:grid-cols-2">
-                            <div className="rounded-lg border border-rose-200 bg-rose-50 p-2">
+                            <div className="overflow-hidden rounded-lg border border-rose-200 bg-rose-50 p-2">
                                 <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-rose-700">Old Data</p>
-                                <pre className="overflow-auto whitespace-pre-wrap break-all text-[11px] text-rose-900">{formatJson(diff.oldData)}</pre>
+                                <pre className="max-h-60 overflow-auto whitespace-pre-wrap break-all text-[11px] text-rose-900">
+                                    {formatJson(diff.oldData)}
+                                </pre>
                             </div>
-                            <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-2">
+                            <div className="overflow-hidden rounded-lg border border-emerald-200 bg-emerald-50 p-2">
                                 <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-emerald-700">New Data</p>
-                                <pre className="overflow-auto whitespace-pre-wrap break-all text-[11px] text-emerald-900">{formatJson(diff.newData)}</pre>
+                                <pre className="max-h-60 overflow-auto whitespace-pre-wrap break-all text-[11px] text-emerald-900">
+                                    {formatJson(diff.newData)}
+                                </pre>
                             </div>
                         </div>
                     </details>

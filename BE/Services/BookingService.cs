@@ -469,6 +469,7 @@ public class BookingService : IBookingService
             CheckOutDate = lastCheckOut,
             Status = string.IsNullOrWhiteSpace(booking.Status) ? "Pending" : booking.Status,
             TotalAmount = booking.FinalPrice,
+            Deposit = booking.Deposit ?? 0m,
             RoomNumbers = orderedDetails.Where(item => item.RoomId.HasValue).Select(item => item.Room?.RoomNumber ?? string.Empty).Distinct().ToList(),
             RoomIds = orderedDetails
                 .Select(item => item.RoomId)
@@ -509,7 +510,7 @@ public class BookingService : IBookingService
 
     private async Task<User?> ResolveRegisteredUserAsync(string? guestEmail, bool isExistingGuest)
     {
-        if (string.IsNullOrWhiteSpace(guestEmail))
+        if (string.IsNullOrWhiteSpace(guestEmail) || !isExistingGuest)
         {
             return null;
         }
