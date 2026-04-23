@@ -1,5 +1,6 @@
 using HotelManagement.Dtos;
 using HotelManagement.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HotelManagement.Controllers;
@@ -166,5 +167,38 @@ public class BookingsController : ControllerBase
         {
             return BadRequest(new { message = ex.Message });
         }
+    }
+
+    [Authorize]
+    [HttpGet("my-history")]
+    public async Task<IActionResult> GetMyHistory()
+    {
+        var userIdStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out int userId))
+        {
+            return Unauthorized();
+        }
+
+        var history = await _service.GetBookingsByUserIdAsync(userId);
+        return Ok(history);
+    }
+
+    [Authorize]
+    [HttpPost("{id}/cancel")]
+    public async Task<IActionResult> CancelMyBooking(int id)
+    {
+        var userIdStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(userIdStr) || !int.TryParse(userIdStr, out int userId))
+        {
+            return Unauthorized();
+        }
+
+        var ok = await _service.CancelBookingByUserAsync(id, userId);
+        if (!ok)
+        {
+            return BadRequest(new { message = "Cannot cancel this booking. It might not belong to you or it's in a state that cannot be cancelled." });
+        }
+
+        return Ok(new { message = "Booking cancelled successfully." });
     }
 }

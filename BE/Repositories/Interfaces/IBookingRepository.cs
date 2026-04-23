@@ -19,6 +19,7 @@ public interface IBookingRepository
     Task<List<Booking>> GetArrivalsTodayAsync(DateTime date);
     Task<List<Booking>> GetInHouseGuestsAsync();
     Task<List<Booking>> GetAllWithDetailsAsync();
+    Task<List<Booking>> GetByUserIdAsync(int userId);
     Task<OverdueBookingResult> GetOverdueCheckInBookingIdsAsync(DateTime cutoffTimeConfirmed, DateTime cutoffTimePending);
     Task<BookingDetail?> GetBookingDetailWithBookingAsync(int id);
     Task SaveChangesAsync();

@@ -123,6 +123,16 @@ public class BookingRepository : IBookingRepository
             .OrderByDescending(booking => booking.Id)
             .ToListAsync();
     }
+    public async Task<List<Booking>> GetByUserIdAsync(int userId)
+    {
+        return await _context.Bookings
+            .AsNoTracking()
+            .Include(booking => booking.BookingDetails)
+                .ThenInclude(detail => detail.Room)
+            .Where(booking => booking.UserId == userId)
+            .OrderByDescending(booking => booking.Id)
+            .ToListAsync();
+    }
 
     public async Task<OverdueBookingResult> GetOverdueCheckInBookingIdsAsync(
     DateTime cutoffTimeConfirmed,

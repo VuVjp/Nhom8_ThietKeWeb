@@ -1,16 +1,17 @@
-import { useState, useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
-import { roomTypesApi, type RoomTypeItem } from '../../api/roomTypesApi';
-import { receptionApi } from '../../api/receptionApi';
-import toast from 'react-hot-toast';
-import { ShieldCheckIcon, CreditCardIcon, InformationCircleIcon, MapPinIcon, CalendarDaysIcon, UserGroupIcon, SparklesIcon, CheckCircleIcon, ArrowRightIcon, TicketIcon, XMarkIcon } from '@heroicons/react/24/outline';
-import type { RoomAvailability, Voucher } from '../../types/models';
-import { useAppAuth } from '../../auth/useAppAuth';
-import { vouchersApi } from '../../api/vouchersApi';
-import { usersApi } from '../../api/usersApi';
-import { toApiError } from '../../api/httpClient';
+    import { useState, useEffect } from 'react';
+    import { useSearchParams, useNavigate } from 'react-router-dom';
+    import { roomTypesApi, type RoomTypeItem } from '../../api/roomTypesApi';
+    import { receptionApi } from '../../api/receptionApi';
+    import toast from 'react-hot-toast';
+    import { ShieldCheckIcon, CreditCardIcon, InformationCircleIcon, MapPinIcon, CalendarDaysIcon, UserGroupIcon, SparklesIcon, CheckCircleIcon, ArrowRightIcon, TicketIcon, XMarkIcon } from '@heroicons/react/24/outline';
+    import type { RoomAvailability, Voucher } from '../../types/models';
+    import { useAppAuth } from '../../auth/useAppAuth';
+    import { vouchersApi } from '../../api/vouchersApi';
+    import { usersApi } from '../../api/usersApi';
+    import { toApiError } from '../../api/httpClient';
+    import momoApi from '../../api/momoApi';
 
-export function ClientBookingPage() {
+    export function ClientBookingPage() {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     const { user, isAuthenticated } = useAppAuth();
@@ -41,6 +42,9 @@ export function ClientBookingPage() {
         guests: '2',
         notes: ''
     });
+
+    const [showPaymentModal, setShowPaymentModal] = useState(false);
+    const [recentBooking, setRecentBooking] = useState<any>(null);
 
     useEffect(() => {
         const fetchRooms = async () => {
@@ -105,6 +109,21 @@ export function ClientBookingPage() {
     const handleRoomTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const r = roomTypes.find(x => x.id === Number(e.target.value));
         if (r) setSelectedRoomType(r);
+    };
+
+    const handlePayment = async () => {
+        if (!recentBooking) return;
+        try {
+            const res = await momoApi.createPayment({
+                type: 'booking',
+                targetId: recentBooking.id
+            });
+            if (res.payUrl) {
+                window.location.href = res.payUrl;
+            }
+        } catch (error) {
+            toast.error('Không thể tạo liên kết thanh toán.');
+        }
     };
 
     const handleSearchRooms = async () => {
@@ -238,8 +257,9 @@ export function ClientBookingPage() {
             localStorage.setItem('my_bookings', JSON.stringify(stored));
             localStorage.setItem('client_guest_email', formData.email);
 
-            toast.success('🎉 Đặt phòng thành công!');
-            navigate('/account');
+            toast.success('🎉 Đặt phòng thành công! Vui lòng hoàn tất đặt cọc.');
+            setRecentBooking(booking);
+            setShowPaymentModal(true);
         } catch (err: any) {
             const apiError = toApiError(err);
             toast.error(apiError.message || 'Không thể tạo đặt phòng.');
@@ -628,7 +648,68 @@ export function ClientBookingPage() {
 
                 </div>
             </div>
+
+            {/* Payment Modal */}
+            {showPaymentModal && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+                    <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden animate-in zoom-in-95 duration-300">
+                        <div className="p-8 text-center">
+                            <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                                <CheckCircleIcon className="w-12 h-12" />
+                            </div>
+                            <h2 className="text-2xl font-bold text-slate-900 mb-2">Booking Successful!</h2>
+                            <p className="text-slate-500 mb-8">Your reservation <strong>#{recentBooking?.id}</strong> has been created. Please complete the deposit to secure your room.</p>
+                            
+                            <div className="bg-slate-50 rounded-2xl p-6 mb-8 text-left border border-slate-100">
+                                <div className="flex justify-between items-center mb-2">
+                                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Deposit Amount</span>
+                                    <span className="text-xl font-black text-slate-900">${recentBooking?.deposit?.toLocaleString()}</span>
+                                </div>
+                                <div className="flex items-start gap-2 text-amber-600 bg-amber-50 p-3 rounded-xl border border-amber-100">
+                                    <InformationCircleIcon className="w-5 h-5 shrink-0" />
+                                    <p className="text-xs font-medium leading-relaxed">
+                                        Your booking will be automatically cancelled after <strong>15 minutes</strong> if the deposit is not completed.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="flex flex-col gap-3">
+                                <button
+                                    onClick={handlePayment}
+                                    className="w-full py-4 bg-cyan-600 text-white rounded-xl font-bold uppercase tracking-widest text-sm hover:bg-cyan-700 shadow-lg shadow-cyan-600/20 transition-all flex items-center justify-center gap-3 group"
+                                >
+                                    <CreditCardIcon className="w-5 h-5" />
+                                    Pay with MoMo
+                                    <ArrowRightIcon className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                                </button>
+                                <button
+                                    onClick={() => navigate('/account')}
+                                    className="w-full py-4 bg-white text-slate-500 border-2 border-slate-100 rounded-xl font-bold uppercase tracking-widest text-sm hover:bg-slate-50 transition-all"
+                                >
+                                    Pay Later in Account
+                                </button>
+                                <button
+                                    onClick={async () => {
+                                        if (window.confirm('Are you sure you want to cancel this booking?')) {
+                                            try {
+                                                await receptionApi.cancelBooking(recentBooking.id);
+                                                toast.success('Booking cancelled.');
+                                                navigate('/account');
+                                            } catch (e) {
+                                                toast.error('Failed to cancel.');
+                                            }
+                                        }
+                                    }}
+                                    className="w-full py-2 text-slate-400 hover:text-red-500 font-bold uppercase tracking-widest text-[10px] transition-all"
+                                >
+                                    Cancel Booking
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
-};
+}
 

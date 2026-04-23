@@ -62,4 +62,13 @@ export const receptionApi = {
     const response = await httpClient.get<any[]>('/Bookings/active-rooms');
     return response.data;
   },
+  
+  getMyHistory: async (): Promise<Booking[]> => {
+    const response = await httpClient.get<Booking[]>('/Bookings/my-history');
+    return response.data;
+  },
+
+  cancelBooking: async (id: number): Promise<void> => {
+    await httpClient.post(`/Bookings/${id}/cancel`);
+  },
 };

@@ -10,6 +10,8 @@ public interface IBookingService
     Task<IEnumerable<BookingSummaryDto>> GetArrivalsTodayAsync();
     Task<IEnumerable<BookingSummaryDto>> GetInHouseGuestsAsync();
     Task<IEnumerable<BookingSummaryDto>> GetAllBookingsAsync();
+    Task<IEnumerable<BookingSummaryDto>> GetBookingsByUserIdAsync(int userId);
     Task<bool> ChangeBookingStatusAsync(int id, string status);
+    Task<bool> CancelBookingByUserAsync(int bookingId, int userId);
     Task<IEnumerable<ActiveRoomDto>> GetActiveRoomsAsync();
 }

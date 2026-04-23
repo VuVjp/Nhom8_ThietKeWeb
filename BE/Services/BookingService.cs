@@ -310,6 +310,13 @@ public class BookingService : IBookingService
         return bookings.Select(MapToSummaryDto);
     }
 
+    public async Task<IEnumerable<BookingSummaryDto>> GetBookingsByUserIdAsync(int userId)
+    {
+        var bookings = await _repository.GetByUserIdAsync(userId);
+
+        return bookings.Select(MapToSummaryDto);
+    }
+
     public async Task<bool> ChangeBookingStatusAsync(int id, string status)
     {
         if (string.IsNullOrWhiteSpace(status))
@@ -420,6 +427,23 @@ public class BookingService : IBookingService
         booking.Status = status;
         await _repository.SaveChangesAsync();
         return true;
+    }
+
+    public async Task<bool> CancelBookingByUserAsync(int bookingId, int userId)
+    {
+        var booking = await _repository.GetBookingByIdWithDetailsAsync(bookingId, includeRoom: false);
+        if (booking == null) return false;
+
+        if (booking.UserId != userId) return false;
+
+        try
+        {
+            return await ChangeBookingStatusAsync(bookingId, "Cancelled");
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     public async Task<IEnumerable<ActiveRoomDto>> GetActiveRoomsAsync()
