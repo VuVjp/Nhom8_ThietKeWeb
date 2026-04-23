@@ -48,6 +48,7 @@ public class VoucherService : IVoucherService
             DiscountType = dto.DiscountType.Trim(),
             DiscountValue = dto.DiscountValue,
             MinBookingValue = dto.MinBookingValue,
+            MaxDiscountValue = dto.MaxDiscountValue,
             ValidFrom = dto.ValidFrom,
             ValidTo = dto.ValidTo,
             UsageLimit = dto.UsageLimit,
@@ -100,6 +101,11 @@ public class VoucherService : IVoucherService
             entity.MinBookingValue = dto.MinBookingValue.Value;
         }
 
+        if (dto.MaxDiscountValue.HasValue)
+        {
+            entity.MaxDiscountValue = dto.MaxDiscountValue.Value;
+        }
+
         if (dto.ValidFrom.HasValue)
         {
             entity.ValidFrom = dto.ValidFrom;
@@ -143,6 +149,7 @@ public class VoucherService : IVoucherService
             DiscountType = entity.DiscountType,
             DiscountValue = entity.DiscountValue,
             MinBookingValue = entity.MinBookingValue,
+            MaxDiscountValue = entity.MaxDiscountValue,
             ValidFrom = entity.ValidFrom,
             ValidTo = entity.ValidTo,
             UsageLimit = entity.UsageLimit,
@@ -171,6 +178,11 @@ public class VoucherService : IVoucherService
         if (dto.MinBookingValue.HasValue && dto.MinBookingValue.Value < 0)
         {
             throw new ArgumentException("MinBookingValue cannot be negative.");
+        }
+
+        if (dto.MaxDiscountValue.HasValue && dto.MaxDiscountValue.Value < 0)
+        {
+            throw new ArgumentException("MaxDiscountValue cannot be negative.");
         }
 
         if (dto.UsageLimit.HasValue && dto.UsageLimit.Value < 0)
@@ -235,6 +247,11 @@ public class VoucherService : IVoucherService
         if (minBooking.HasValue && minBooking.Value < 0)
         {
             throw new ArgumentException("MinBookingValue cannot be negative.");
+        }
+
+        if (dto.MaxDiscountValue.HasValue && dto.MaxDiscountValue.Value < 0)
+        {
+            throw new ArgumentException("MaxDiscountValue cannot be negative.");
         }
 
         if (usageLimit.HasValue && usageLimit.Value < 0)

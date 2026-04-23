@@ -40,14 +40,14 @@ export function ClientServicesPage() {
     return (
         <div className="w-full bg-white text-slate-800 pb-24 font-sans">
             {/* HERo/LARGETHUMBNAIL SECTION */}
-            <div className="relative h-[60vh] w-full bg-slate-900 mt-[88px] flex items-center justify-center">
-                <img 
-                    src="https://images.unsplash.com/photo-1540555600477-8cd28148b598?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80" 
+            <div className="relative h-[60vh] w-full bg-slate-900 mt-[0px] flex items-center justify-center">
+                <img
+                    src="https://images.unsplash.com/photo-1641924676093-42e61835bbe2?q=80&w=1742&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
                     alt="Services"
                     className="absolute inset-0 w-full h-full object-cover opacity-50"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent" />
-                
+
                 <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
                     <span className="text-cyan-400 font-bold tracking-[0.3em] uppercase text-xs md:text-sm mb-4 block">World-Class Amenities</span>
                     <h1 className="text-4xl md:text-6xl font-extrabold text-white mb-6 drop-shadow-lg">
@@ -67,10 +67,10 @@ export function ClientServicesPage() {
                             <div className="w-full md:w-1/2">
                                 <div className="relative group overflow-hidden shadow-2xl">
                                     <div className="absolute inset-0 bg-cyan-900/20 group-hover:bg-transparent transition-colors duration-500 z-10" />
-                                    <img 
-                                        src={svc.img} 
-                                        alt={svc.name} 
-                                        className="w-full h-[400px] object-cover transform transition-transform duration-700 group-hover:scale-105" 
+                                    <img
+                                        src={svc.img}
+                                        alt={svc.name}
+                                        className="w-full h-[400px] object-cover transform transition-transform duration-700 group-hover:scale-105"
                                     />
                                     {/* Price tag */}
                                     <div className="absolute bottom-6 left-6 z-20 bg-white/95 backdrop-blur px-6 py-3 font-bold text-slate-900 shadow-xl uppercase tracking-widest text-xs">
@@ -87,7 +87,7 @@ export function ClientServicesPage() {
                                 </div>
                                 <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-6">{svc.name}</h2>
                                 <p className="text-slate-600 leading-relaxed mb-8 text-lg">{svc.description}</p>
-                                
+
                                 <ul className="space-y-3 mb-10 text-sm font-semibold text-slate-700">
                                     {svc.features.map((feature, i) => (
                                         <li key={i} className="flex items-center gap-3">
@@ -112,7 +112,7 @@ export function ClientServicesPage() {
                     ))}
                 </div>
             </div>
-            
+
             <div className="mt-32 max-w-[1400px] mx-auto px-6 sm:px-8 lg:px-12 text-center bg-cyan-50 py-16 rounded-2xl border border-cyan-100">
                 <h3 className="text-2xl font-bold mb-4">Not staying with us?</h3>
                 <p className="text-slate-600 mb-6">Our Spa and Restaurant amenities are open to non-guests by reservation.</p>

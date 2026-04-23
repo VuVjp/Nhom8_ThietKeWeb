@@ -402,6 +402,7 @@ public class AppDbContext : DbContext
             e.Property(x => x.DiscountType).HasColumnName("discount_type");
             e.Property(x => x.DiscountValue).HasColumnName("discount_value").HasColumnType("decimal(18,2)");
             e.Property(x => x.MinBookingValue).HasColumnName("min_booking_value").HasColumnType("decimal(18,2)");
+            e.Property(x => x.MaxDiscountValue).HasColumnName("max_discount_value").HasColumnType("decimal(18,2)");
             e.Property(x => x.ValidFrom).HasColumnName("valid_from");
             e.Property(x => x.ValidTo).HasColumnName("valid_to");
             e.Property(x => x.UsageLimit).HasColumnName("usage_limit");

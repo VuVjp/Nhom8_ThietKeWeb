@@ -6,6 +6,7 @@ export interface CreateVoucherPayload {
   discountType: 'Percentage' | 'Fixed';
   discountValue: number;
   minBookingValue: number;
+  maxDiscountValue: number;
   usageLimit: number;
   validFrom: string;
   validTo: string;

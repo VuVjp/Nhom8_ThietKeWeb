@@ -49,6 +49,7 @@ import { ClientAccountPage } from '../pages/client/ClientAccountPage';
 import { ClientServicesPage } from '../pages/client/ClientServicesPage';
 import { ClientNewsPage } from '../pages/client/ClientNewsPage';
 import { ClientAboutPage } from '../pages/client/ClientAboutPage';
+import { ClientNewsDetailPage } from '../pages/client/ClientNewsDetailPage';
 
 function AdminEntryRedirect() {
     const { user, isAuthReady } = useAppAuth();
@@ -180,6 +181,7 @@ export const AppRouter = () => {
                 <Route path="/account" element={<ClientAccountPage />} />
                 <Route path="/services" element={<ClientServicesPage />} />
                 <Route path="/news" element={<ClientNewsPage />} />
+                <Route path="/news/:id" element={<ClientNewsDetailPage />} />
                 <Route path="/about" element={<ClientAboutPage />} />
 
                 <Route path="/attractions" element={<ClientAttractionsPage />} />

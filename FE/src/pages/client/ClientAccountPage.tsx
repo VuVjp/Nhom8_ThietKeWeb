@@ -22,6 +22,9 @@ export function ClientAccountPage() {
         phone: ''
     });
 
+    const [bookingToCancel, setBookingToCancel] = useState<number | null>(null);
+    const [isCancelling, setIsCancelling] = useState(false);
+
     useEffect(() => {
         const token = getAccessToken();
         if (!token) {
@@ -90,14 +93,22 @@ export function ClientAccountPage() {
         }
     };
 
-    const handleCancelBooking = async (bookingId: number) => {
-        if (!window.confirm('Are you sure you want to cancel this booking?')) return;
+    const handleCancelBooking = (bookingId: number) => {
+        setBookingToCancel(bookingId);
+    };
+
+    const confirmCancel = async () => {
+        if (!bookingToCancel) return;
+        setIsCancelling(true);
         try {
-            await receptionApi.cancelBooking(bookingId);
+            await receptionApi.cancelBooking(bookingToCancel);
             toast.success('Booking cancelled successfully!');
+            setBookingToCancel(null);
             fetchData(); // Refresh list
         } catch (error) {
             toast.error('Failed to cancel booking. It may be too late to cancel.');
+        } finally {
+            setIsCancelling(false);
         }
     };
 
@@ -286,7 +297,7 @@ export function ClientAccountPage() {
                                                                     <CreditCardIcon className="w-4 h-4" /> Pay Deposit
                                                                 </button>
                                                             )}
-                                                            {(bkg.status?.toLowerCase() === 'pending' || bkg.status?.toLowerCase() === 'confirmed') && (
+                                                            {(bkg.status?.toLowerCase() === 'pending' || bkg.status?.toLowerCase() === 'confirmed') && new Date(bkg.checkInDate) > new Date() && (
                                                                 <button
                                                                     onClick={() => handleCancelBooking(bkg.id)}
                                                                     className="text-red-600 bg-red-50 hover:bg-red-100 border border-red-100 font-bold text-xs uppercase tracking-wider px-3 py-1.5 rounded flex items-center gap-1 transition-all shadow-sm active:scale-95"
@@ -311,6 +322,38 @@ export function ClientAccountPage() {
                     )}
                 </div>
             </div>
+
+            {/* Cancel Confirmation Modal */}
+            {bookingToCancel && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+                    <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full overflow-hidden animate-in zoom-in-95 duration-300">
+                        <div className="p-8 text-center">
+                            <div className="w-20 h-20 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                                <XMarkIcon className="w-12 h-12" />
+                            </div>
+                            <h2 className="text-2xl font-bold text-slate-900 mb-2">Cancel Booking?</h2>
+                            <p className="text-slate-500 mb-8">Are you sure you want to cancel booking <strong>#{bookingToCancel}</strong>? This action cannot be undone.</p>
+                            
+                            <div className="flex flex-col gap-3">
+                                <button
+                                    onClick={confirmCancel}
+                                    disabled={isCancelling}
+                                    className="w-full py-4 bg-red-600 text-white rounded-xl font-bold uppercase tracking-widest text-sm hover:bg-red-700 shadow-lg shadow-red-600/20 transition-all disabled:opacity-50"
+                                >
+                                    {isCancelling ? 'Processing...' : 'Yes, Cancel Booking'}
+                                </button>
+                                <button
+                                    onClick={() => setBookingToCancel(null)}
+                                    disabled={isCancelling}
+                                    className="w-full py-4 bg-white text-slate-500 border-2 border-slate-100 rounded-xl font-bold uppercase tracking-widest text-sm hover:bg-slate-50 transition-all disabled:opacity-50"
+                                >
+                                    Go Back
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

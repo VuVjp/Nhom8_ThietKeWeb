@@ -4,14 +4,14 @@ export function ClientAboutPage() {
     return (
         <div className="w-full bg-white text-slate-800 pb-24 font-sans min-h-screen">
             {/* HERO SECTION */}
-            <div className="relative h-[60vh] w-full bg-slate-900 mt-[88px] flex items-center justify-center">
-                <img 
-                    src="https://images.unsplash.com/photo-1542314831-c6a4d1409e1f?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80" 
+            <div className="relative h-[60vh] w-full bg-slate-900 flex items-center justify-center">
+                <img
+                    src="https://images.unsplash.com/photo-1542744095-fcf48d80b0fd?q=80&w=1752&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
                     alt="About Us"
                     className="absolute inset-0 w-full h-full object-cover opacity-40"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent opacity-10" />
-                
+
                 <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
                     <span className="text-cyan-400 font-bold tracking-[0.3em] uppercase text-xs md:text-sm mb-4 block drop-shadow-md">The Grandeur Legacy</span>
                     <h1 className="text-4xl md:text-6xl font-extrabold text-white mb-6 drop-shadow-lg">
@@ -54,7 +54,7 @@ export function ClientAboutPage() {
                 <div className="max-w-[1400px] mx-auto px-6 sm:px-8 lg:px-12 text-center">
                     <span className="text-cyan-600 font-bold tracking-widest uppercase text-xs mb-4 block">Our Philosophy</span>
                     <h2 className="text-3xl font-extrabold text-slate-900 mb-16">Core Values</h2>
-                    
+
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
                         <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-100">
                             <h4 className="text-xl font-bold text-slate-900 mb-4">Quality</h4>

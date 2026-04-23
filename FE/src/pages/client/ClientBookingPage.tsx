@@ -195,7 +195,9 @@
         let voucherDiscount = 0;
         if (appliedVoucher) {
             if (appliedVoucher.discountType === 'Percentage') {
-                voucherDiscount = Math.round((baseTotal * appliedVoucher.discountValue) / 100);
+                const raw = Math.round((baseTotal * appliedVoucher.discountValue) / 100);
+                const cap = appliedVoucher.maxDiscountValue ?? 0;
+                voucherDiscount = cap > 0 ? Math.min(raw, cap) : raw;
             } else {
                 voucherDiscount = appliedVoucher.discountValue;
             }
@@ -459,15 +461,15 @@
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6">
                                         <div className="space-y-2">
                                             <label className="block text-sm font-bold text-slate-500 uppercase tracking-wider">Full Name *</label>
-                                            <input required name="fullName" value={formData.fullName} onChange={handleChange} type="text" className="w-full px-5 py-4 bg-slate-50 border-2 border-slate-100 rounded-xl focus:border-cyan-500 focus:bg-white focus:outline-none transition-all font-medium" placeholder="e.g. John Smith" />
+                                            <input required name="fullName" value={formData.fullName} onChange={handleChange} type="text" readOnly={isAuthenticated} className={`w-full px-5 py-4 border-2 border-slate-100 rounded-xl focus:border-cyan-500 focus:bg-white focus:outline-none transition-all font-medium ${isAuthenticated ? 'bg-slate-100 cursor-not-allowed' : 'bg-slate-50'}`} placeholder="e.g. John Smith" />
                                         </div>
                                         <div className="space-y-2">
                                             <label className="block text-sm font-bold text-slate-500 uppercase tracking-wider">Email Address *</label>
-                                            <input required name="email" value={formData.email} onChange={handleChange} type="email" className="w-full px-5 py-4 bg-slate-50 border-2 border-slate-100 rounded-xl focus:border-cyan-500 focus:bg-white focus:outline-none transition-all font-medium" placeholder="john@example.com" />
+                                            <input required name="email" value={formData.email} onChange={handleChange} type="email" readOnly={isAuthenticated} className={`w-full px-5 py-4 border-2 border-slate-100 rounded-xl focus:border-cyan-500 focus:bg-white focus:outline-none transition-all font-medium ${isAuthenticated ? 'bg-slate-100 cursor-not-allowed' : 'bg-slate-50'}`} placeholder="john@example.com" />
                                         </div>
                                         <div className="space-y-2">
                                             <label className="block text-sm font-bold text-slate-500 uppercase tracking-wider">Phone Number *</label>
-                                            <input required name="phone" value={formData.phone} onChange={handleChange} type="tel" className="w-full px-5 py-4 bg-slate-50 border-2 border-slate-100 rounded-xl focus:border-cyan-500 focus:bg-white focus:outline-none transition-all font-medium" placeholder="+84 123 456 789" />
+                                            <input required name="phone" value={formData.phone} onChange={handleChange} type="tel" readOnly={isAuthenticated} className={`w-full px-5 py-4 border-2 border-slate-100 rounded-xl focus:border-cyan-500 focus:bg-white focus:outline-none transition-all font-medium ${isAuthenticated ? 'bg-slate-100 cursor-not-allowed' : 'bg-slate-50'}`} placeholder="+84 123 456 789" />
                                         </div>
                                         <div className="space-y-2">
                                             <label className="block text-sm font-bold text-slate-500 uppercase tracking-wider">Guests *</label>
@@ -525,6 +527,9 @@
                                             <p className="mt-2 text-xs text-emerald-600 font-bold flex items-center gap-1">
                                                 <CheckCircleIcon className="w-4 h-4" />
                                                 Discount Applied: {appliedVoucher.discountType === 'Percentage' ? `${appliedVoucher.discountValue}%` : `$${appliedVoucher.discountValue}`} Off
+                                                {appliedVoucher.discountType === 'Percentage' && (appliedVoucher.maxDiscountValue ?? 0) > 0 && (
+                                                    <span className="ml-1 text-amber-500">(capped at ${appliedVoucher.maxDiscountValue})</span>
+                                                )}
                                             </p>
                                         )}
                                     </div>
@@ -682,28 +687,32 @@
                                     Pay with MoMo
                                     <ArrowRightIcon className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                                 </button>
-                                <button
-                                    onClick={() => navigate('/account')}
-                                    className="w-full py-4 bg-white text-slate-500 border-2 border-slate-100 rounded-xl font-bold uppercase tracking-widest text-sm hover:bg-slate-50 transition-all"
-                                >
-                                    Pay Later in Account
-                                </button>
-                                <button
-                                    onClick={async () => {
-                                        if (window.confirm('Are you sure you want to cancel this booking?')) {
-                                            try {
-                                                await receptionApi.cancelBooking(recentBooking.id);
-                                                toast.success('Booking cancelled.');
-                                                navigate('/account');
-                                            } catch (e) {
-                                                toast.error('Failed to cancel.');
-                                            }
-                                        }
-                                    }}
-                                    className="w-full py-2 text-slate-400 hover:text-red-500 font-bold uppercase tracking-widest text-[10px] transition-all"
-                                >
-                                    Cancel Booking
-                                </button>
+                                {isAuthenticated && (
+                                    <>
+                                        <button
+                                            onClick={() => navigate('/account')}
+                                            className="w-full py-4 bg-white text-slate-500 border-2 border-slate-100 rounded-xl font-bold uppercase tracking-widest text-sm hover:bg-slate-50 transition-all"
+                                        >
+                                            Pay Later in Account
+                                        </button>
+                                        <button
+                                            onClick={async () => {
+                                                if (window.confirm('Are you sure you want to cancel this booking?')) {
+                                                    try {
+                                                        await receptionApi.cancelBooking(recentBooking.id);
+                                                        toast.success('Booking cancelled.');
+                                                        navigate('/account');
+                                                    } catch (e) {
+                                                        toast.error('Failed to cancel.');
+                                                    }
+                                                }
+                                            }}
+                                            className="w-full py-2 text-slate-400 hover:text-red-500 font-bold uppercase tracking-widest text-[10px] transition-all"
+                                        >
+                                            Cancel Booking
+                                        </button>
+                                    </>
+                                )}
                             </div>
                         </div>
                     </div>

@@ -7,6 +7,7 @@ public class VoucherDto
     public string DiscountType { get; set; } = string.Empty;
     public decimal DiscountValue { get; set; }
     public decimal? MinBookingValue { get; set; }
+    public decimal? MaxDiscountValue { get; set; }
     public DateTime? ValidFrom { get; set; }
     public DateTime? ValidTo { get; set; }
     public int? UsageLimit { get; set; }
@@ -20,6 +21,7 @@ public class CreateVoucherDto
     public string DiscountType { get; set; } = string.Empty;
     public decimal DiscountValue { get; set; }
     public decimal? MinBookingValue { get; set; }
+    public decimal? MaxDiscountValue { get; set; }
     public DateTime? ValidFrom { get; set; }
     public DateTime? ValidTo { get; set; }
     public int? UsageLimit { get; set; }
@@ -31,6 +33,7 @@ public class UpdateVoucherDto
     public string? DiscountType { get; set; }
     public decimal? DiscountValue { get; set; }
     public decimal? MinBookingValue { get; set; }
+    public decimal? MaxDiscountValue { get; set; }
     public DateTime? ValidFrom { get; set; }
     public DateTime? ValidTo { get; set; }
     public int? UsageLimit { get; set; }

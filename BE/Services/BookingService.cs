@@ -159,6 +159,10 @@ public class BookingService : IBookingService
                 if (voucher.DiscountType == "Percentage")
                 {
                     voucherDiscountAmount = Math.Round(booking.TotalPrice * (voucher.DiscountValue / 100m), 2);
+                    if (voucher.MaxDiscountValue.HasValue && voucher.MaxDiscountValue.Value > 0)
+                    {
+                        voucherDiscountAmount = Math.Min(voucherDiscountAmount, voucher.MaxDiscountValue.Value);
+                    }
                 }
                 else if (voucher.DiscountType == "Fixed")
                 {
@@ -270,6 +274,10 @@ public class BookingService : IBookingService
                 if (voucher.DiscountType == "Percentage")
                 {
                     voucherDiscountAmount = Math.Round(booking.TotalPrice * (voucher.DiscountValue / 100m), 0);
+                    if (voucher.MaxDiscountValue.HasValue && voucher.MaxDiscountValue.Value > 0)
+                    {
+                        voucherDiscountAmount = Math.Min(voucherDiscountAmount, voucher.MaxDiscountValue.Value);
+                    }
                 }
                 else if (voucher.DiscountType == "Fixed")
                 {
@@ -436,6 +444,16 @@ public class BookingService : IBookingService
 
         if (booking.UserId != userId) return false;
 
+        if (booking.Status != "Confirmed" && booking.Status != "Pending")
+        {
+            return false;
+        }
+
+        if(DateTime.Now > booking.CheckInDate)
+        {
+            return false;
+        }
+        
         try
         {
             return await ChangeBookingStatusAsync(bookingId, "Cancelled");

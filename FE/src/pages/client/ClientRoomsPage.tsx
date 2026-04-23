@@ -53,7 +53,7 @@ export function ClientRoomsPage() {
     // Dynamically compute max possible price for the slider
     const maxBasePrice = useMemo(() =>
         roomTypes.length > 0 ? Math.max(...roomTypes.map(r => r.basePrice)) : 10000,
-    [roomTypes]);
+        [roomTypes]);
 
     // Initialize slider to max price once loaded
     useEffect(() => {
@@ -103,13 +103,13 @@ export function ClientRoomsPage() {
     return (
         <div className="w-full bg-[#f9fafb] min-h-screen font-sans text-slate-800">
             {/* Hero Banner */}
-            <div className="relative bg-slate-900 overflow-hidden mt-[88px]">
+            <div className="relative bg-slate-900 overflow-hidden mt-[0px]">
                 <img
                     src="https://images.unsplash.com/photo-1631049307264-da0ec9d70304?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80"
                     alt="Rooms Banner"
                     className="absolute inset-0 w-full h-full object-cover opacity-30"
                 />
-                <div className="relative z-10 text-center py-24 px-4 max-w-4xl mx-auto">
+                <div className="relative mt-[50px] z-10 text-center py-24 px-4 max-w-4xl mx-auto">
                     <span className="text-cyan-400 font-bold tracking-[0.3em] uppercase text-xs mb-4 block">Accommodations</span>
                     <h1 className="text-4xl md:text-6xl font-extrabold text-white mb-4 drop-shadow-lg">
                         Our Suites & Rooms
@@ -159,11 +159,10 @@ export function ClientRoomsPage() {
                         {/* Filter toggle */}
                         <button
                             onClick={() => setFiltersOpen(!filtersOpen)}
-                            className={`flex-shrink-0 flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-sm uppercase tracking-wider transition-all border ${
-                                filtersOpen || activeFilterCount > 0
-                                    ? 'bg-cyan-600 text-white border-cyan-600'
-                                    : 'bg-white text-slate-700 border-slate-200 hover:border-cyan-400'
-                            }`}
+                            className={`flex-shrink-0 flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-sm uppercase tracking-wider transition-all border ${filtersOpen || activeFilterCount > 0
+                                ? 'bg-cyan-600 text-white border-cyan-600'
+                                : 'bg-white text-slate-700 border-slate-200 hover:border-cyan-400'
+                                }`}
                         >
                             <AdjustmentsHorizontalIcon className="w-5 h-5" />
                             Filters

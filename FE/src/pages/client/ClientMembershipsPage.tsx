@@ -26,15 +26,14 @@ export function ClientMembershipsPage() {
 
     const renderTierCard = (membership: Membership, index: number) => {
         const isPremium = index === memberships.length - 1; // Highlight the top tier
-        
+
         return (
-            <div 
-                key={membership.id} 
-                className={`relative rounded-3xl p-8 transition-transform duration-500 hover:-translate-y-2 ${
-                    isPremium 
-                    ? 'bg-gradient-to-b from-cyan-900 to-slate-900 text-white shadow-2xl shadow-cyan-900/40 border border-cyan-800' 
+            <div
+                key={membership.id}
+                className={`relative rounded-3xl p-8 transition-transform duration-500 hover:-translate-y-2 ${isPremium
+                    ? 'bg-gradient-to-b from-cyan-900 to-slate-900 text-white shadow-2xl shadow-cyan-900/40 border border-cyan-800'
                     : 'bg-white text-slate-900 border border-slate-200 shadow-xl shadow-slate-200/50'
-                }`}
+                    }`}
             >
                 {isPremium && (
                     <div className="absolute top-0 right-10 transform -translate-y-1/2">
@@ -43,19 +42,19 @@ export function ClientMembershipsPage() {
                         </span>
                     </div>
                 )}
-                
+
                 <h3 className={`text-3xl font-bold mb-2 ${isPremium ? 'text-white' : 'text-slate-900'}`}>
                     {membership.tierName}
                 </h3>
                 <p className={`text-sm mb-8 ${isPremium ? 'text-cyan-200' : 'text-slate-500'}`}>
                     Unlock exclusive privileges and rewards.
                 </p>
-                
+
                 <div className="mb-8">
                     <span className="text-4xl font-bold">{membership.discountPercent}%</span>
                     <span className={`ml-2 font-medium ${isPremium ? 'text-cyan-200' : 'text-slate-500'}`}>Discount</span>
                 </div>
-                
+
                 <ul className="space-y-4 mb-8">
                     <li className="flex items-start gap-3">
                         <CheckCircleIcon className={`w-6 h-6 shrink-0 ${isPremium ? 'text-cyan-400' : 'text-cyan-600'}`} />
@@ -84,14 +83,13 @@ export function ClientMembershipsPage() {
                         </li>
                     )}
                 </ul>
-                
-                <button 
+
+                <button
                     onClick={() => toast.success(`More details for ${membership.tierName} will be sent to you shortly!`)}
-                    className={`w-full py-4 rounded-xl font-bold transition-colors ${
-                        isPremium 
-                        ? 'bg-cyan-500 hover:bg-cyan-400 text-white shadow-lg shadow-cyan-500/30' 
+                    className={`w-full py-4 rounded-xl font-bold transition-colors ${isPremium
+                        ? 'bg-cyan-500 hover:bg-cyan-400 text-white shadow-lg shadow-cyan-500/30'
                         : 'bg-slate-100 hover:bg-slate-200 text-slate-900 border border-slate-200'
-                    }`}
+                        }`}
                 >
                     Learn More
                 </button>
@@ -103,10 +101,10 @@ export function ClientMembershipsPage() {
         <div className="w-full bg-slate-50 min-h-screen">
             {/* Header Banner */}
             <div className="bg-slate-900 py-20 text-center text-white px-4 relative overflow-hidden">
-                 <div className="absolute top-0 right-1/4 w-[40rem] h-[40rem] bg-indigo-600/10 rounded-full mix-blend-screen filter blur-3xl opacity-50" />
-                 <div className="absolute bottom-0 left-1/4 w-[30rem] h-[30rem] bg-cyan-600/10 rounded-full mix-blend-screen filter blur-3xl opacity-50" />
-                 
-                 <div className="relative z-10 max-w-3xl mx-auto">
+                <div className="absolute top-0 right-1/4 w-[40rem] h-[40rem] bg-indigo-600/10 rounded-full mix-blend-screen filter blur-3xl opacity-50" />
+                <div className="absolute bottom-0 left-1/4 w-[30rem] h-[30rem] bg-cyan-600/10 rounded-full mix-blend-screen filter blur-3xl opacity-50" />
+
+                <div className="relative mt-[50px] z-10 max-w-3xl mx-auto">
                     <span className="text-cyan-400 font-semibold tracking-widest uppercase text-sm mb-4 block">Grandeur Club</span>
                     <h1 className="text-4xl md:text-6xl font-bold mb-6 tracking-tight">Elevate Your Stay</h1>
                     <p className="text-slate-300 text-lg">
@@ -130,13 +128,13 @@ export function ClientMembershipsPage() {
                     </div>
                 )}
             </div>
-            
+
             {/* Info Section */}
             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-24 text-center">
                 <h2 className="text-2xl font-bold text-slate-900 mb-4">How it works</h2>
                 <p className="text-slate-600">
-                    Earn points automatically with every booking you make through our official portal. 
-                    Your tier is calculated based on total points accumulated over your lifetime. 
+                    Earn points automatically with every booking you make through our official portal.
+                    Your tier is calculated based on total points accumulated over your lifetime.
                     No renewals, no hidden fees—just pure luxury.
                 </p>
             </div>

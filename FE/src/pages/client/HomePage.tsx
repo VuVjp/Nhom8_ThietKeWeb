@@ -41,7 +41,7 @@ export function HomePage() {
         if (searchName) params.append('name', searchName);
         params.append('adults', adults.toString());
         params.append('children', children.toString());
-        
+
         toast.success('Searching for the perfect room...');
         navigate(`/rooms?${params.toString()}`);
     };
@@ -52,29 +52,29 @@ export function HomePage() {
             <section className="relative h-[90vh] w-full flex flex-col justify-center items-center overflow-hidden -mt-[88px] pt-[88px]">
                 {/* Real Background Image */}
                 <div className="absolute inset-0 z-0">
-                    <img 
-                        src="https://images.unsplash.com/photo-1542314831-c6a4d1409e1f?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80" 
-                        alt="Luxury Hotel Facade" 
+                    <img
+                        src="https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+                        alt="Luxury Hotel Facade"
                         className="w-full h-full object-cover"
                     />
                     {/* Gradient Overlay for text readability */}
                     <div className="absolute inset-0 bg-gradient-to-b from-slate-900/60 via-slate-900/40 to-slate-900/80" />
                 </div>
-                
+
                 <div className="relative z-10 text-center px-4 max-w-5xl mx-auto w-full">
                     <span className="text-cyan-400 font-bold tracking-[0.3em] uppercase text-xs md:text-sm mb-6 block drop-shadow-md">Welcome to Grandeur</span>
                     <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold text-white mb-6 leading-tight drop-shadow-lg">
                         Experience the <span className="font-light italic">Art</span> of <br /> Luxury Living
                     </h1>
-                    
+
                     {/* Search Form Overlay */}
                     <div className="mt-12 md:mt-16 bg-white/10 backdrop-blur-md p-4 md:p-6 rounded-2xl border border-white/20 shadow-2xl mx-auto w-full max-w-4xl">
                         <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-4">
                             <div className="flex-1 bg-white rounded-xl overflow-hidden flex flex-col justify-center px-4 py-3 text-left">
                                 <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Search Room</label>
-                                <input 
-                                    type="text" 
-                                    placeholder="Enter room name..." 
+                                <input
+                                    type="text"
+                                    placeholder="Enter room name..."
                                     className="w-full text-slate-900 font-semibold focus:outline-none placeholder-slate-400"
                                     value={searchName}
                                     onChange={(e) => setSearchName(e.target.value)}
@@ -82,8 +82,8 @@ export function HomePage() {
                             </div>
                             <div className="md:w-32 bg-white rounded-xl overflow-hidden flex flex-col justify-center px-4 py-3 text-left">
                                 <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Adults</label>
-                                <input 
-                                    type="number" 
+                                <input
+                                    type="number"
                                     min={1}
                                     className="w-full text-slate-900 font-semibold focus:outline-none bg-transparent"
                                     value={adults}
@@ -92,8 +92,8 @@ export function HomePage() {
                             </div>
                             <div className="md:w-32 bg-white rounded-xl overflow-hidden flex flex-col justify-center px-4 py-3 text-left">
                                 <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Children</label>
-                                <input 
-                                    type="number" 
+                                <input
+                                    type="number"
                                     min={0}
                                     className="w-full text-slate-900 font-semibold focus:outline-none bg-transparent"
                                     value={children}
@@ -178,8 +178,8 @@ export function HomePage() {
                                             <div className="absolute bottom-4 right-4 z-20 bg-white/90 backdrop-blur text-slate-900 px-4 py-2 font-bold text-lg shadow-lg">
                                                 ${rt.basePrice.toLocaleString()}<span className="text-xs font-normal text-slate-500">/night</span>
                                             </div>
-                                            <img 
-                                                src={displayImage} 
+                                            <img
+                                                src={displayImage}
                                                 alt={rt.name}
                                                 className="w-full h-full object-cover transform transition-transform duration-700 group-hover:scale-110"
                                             />
@@ -241,12 +241,12 @@ export function HomePage() {
                         <span className="text-cyan-400 font-bold tracking-widest uppercase text-sm mb-2 block">Testimonials</span>
                         <h2 className="text-3xl md:text-5xl font-extrabold text-white">What Our Guests Say</h2>
                     </div>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                         {/* Review 1 */}
                         <div className="bg-slate-800/50 p-10 border border-slate-700 relative text-left">
                             <div className="text-cyan-500 mb-6 flex">
-                                {[1,2,3,4,5].map(i => <StarIcon key={i} className="w-5 h-5 fill-current" />)}
+                                {[1, 2, 3, 4, 5].map(i => <StarIcon key={i} className="w-5 h-5 fill-current" />)}
                             </div>
                             <p className="text-slate-300 italic mb-8 leading-relaxed">"Absolutely incredible experience. The attention to detail, the culinary masterpieces, and the view from our suite were completely unmatched. Will definitely return."</p>
                             <div className="flex items-center gap-4">
@@ -260,7 +260,7 @@ export function HomePage() {
                         {/* Review 2 */}
                         <div className="bg-slate-800/50 p-10 border border-slate-700 relative transform md:-translate-y-4 text-left">
                             <div className="text-cyan-500 mb-6 flex">
-                                {[1,2,3,4,5].map(i => <StarIcon key={i} className="w-5 h-5 fill-current" />)}
+                                {[1, 2, 3, 4, 5].map(i => <StarIcon key={i} className="w-5 h-5 fill-current" />)}
                             </div>
                             <p className="text-slate-300 italic mb-8 leading-relaxed">"From the moment we arrived, we were treated like royalty. The spa services are out of this world and the staff is incredibly attentive."</p>
                             <div className="flex items-center gap-4">
@@ -274,7 +274,7 @@ export function HomePage() {
                         {/* Review 3 */}
                         <div className="bg-slate-800/50 p-10 border border-slate-700 relative text-left">
                             <div className="text-cyan-500 mb-6 flex">
-                                {[1,2,3,4,5].map(i => <StarIcon key={i} className="w-5 h-5 fill-current" />)}
+                                {[1, 2, 3, 4, 5].map(i => <StarIcon key={i} className="w-5 h-5 fill-current" />)}
                             </div>
                             <p className="text-slate-300 italic mb-8 leading-relaxed">"The perfect destination for our anniversary. They went above and beyond to make our stay special. The infinity pool is breathtaking."</p>
                             <div className="flex items-center gap-4">

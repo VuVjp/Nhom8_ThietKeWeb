@@ -94,7 +94,9 @@ export function CreateBookingPage() {
     const getDiscountAmount = (baseTotal: number) => {
         if (!appliedVoucher) return 0;
         if (appliedVoucher.discountType === 'Percentage') {
-            return Math.round((baseTotal * appliedVoucher.discountValue) / 100);
+            const raw = Math.round((baseTotal * appliedVoucher.discountValue) / 100);
+            const cap = appliedVoucher.maxDiscountValue ?? 0;
+            return cap > 0 ? Math.min(raw, cap) : raw;
         }
         return Math.round(appliedVoucher.discountValue);
     };
@@ -542,6 +544,9 @@ export function CreateBookingPage() {
                                         <p className="mt-2 text-xs text-emerald-600 font-medium flex items-center gap-1">
                                             <CheckCircleIcon className="h-3.5 w-3.5" />
                                             Voucher applied: {appliedVoucher.discountType === 'Percentage' ? `${appliedVoucher.discountValue}%` : `$${appliedVoucher.discountValue}`} off
+                                            {appliedVoucher.discountType === 'Percentage' && (appliedVoucher.maxDiscountValue ?? 0) > 0 && (
+                                                <span className="text-amber-500">(max ${appliedVoucher.maxDiscountValue})</span>
+                                            )}
                                         </p>
                                     )}
                                 </div>

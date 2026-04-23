@@ -41,6 +41,7 @@ export function VouchersPage() {
     discountType: 'Percentage' as 'Percentage' | 'Fixed',
     discountValue: 0,
     minBookingValue: 0,
+    maxDiscountValue: 0,
     usageLimit: 1,
     validFrom: '',
     validTo: '',
@@ -107,6 +108,7 @@ export function VouchersPage() {
       discountType: 'Percentage',
       discountValue: 0,
       minBookingValue: 0,
+      maxDiscountValue: 0,
       usageLimit: 1,
       validFrom: '',
       validTo: '',
@@ -123,6 +125,7 @@ export function VouchersPage() {
       discountType: (voucher.discountType as any) || 'Percentage',
       discountValue: voucher.discountValue,
       minBookingValue: voucher.minBookingValue,
+      maxDiscountValue: voucher.maxDiscountValue ?? 0,
       usageLimit: voucher.usageLimit,
       validFrom: voucher.validFrom.split('T')[0],
       validTo: voucher.validTo.split('T')[0],
@@ -167,6 +170,9 @@ export function VouchersPage() {
           <span className="font-semibold text-cyan-700">
             {row.discountType === 'Percentage' ? `${row.discountValue}%` : `$${row.discountValue}`}
           </span>
+          {row.discountType === 'Percentage' && row.maxDiscountValue > 0 && (
+            <p className="text-xs text-amber-500 font-medium">Cap: ${row.maxDiscountValue.toLocaleString()}</p>
+          )}
           <p className="text-xs text-slate-400">Min: ${row.minBookingValue}</p>
         </div>
       )
@@ -330,13 +336,27 @@ export function VouchersPage() {
             </div>
           </div>
 
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-slate-500 uppercase">Min Booking Value ($)</label>
-            <Input
-              type="number"
-              value={form.minBookingValue}
-              onChange={e => setForm({ ...form, minBookingValue: Number(e.target.value) })}
-            />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-slate-500 uppercase">Min Booking Value ($)</label>
+              <Input
+                type="number"
+                value={form.minBookingValue}
+                onChange={e => setForm({ ...form, minBookingValue: Number(e.target.value) })}
+              />
+            </div>
+            {form.discountType === 'Percentage' && (
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-500 uppercase">Max Discount Cap ($)</label>
+                <Input
+                  type="number"
+                  placeholder="0 = no limit"
+                  value={form.maxDiscountValue}
+                  onChange={e => setForm({ ...form, maxDiscountValue: Number(e.target.value) })}
+                />
+                <p className="text-xs text-slate-400">Set 0 to disable the cap.</p>
+              </div>
+            )}
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">

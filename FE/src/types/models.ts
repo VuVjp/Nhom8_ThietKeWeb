@@ -103,6 +103,7 @@ export interface Voucher {
   discountType: 'Percentage' | 'Fixed' | string;
   discountValue: number;
   minBookingValue: number;
+  maxDiscountValue: number; // 0 = no cap
   usageLimit: number;
   usageCount: number;
   validFrom: string;
