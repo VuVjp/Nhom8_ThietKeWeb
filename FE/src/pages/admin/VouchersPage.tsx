@@ -138,7 +138,7 @@ export function VouchersPage() {
     setIsSubmitting(true);
     try {
       if (editTarget) {
-        await vouchersApi.update(editTarget.id, form);
+        await vouchersApi.update(+editTarget.id, form);
         toast.success('Voucher updated successfully');
       } else {
         await vouchersApi.create(form);
@@ -211,7 +211,7 @@ export function VouchersPage() {
       render: (row: Voucher) => (
         <button
           style={{ cursor: 'pointer' }}
-          onClick={() => handleToggleActive(row.id)}>
+          onClick={() => handleToggleActive(+row.id)}>
           <Badge value={row.isActive ? 'Active' : 'Inactive'} />
         </button>
       )
