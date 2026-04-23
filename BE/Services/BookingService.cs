@@ -148,8 +148,6 @@ public class BookingService : IBookingService
             booking.MembershipDiscountAmountApplied = membershipDiscountAmount;
         }
 
-        booking.Discount = membershipDiscountAmount;
-
         if (!string.IsNullOrWhiteSpace(dto.VoucherId))
         {
             booking.VoucherId = int.TryParse(dto.VoucherId, out var voucherId) ? voucherId : (int?)null;
@@ -167,13 +165,13 @@ public class BookingService : IBookingService
                     voucherDiscountAmount = Math.Min(voucher.DiscountValue, booking.TotalPrice);
                 }
 
-                booking.Discount = (booking.Discount ?? 0m) + voucherDiscountAmount;
+                booking.VoucherDiscount = voucherDiscountAmount;
                 voucher.UsageCount += 1;
                 await _voucherRepository.SaveChangesAsync();
             }
         }
-        booking.FinalPrice = Math.Max(0m, booking.TotalPrice - (booking.Discount ?? 0));
-        booking.Deposit = Math.Round(booking.FinalPrice * 0.3m, 2);
+        booking.FinalPrice = Math.Max(0m, booking.TotalPrice - (booking.MembershipDiscountAmountApplied ?? 0m) - (booking.VoucherDiscount ?? 0m));
+        booking.Deposit = Math.Round(booking.FinalPrice * 0.3m, 0);
 
         await _repository.AddBookingAsync(booking);
         await _repository.SaveChangesAsync();
@@ -261,7 +259,6 @@ public class BookingService : IBookingService
         booking.TotalPrice = CalculateTotalAmount(booking.BookingDetails);
         var membershipDiscountAmount = CalculateMembershipDiscountForBooking(booking.User, booking.TotalPrice);
         booking.MembershipDiscountAmountApplied = membershipDiscountAmount;
-        booking.Discount = membershipDiscountAmount;
 
         if (booking.VoucherId.HasValue)
         {
@@ -272,18 +269,18 @@ public class BookingService : IBookingService
                 decimal voucherDiscountAmount = 0m;
                 if (voucher.DiscountType == "Percentage")
                 {
-                    voucherDiscountAmount = Math.Round(booking.TotalPrice * (voucher.DiscountValue / 100m), 2);
+                    voucherDiscountAmount = Math.Round(booking.TotalPrice * (voucher.DiscountValue / 100m), 0);
                 }
                 else if (voucher.DiscountType == "Fixed")
                 {
                     voucherDiscountAmount = Math.Min(voucher.DiscountValue, booking.TotalPrice);
                 }
 
-                booking.Discount = (booking.Discount ?? 0m) + voucherDiscountAmount;
+                booking.VoucherDiscount = voucherDiscountAmount;
             }
         }
-        booking.FinalPrice = Math.Max(0m, booking.TotalPrice - (booking.Discount ?? 0));
-        booking.Deposit = Math.Round(booking.FinalPrice * 0.3m, 2);
+        booking.FinalPrice = Math.Max(0m, booking.TotalPrice - (booking.MembershipDiscountAmountApplied ?? 0m) - (booking.VoucherDiscount ?? 0m));
+        booking.Deposit = Math.Round(booking.FinalPrice * 0.3m, 0);
 
         await _repository.SaveChangesAsync();
 
@@ -470,6 +467,8 @@ public class BookingService : IBookingService
             Status = string.IsNullOrWhiteSpace(booking.Status) ? "Pending" : booking.Status,
             TotalAmount = booking.FinalPrice,
             Deposit = booking.Deposit ?? 0m,
+            MembershipDiscount = booking.MembershipDiscountAmountApplied ?? 0m,
+            VoucherDiscount = booking.VoucherDiscount ?? 0m,
             RoomNumbers = orderedDetails.Where(item => item.RoomId.HasValue).Select(item => item.Room?.RoomNumber ?? string.Empty).Distinct().ToList(),
             RoomIds = orderedDetails
                 .Select(item => item.RoomId)
@@ -537,7 +536,7 @@ public class BookingService : IBookingService
             return 0m;
         }
 
-        return Math.Round(totalRoomAmount * (discountPercent / 100m), 2);
+        return Math.Round(totalRoomAmount * (discountPercent / 100m), 0);
     }
 
     private static void ValidateDateRange(DateTime checkIn, DateTime checkOut)

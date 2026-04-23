@@ -18,6 +18,9 @@ const emptyDraft: RoomTypePayload = {
     CapacityAdults: 1,
     CapacityChildren: 0,
     Description: '',
+    View: '',
+    BedType: '',
+    SizeM2: null,
     Files: [],
 };
 
@@ -202,6 +205,9 @@ export function RoomTypesPage() {
             CapacityAdults: row.capacityAdults,
             CapacityChildren: row.capacityChildren,
             Description: row.description,
+            View: row.view,
+            BedType: row.bedType,
+            SizeM2: row.sizeM2,
         });
         setEditFiles([]);
         setEditActiveIndex(getDefaultActiveImageId(row.images));
@@ -213,6 +219,9 @@ export function RoomTypesPage() {
         { key: 'basePrice', label: 'Base Price', render: (row: RoomTypeItem) => `$${row.basePrice}` },
         { key: 'capacityAdults', label: 'Adults', render: (row: RoomTypeItem) => row.capacityAdults },
         { key: 'capacityChildren', label: 'Children', render: (row: RoomTypeItem) => row.capacityChildren },
+        { key: 'bedType', label: 'Bed Type', render: (row: RoomTypeItem) => row.bedType || '-' },
+        { key: 'view', label: 'View', render: (row: RoomTypeItem) => row.view || '-' },
+        { key: 'sizeM2', label: 'Size (m²)', render: (row: RoomTypeItem) => row.sizeM2 != null ? `${row.sizeM2} m²` : '-' },
         { key: 'description', label: 'Description', render: (row: RoomTypeItem) => row.description || '-' },
         {
             key: 'status',
@@ -365,6 +374,23 @@ export function RoomTypesPage() {
                                 <p className="text-xs text-slate-500">Max child guests.</p>
                             </div>
                         </div>
+                        <div className="grid gap-3 sm:grid-cols-3">
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-slate-700">Bed Type</label>
+                                <Input placeholder="e.g. King, Double, Twin" value={draft.BedType ?? ''} onChange={(event) => setDraft((prev) => ({ ...prev, BedType: event.target.value }))} />
+                                <p className="text-xs text-slate-500">Type of bed in the room.</p>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-slate-700">View</label>
+                                <Input placeholder="e.g. City View, Sea View" value={draft.View ?? ''} onChange={(event) => setDraft((prev) => ({ ...prev, View: event.target.value }))} />
+                                <p className="text-xs text-slate-500">Window view description.</p>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-slate-700">Size (m²)</label>
+                                <Input type="number" min={0} placeholder="e.g. 45" value={draft.SizeM2 != null ? String(draft.SizeM2) : ''} onChange={(event) => setDraft((prev) => ({ ...prev, SizeM2: event.target.value ? Number(event.target.value) : null }))} />
+                                <p className="text-xs text-slate-500">Room area in square meters.</p>
+                            </div>
+                        </div>
                     </section>
 
                     <section className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
@@ -478,6 +504,23 @@ export function RoomTypesPage() {
                                 <label className="text-sm font-medium text-slate-700">Children</label>
                                 <Input type="number" min={0} placeholder="0" value={String(editDraft.CapacityChildren)} onChange={(event) => setEditDraft((prev) => ({ ...prev, CapacityChildren: Number(event.target.value) }))} />
                                 <p className="text-xs text-slate-500">Maximum child guests.</p>
+                            </div>
+                        </div>
+                        <div className="grid gap-3 sm:grid-cols-3">
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-slate-700">Bed Type</label>
+                                <Input placeholder="e.g. King, Double, Twin" value={editDraft.BedType ?? ''} onChange={(event) => setEditDraft((prev) => ({ ...prev, BedType: event.target.value }))} />
+                                <p className="text-xs text-slate-500">Type of bed in the room.</p>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-slate-700">View</label>
+                                <Input placeholder="e.g. City View, Sea View" value={editDraft.View ?? ''} onChange={(event) => setEditDraft((prev) => ({ ...prev, View: event.target.value }))} />
+                                <p className="text-xs text-slate-500">Window view description.</p>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-slate-700">Size (m²)</label>
+                                <Input type="number" min={0} placeholder="e.g. 45" value={editDraft.SizeM2 != null ? String(editDraft.SizeM2) : ''} onChange={(event) => setEditDraft((prev) => ({ ...prev, SizeM2: event.target.value ? Number(event.target.value) : null }))} />
+                                <p className="text-xs text-slate-500">Room area in square meters.</p>
                             </div>
                         </div>
                     </section>

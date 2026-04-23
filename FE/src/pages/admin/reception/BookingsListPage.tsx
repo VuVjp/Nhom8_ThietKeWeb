@@ -41,6 +41,8 @@ export function BookingsListPage() {
     const [isSavingEdit, setIsSavingEdit] = useState(false);
     const [activePaymentBookingId, setActivePaymentBookingId] = useState<number | null>(null);
     const [activePaymentMethod, setActivePaymentMethod] = useState<'cash' | 'momo' | null>(null);
+    const [viewRoomsTarget, setViewRoomsTarget] = useState<Booking | null>(null);
+    const [cashPaymentTarget, setCashPaymentTarget] = useState<Booking | null>(null);
 
     const loadBookings = useCallback(async () => {
         setIsLoading(true);
@@ -86,6 +88,7 @@ export function BookingsListPage() {
             });
             toast.success('Cash deposit recorded. Booking confirmed.');
             setBookings((prev) => prev.map((b) => (b.id === booking.id ? { ...b, status: 'Confirmed' } : b)));
+            setCashPaymentTarget(null);
         } catch (error) {
             const apiError = toApiError(error);
             toast.error(apiError.message || 'Failed to process cash payment');
@@ -337,12 +340,51 @@ export function BookingsListPage() {
         {
             key: 'roomDetails',
             label: 'Rooms',
+            render: (row: Booking) => {
+                const count = row.roomNumbers?.length ?? 0;
+                const visible = row.roomNumbers?.slice(0, 4) ?? [];
+                const extra = count > 4 ? count - 4 : 0;
+
+                return (
+                    <div 
+                        className="cursor-pointer group"
+                        onClick={() => setViewRoomsTarget(row)}
+                    >
+                        <div className="flex flex-wrap gap-1">
+                            {visible.map((rn) => (
+                                <span key={rn} className="inline-flex items-center rounded-md bg-slate-100 px-1.5 py-0.5 text-xs font-medium text-slate-700 ring-1 ring-inset ring-slate-200 group-hover:bg-cyan-50 group-hover:text-cyan-700 group-hover:ring-cyan-200">
+                                    {rn}
+                                </span>
+                            ))}
+                            {extra > 0 && (
+                                <span className="inline-flex items-center rounded-md bg-cyan-100 px-1.5 py-0.5 text-xs font-medium text-cyan-700 ring-1 ring-inset ring-cyan-200">
+                                    +{extra}
+                                </span>
+                            )}
+                            {count === 0 && <span className="text-slate-400 italic text-xs">Unassigned</span>}
+                        </div>
+                        <div className="mt-1 text-[10px] text-slate-400 uppercase tracking-wider font-semibold group-hover:text-cyan-600 transition-colors">
+                            {count} room{count !== 1 ? 's' : ''} &bull; Click to view
+                        </div>
+                    </div>
+                );
+            },
+        },
+        {
+            key: 'discounts',
+            label: 'Discounts',
             render: (row: Booking) => (
-                <div>
-                    <div className="font-medium text-slate-900">{row.roomNumbers?.join(', ') || 'Unassigned'}</div>
-                    <div className="text-xs text-slate-500">{row.roomNumbers?.length ?? 0} room(s)</div>
+                <div className="space-y-0.5">
+                    <div className="flex items-center justify-between gap-4 text-xs">
+                        <span className="text-slate-500">Member:</span>
+                        <span className="font-medium text-amber-600">-${row.membershipDiscount?.toLocaleString()}</span>
+                    </div>
+                    <div className="flex items-center justify-between gap-4 text-xs">
+                        <span className="text-slate-500">Voucher:</span>
+                        <span className="font-medium text-blue-600">-${row.voucherDiscount?.toLocaleString()}</span>
+                    </div>
                 </div>
-            ),
+            )
         },
         { 
             key: 'finances', 
@@ -390,7 +432,7 @@ export function BookingsListPage() {
                         <button
                             type="button"
                             className="inline-flex items-center rounded-lg bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed"
-                            onClick={() => void handleBookingCashPayment(row)}
+                            onClick={() => setCashPaymentTarget(row)}
                             disabled={!isPending || activePaymentBookingId === row.id}
                         >
                             {activePaymentBookingId === row.id && activePaymentMethod === 'cash' ? 'Processing...' : 'Cash Deposit'}
@@ -602,6 +644,100 @@ export function BookingsListPage() {
                         </button>
                     </div>
                 </div>
+            </Modal>
+
+            <Modal
+                open={Boolean(viewRoomsTarget)}
+                title={`Rooms for Booking #${viewRoomsTarget?.id}`}
+                onClose={() => setViewRoomsTarget(null)}
+            >
+                <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                        {viewRoomsTarget?.roomNumbers?.map((rn) => (
+                            <div 
+                                key={rn} 
+                                className="flex flex-col items-center justify-center rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all hover:border-cyan-300 hover:shadow-md"
+                            >
+                                <span className="text-2xl font-bold text-slate-900">{rn}</span>
+                                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest mt-1">Room</span>
+                            </div>
+                        ))}
+                    </div>
+                    {(!viewRoomsTarget?.roomNumbers || viewRoomsTarget.roomNumbers.length === 0) && (
+                        <div className="text-center py-8 text-slate-500">No rooms assigned to this booking.</div>
+                    )}
+                    <div className="flex justify-end pt-4">
+                        <button
+                            type="button"
+                            className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 transition-colors"
+                            onClick={() => setViewRoomsTarget(null)}
+                        >
+                            Close
+                        </button>
+                    </div>
+                </div>
+            </Modal>
+
+            <Modal
+                open={Boolean(cashPaymentTarget)}
+                title="Confirm Cash Deposit"
+                onClose={() => setCashPaymentTarget(null)}
+            >
+                {cashPaymentTarget && (
+                    <div className="space-y-4">
+                        <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-4">
+                            <h3 className="font-semibold text-emerald-900 mb-2">Deposit Summary</h3>
+                            <div className="grid grid-cols-2 gap-4 text-sm">
+                                <div>
+                                    <span className="block text-emerald-700">Booking ID</span>
+                                    <span className="font-medium text-emerald-950">#{cashPaymentTarget.id}</span>
+                                </div>
+                                <div>
+                                    <span className="block text-emerald-700">Guest</span>
+                                    <span className="font-medium text-emerald-950">{cashPaymentTarget.guestName}</span>
+                                </div>
+                                <div className="col-span-2">
+                                    <span className="block text-emerald-700">Rooms ({cashPaymentTarget.roomNumbers?.length || 0})</span>
+                                    <div className="flex flex-wrap gap-1 mt-1">
+                                        {cashPaymentTarget.roomNumbers?.map(rn => (
+                                            <span key={rn} className="inline-flex items-center rounded-md bg-white px-2 py-1 text-xs font-semibold text-emerald-800 shadow-sm ring-1 ring-inset ring-emerald-200">
+                                                {rn}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div className="col-span-2 mt-2 pt-2 border-t border-emerald-200/60 flex items-center justify-between">
+                                    <span className="font-semibold text-emerald-800">Amount to Receive:</span>
+                                    <span className="text-xl font-bold text-emerald-600">${cashPaymentTarget.deposit?.toLocaleString()}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div className="flex justify-end gap-2 pt-2">
+                            <button
+                                type="button"
+                                className="rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 transition-colors"
+                                onClick={() => setCashPaymentTarget(null)}
+                                disabled={activePaymentBookingId === cashPaymentTarget.id}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+                                onClick={() => void handleBookingCashPayment(cashPaymentTarget)}
+                                disabled={activePaymentBookingId === cashPaymentTarget.id}
+                            >
+                                {activePaymentBookingId === cashPaymentTarget.id ? (
+                                    <>
+                                        <div className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                                        Processing...
+                                    </>
+                                ) : 'Confirm & Collect Cash'}
+                            </button>
+                        </div>
+                    </div>
+                )}
             </Modal>
         </div>
     );

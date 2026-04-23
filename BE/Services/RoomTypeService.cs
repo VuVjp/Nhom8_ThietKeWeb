@@ -43,6 +43,9 @@ public class RoomTypeService : IRoomTypeService
             CapacityAdults = dto.CapacityAdults,
             CapacityChildren = dto.CapacityChildren,
             Description = dto.Description,
+            View = dto.View,
+            BedType = dto.BedType,
+            SizeM2 = dto.SizeM2,
             IsActive = true
         };
 
@@ -80,6 +83,9 @@ public class RoomTypeService : IRoomTypeService
         roomType.CapacityAdults = dto.CapacityAdults;
         roomType.CapacityChildren = dto.CapacityChildren;
         roomType.Description = dto.Description;
+        roomType.View = dto.View;
+        roomType.BedType = dto.BedType;
+        roomType.SizeM2 = dto.SizeM2;
 
         if (dto.Files != null && dto.Files.Count > 0)
         {
@@ -271,6 +277,9 @@ public class RoomTypeService : IRoomTypeService
             CapacityAdults = roomType.CapacityAdults,
             CapacityChildren = roomType.CapacityChildren,
             Description = roomType.Description,
+            View = roomType.View,
+            BedType = roomType.BedType,
+            SizeM2 = roomType.SizeM2,
             IsActive = roomType.IsActive,
             Amenities = roomType.RoomTypeAmenities
                 .Where(x => x.Amenity != null)
@@ -287,7 +296,24 @@ public class RoomTypeService : IRoomTypeService
                 Id = i.Id,
                 ImageUrl = i.ImageUrl,
                 IsPrimary = i.IsPrimary ?? false
-            }).ToList()
+            }).ToList(),
+            Equipments = roomType.Rooms
+                .SelectMany(r => r.RoomInventories)
+                .Where(i => i.Equipment != null && i.IsActive)
+                .Select(i => i.Equipment!)
+                .GroupBy(e => e.Id)
+                .Select(g => g.First())
+                .Select(e => new EquipmentDto
+                {
+                    Id = e.Id,
+                    ItemCode = e.ItemCode,
+                    Name = e.Name,
+                    Category = e.Category,
+                    Unit = e.Unit,
+                    ImageUrl = e.ImageUrl,
+                    IsActive = e.IsActive
+                })
+                .ToList()
         };
     }
 }

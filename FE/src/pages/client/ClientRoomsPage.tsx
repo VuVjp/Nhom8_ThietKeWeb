@@ -1,16 +1,8 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { roomTypesApi, type RoomTypeItem } from '../../api/roomTypesApi';
 import { Spin } from 'antd';
 import { UserIcon, MagnifyingGlassIcon, AdjustmentsHorizontalIcon, XMarkIcon } from '@heroicons/react/24/outline';
-
-const ROOM_IMAGES = [
-    'https://images.unsplash.com/photo-1618773928112-859e548dbce9?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-    'https://images.unsplash.com/photo-1582719478250-c89d14565b24?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-    'https://images.unsplash.com/photo-1584622839958-86d11e5a5573?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-    'https://images.unsplash.com/photo-1611892440504-42a792e24d32?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-    'https://images.unsplash.com/photo-1578683010236-d716f9a3f461?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-];
 
 const SORT_OPTIONS = [
     { value: 'default', label: 'Default' },
@@ -21,15 +13,28 @@ const SORT_OPTIONS = [
 ];
 
 export function ClientRoomsPage() {
+    const [searchParams] = useSearchParams();
+    const queryName = searchParams.get('name') || '';
+    const queryAdults = Number(searchParams.get('adults')) || 0;
+    const queryChildren = Number(searchParams.get('children')) || 0;
+
     const [roomTypes, setRoomTypes] = useState<RoomTypeItem[]>([]);
     const [loading, setLoading] = useState(true);
 
     // Filter & sort state
-    const [searchQuery, setSearchQuery] = useState('');
+    const [searchQuery, setSearchQuery] = useState(queryName);
     const [maxPrice, setMaxPrice] = useState<number>(10000);
-    const [minGuests, setMinGuests] = useState<number>(1);
+    const [minAdults, setMinAdults] = useState<number>(queryAdults || 1);
+    const [minChildren, setMinChildren] = useState<number>(queryChildren || 0);
     const [sortBy, setSortBy] = useState('default');
     const [filtersOpen, setFiltersOpen] = useState(false);
+
+    // Sync URL params to state if they change
+    useEffect(() => {
+        setSearchQuery(queryName);
+        setMinAdults(queryAdults || 1);
+        setMinChildren(queryChildren || 0);
+    }, [queryName, queryAdults, queryChildren]);
 
     useEffect(() => {
         const fetchRoomTypes = async () => {
@@ -60,15 +65,17 @@ export function ClientRoomsPage() {
         let count = 0;
         if (searchQuery.trim()) count++;
         if (maxPrice < maxBasePrice) count++;
-        if (minGuests > 1) count++;
+        if (minAdults > 1) count++;
+        if (minChildren > 0) count++;
         if (sortBy !== 'default') count++;
         return count;
-    }, [searchQuery, maxPrice, minGuests, sortBy, maxBasePrice]);
+    }, [searchQuery, maxPrice, minAdults, minChildren, sortBy, maxBasePrice]);
 
     const handleReset = () => {
         setSearchQuery('');
         setMaxPrice(maxBasePrice);
-        setMinGuests(1);
+        setMinAdults(1);
+        setMinChildren(0);
         setSortBy('default');
     };
 
@@ -78,8 +85,9 @@ export function ClientRoomsPage() {
             const q = searchQuery.toLowerCase();
             const matchesName = rt.name.toLowerCase().includes(q) || rt.description?.toLowerCase().includes(q);
             const matchesPrice = rt.basePrice <= maxPrice;
-            const matchesGuests = (rt.capacityAdults + rt.capacityChildren) >= minGuests;
-            return matchesName && matchesPrice && matchesGuests;
+            const matchesAdults = rt.capacityAdults >= minAdults;
+            const matchesChildren = rt.capacityChildren >= minChildren;
+            return matchesName && matchesPrice && matchesAdults && matchesChildren;
         });
 
         switch (sortBy) {
@@ -90,7 +98,7 @@ export function ClientRoomsPage() {
         }
 
         return result;
-    }, [roomTypes, searchQuery, maxPrice, minGuests, sortBy]);
+    }, [roomTypes, searchQuery, maxPrice, minAdults, minChildren, sortBy]);
 
     return (
         <div className="w-full bg-[#f9fafb] min-h-screen font-sans text-slate-800">
@@ -191,17 +199,33 @@ export function ClientRoomsPage() {
                                 </div>
                             </div>
 
-                            {/* Min guests */}
+                            {/* Min adults */}
                             <div className="flex-shrink-0">
-                                <label className="text-xs font-bold uppercase tracking-wider text-slate-600 block mb-2">Min Guests</label>
+                                <label className="text-xs font-bold uppercase tracking-wider text-slate-600 block mb-2">Adults</label>
                                 <div className="flex items-center gap-3">
                                     <button
-                                        onClick={() => setMinGuests(g => Math.max(1, g - 1))}
+                                        onClick={() => setMinAdults(g => Math.max(1, g - 1))}
                                         className="w-9 h-9 rounded-full border border-slate-300 flex items-center justify-center text-lg font-bold hover:bg-cyan-50 hover:border-cyan-400 transition"
                                     >−</button>
-                                    <span className="text-lg font-bold w-8 text-center">{minGuests}</span>
+                                    <span className="text-lg font-bold w-8 text-center">{minAdults}</span>
                                     <button
-                                        onClick={() => setMinGuests(g => g + 1)}
+                                        onClick={() => setMinAdults(g => g + 1)}
+                                        className="w-9 h-9 rounded-full border border-slate-300 flex items-center justify-center text-lg font-bold hover:bg-cyan-50 hover:border-cyan-400 transition"
+                                    >+</button>
+                                </div>
+                            </div>
+
+                            {/* Min children */}
+                            <div className="flex-shrink-0">
+                                <label className="text-xs font-bold uppercase tracking-wider text-slate-600 block mb-2">Children</label>
+                                <div className="flex items-center gap-3">
+                                    <button
+                                        onClick={() => setMinChildren(g => Math.max(0, g - 1))}
+                                        className="w-9 h-9 rounded-full border border-slate-300 flex items-center justify-center text-lg font-bold hover:bg-cyan-50 hover:border-cyan-400 transition"
+                                    >−</button>
+                                    <span className="text-lg font-bold w-8 text-center">{minChildren}</span>
+                                    <button
+                                        onClick={() => setMinChildren(g => g + 1)}
                                         className="w-9 h-9 rounded-full border border-slate-300 flex items-center justify-center text-lg font-bold hover:bg-cyan-50 hover:border-cyan-400 transition"
                                     >+</button>
                                 </div>
@@ -245,56 +269,61 @@ export function ClientRoomsPage() {
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-                        {filteredRooms.map((rt, idx) => (
-                            <div key={rt.id} className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-2xl hover:shadow-cyan-900/10 transition-all duration-500 border border-slate-100 flex flex-col">
-                                {/* Image */}
-                                <div className="h-64 bg-slate-200 relative overflow-hidden">
-                                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent z-10" />
-                                    <div className="absolute bottom-4 left-4 z-20">
-                                        <span className="bg-white/90 backdrop-blur text-slate-900 px-3 py-1 text-xs font-bold uppercase tracking-wider rounded">
-                                            From ${rt.basePrice.toLocaleString()}/night
-                                        </span>
-                                    </div>
-                                    <img
-                                        src={ROOM_IMAGES[idx % ROOM_IMAGES.length]}
-                                        alt={rt.name}
-                                        className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700"
-                                    />
-                                </div>
+                        {filteredRooms.map((rt) => {
+                            const primaryImage = rt.images?.find(img => img.isPrimary) || rt.images?.[0];
+                            const displayImage = primaryImage?.url || "https://images.unsplash.com/photo-1618773928112-859e548dbce9?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80";
 
-                                <div className="p-7 flex-1 flex flex-col">
-                                    <h2 className="text-xl font-bold text-slate-900 mb-2">{rt.name}</h2>
-
-                                    <p className="text-slate-500 mb-5 flex-1 text-sm leading-relaxed line-clamp-2">
-                                        {rt.description || 'Experience ultimate luxury in our elegantly appointed rooms featuring premium bedding and state-of-the-art amenities.'}
-                                    </p>
-
-                                    <div className="flex items-center gap-4 text-sm text-slate-600 mb-6">
-                                        <div className="flex items-center gap-1.5">
-                                            <div className="p-1.5 rounded-full bg-cyan-50 text-cyan-600"><UserIcon className="w-4 h-4" /></div>
-                                            <span>Max {rt.capacityAdults + rt.capacityChildren} Guests</span>
+                            return (
+                                <div key={rt.id} className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-2xl hover:shadow-cyan-900/10 transition-all duration-500 border border-slate-100 flex flex-col">
+                                    {/* Image */}
+                                    <div className="h-64 bg-slate-200 relative overflow-hidden">
+                                        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent z-10" />
+                                        <div className="absolute bottom-4 left-4 z-20">
+                                            <span className="bg-white/90 backdrop-blur text-slate-900 px-3 py-1 text-xs font-bold uppercase tracking-wider rounded">
+                                                From ${rt.basePrice.toLocaleString()}/night
+                                            </span>
                                         </div>
-                                        <span className="text-slate-200">|</span>
-                                        <span className="text-slate-400 text-xs uppercase tracking-wider">Adults: {rt.capacityAdults} · Kids: {rt.capacityChildren}</span>
+                                        <img
+                                            src={displayImage}
+                                            alt={rt.name}
+                                            className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700"
+                                        />
                                     </div>
 
-                                    <div className="flex gap-3">
-                                        <Link
-                                            to={`/rooms/${rt.id}`}
-                                            className="flex-1 text-center py-3 bg-slate-900 text-white rounded-xl font-bold text-sm tracking-wide hover:bg-cyan-600 transition-colors shadow-sm"
-                                        >
-                                            View Details
-                                        </Link>
-                                        <Link
-                                            to={`/booking?room=${rt.id}`}
-                                            className="flex-1 text-center py-3 border-2 border-slate-900 text-slate-900 rounded-xl font-bold text-sm tracking-wide hover:bg-slate-900 hover:text-white transition-colors"
-                                        >
-                                            Book Now
-                                        </Link>
+                                    <div className="p-7 flex-1 flex flex-col">
+                                        <h2 className="text-xl font-bold text-slate-900 mb-2">{rt.name}</h2>
+
+                                        <p className="text-slate-500 mb-5 flex-1 text-sm leading-relaxed line-clamp-2">
+                                            {rt.description || 'Experience ultimate luxury in our elegantly appointed rooms featuring premium bedding and state-of-the-art amenities.'}
+                                        </p>
+
+                                        <div className="flex items-center gap-4 text-sm text-slate-600 mb-6">
+                                            <div className="flex items-center gap-1.5">
+                                                <div className="p-1.5 rounded-full bg-cyan-50 text-cyan-600"><UserIcon className="w-4 h-4" /></div>
+                                                <span>Max {rt.capacityAdults + rt.capacityChildren} Guests</span>
+                                            </div>
+                                            <span className="text-slate-200">|</span>
+                                            <span className="text-slate-400 text-xs uppercase tracking-wider">Adults: {rt.capacityAdults} · Kids: {rt.capacityChildren}</span>
+                                        </div>
+
+                                        <div className="flex gap-3">
+                                            <Link
+                                                to={`/rooms/${rt.id}`}
+                                                className="flex-1 text-center py-3 bg-slate-900 text-white rounded-xl font-bold text-sm tracking-wide hover:bg-cyan-600 transition-colors shadow-sm"
+                                            >
+                                                View Details
+                                            </Link>
+                                            <Link
+                                                to={`/booking?room=${rt.id}`}
+                                                className="flex-1 text-center py-3 border-2 border-slate-900 text-slate-900 rounded-xl font-bold text-sm tracking-wide hover:bg-slate-900 hover:text-white transition-colors"
+                                            >
+                                                Book Now
+                                            </Link>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 )}
             </div>

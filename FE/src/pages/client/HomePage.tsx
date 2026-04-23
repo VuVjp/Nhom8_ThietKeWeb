@@ -10,9 +10,10 @@ export function HomePage() {
     const [roomTypes, setRoomTypes] = useState<RoomTypeItem[]>([]);
     const [loadingRooms, setLoadingRooms] = useState(true);
 
-    // Booking form state
-    const [dates, setDates] = useState('');
-    const [guests, setGuests] = useState('2');
+    // Search form state
+    const [searchName, setSearchName] = useState('');
+    const [adults, setAdults] = useState(2);
+    const [children, setChildren] = useState(0);
 
     useEffect(() => {
         const fetchRooms = async () => {
@@ -31,8 +32,13 @@ export function HomePage() {
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
-        toast.success('Browsing available rooms...');
-        navigate('/rooms');
+        const params = new URLSearchParams();
+        if (searchName) params.append('name', searchName);
+        params.append('adults', adults.toString());
+        params.append('children', children.toString());
+        
+        toast.success('Searching for the perfect room...');
+        navigate(`/rooms?${params.toString()}`);
     };
 
     return (
@@ -56,35 +62,41 @@ export function HomePage() {
                         Experience the <span className="font-light italic">Art</span> of <br /> Luxury Living
                     </h1>
                     
-                    {/* Booking Form Overlay */}
+                    {/* Search Form Overlay */}
                     <div className="mt-12 md:mt-16 bg-white/10 backdrop-blur-md p-4 md:p-6 rounded-2xl border border-white/20 shadow-2xl mx-auto w-full max-w-4xl">
                         <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-4">
                             <div className="flex-1 bg-white rounded-xl overflow-hidden flex flex-col justify-center px-4 py-3 text-left">
-                                <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Check-in / Check-out</label>
+                                <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Search Room</label>
                                 <input 
                                     type="text" 
-                                    placeholder="Select Dates" 
+                                    placeholder="Enter room name..." 
                                     className="w-full text-slate-900 font-semibold focus:outline-none placeholder-slate-400"
-                                    value={dates}
-                                    onChange={(e) => setDates(e.target.value)}
-                                    onClick={() => toast('Date picker placeholder UI', { icon: '📅' })}
+                                    value={searchName}
+                                    onChange={(e) => setSearchName(e.target.value)}
                                 />
                             </div>
-                            <div className="md:w-48 bg-white rounded-xl overflow-hidden flex flex-col justify-center px-4 py-3 text-left">
-                                <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Guests</label>
-                                <select 
-                                    className="w-full text-slate-900 font-semibold focus:outline-none bg-transparent cursor-pointer"
-                                    value={guests}
-                                    onChange={(e) => setGuests(e.target.value)}
-                                >
-                                    <option value="1">1 Adult</option>
-                                    <option value="2">2 Adults</option>
-                                    <option value="3">3 Adults</option>
-                                    <option value="4">4 Adults, 2 Children</option>
-                                </select>
+                            <div className="md:w-32 bg-white rounded-xl overflow-hidden flex flex-col justify-center px-4 py-3 text-left">
+                                <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Adults</label>
+                                <input 
+                                    type="number" 
+                                    min={1}
+                                    className="w-full text-slate-900 font-semibold focus:outline-none bg-transparent"
+                                    value={adults}
+                                    onChange={(e) => setAdults(Number(e.target.value))}
+                                />
+                            </div>
+                            <div className="md:w-32 bg-white rounded-xl overflow-hidden flex flex-col justify-center px-4 py-3 text-left">
+                                <label className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Children</label>
+                                <input 
+                                    type="number" 
+                                    min={0}
+                                    className="w-full text-slate-900 font-semibold focus:outline-none bg-transparent"
+                                    value={children}
+                                    onChange={(e) => setChildren(Number(e.target.value))}
+                                />
                             </div>
                             <button type="submit" className="bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-4 md:py-0 px-8 rounded-xl shadow-[0_0_20px_rgba(8,145,178,0.4)] transition-all hover:scale-105 active:scale-95 uppercase tracking-widest text-sm">
-                                Check Availability
+                                Search Rooms
                             </button>
                         </form>
                     </div>
@@ -150,35 +162,40 @@ export function HomePage() {
                         <div className="text-center py-12 text-slate-500 font-medium">Rooms updating...</div>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                            {roomTypes.map((rt, idx) => (
-                                <div key={rt.id} className="bg-white rounded-none border border-slate-100 group overflow-hidden hover:shadow-2xl transition-all duration-500 flex flex-col text-left">
-                                    <div className="relative h-72 overflow-hidden">
-                                        <div className="absolute inset-0 bg-slate-900/20 group-hover:bg-transparent transition-colors z-10" />
-                                        <div className="absolute bottom-4 right-4 z-20 bg-white/90 backdrop-blur text-slate-900 px-4 py-2 font-bold text-lg shadow-lg">
-                                            ${rt.basePrice.toLocaleString()}<span className="text-xs font-normal text-slate-500">/night</span>
+                            {roomTypes.map((rt) => {
+                                const primaryImage = rt.images?.find(img => img.isPrimary) || rt.images?.[0];
+                                const displayImage = primaryImage?.url || "https://images.unsplash.com/photo-1618773928112-859e548dbce9?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80";
+
+                                return (
+                                    <div key={rt.id} className="bg-white rounded-none border border-slate-100 group overflow-hidden hover:shadow-2xl transition-all duration-500 flex flex-col text-left">
+                                        <div className="relative h-72 overflow-hidden">
+                                            <div className="absolute inset-0 bg-slate-900/20 group-hover:bg-transparent transition-colors z-10" />
+                                            <div className="absolute bottom-4 right-4 z-20 bg-white/90 backdrop-blur text-slate-900 px-4 py-2 font-bold text-lg shadow-lg">
+                                                ${rt.basePrice.toLocaleString()}<span className="text-xs font-normal text-slate-500">/night</span>
+                                            </div>
+                                            <img 
+                                                src={displayImage} 
+                                                alt={rt.name}
+                                                className="w-full h-full object-cover transform transition-transform duration-700 group-hover:scale-110"
+                                            />
                                         </div>
-                                        <img 
-                                            src={`https://images.unsplash.com/photo-${idx === 0 ? '1618773928112-859e548dbce9' : idx === 1 ? '1582719478250-c89d14565b24' : '1584622839958-86d11e5a5573'}?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80`} 
-                                            alt={rt.name}
-                                            className="w-full h-full object-cover transform transition-transform duration-700 group-hover:scale-110"
-                                        />
-                                    </div>
-                                    <div className="p-8 flex-1 flex flex-col">
-                                        <h3 className="text-2xl font-bold mb-3">{rt.name}</h3>
-                                        <p className="text-slate-500 text-sm mb-6 flex-1">{rt.description || 'Spacious room with modern interior and premium bedding.'}</p>
-                                        <div className="flex gap-4 text-xs font-bold text-slate-400 uppercase tracking-wider mb-6">
-                                            <span>{rt.capacityAdults + rt.capacityChildren} GUESTS</span>
-                                            <span>•</span>
-                                            <span>KING BED</span>
-                                            <span>•</span>
-                                            <span>VIEW</span>
+                                        <div className="p-8 flex-1 flex flex-col">
+                                            <h3 className="text-2xl font-bold mb-3">{rt.name}</h3>
+                                            <p className="text-slate-500 text-sm mb-6 flex-1">{rt.description || 'Spacious room with modern interior and premium bedding.'}</p>
+                                            <div className="flex gap-4 text-xs font-bold text-slate-400 uppercase tracking-wider mb-6">
+                                                <span>{rt.capacityAdults + rt.capacityChildren} GUESTS</span>
+                                                <span>•</span>
+                                                <span>KING BED</span>
+                                                <span>•</span>
+                                                <span>VIEW</span>
+                                            </div>
+                                            <Link to={`/rooms/${rt.id}`} className="w-full text-center border-2 border-slate-900 text-slate-900 hover:bg-slate-900 hover:text-white py-3 font-bold uppercase tracking-widest text-xs transition-colors">
+                                                Book Now
+                                            </Link>
                                         </div>
-                                        <Link to={`/rooms/${rt.id}`} className="w-full text-center border-2 border-slate-900 text-slate-900 hover:bg-slate-900 hover:text-white py-3 font-bold uppercase tracking-widest text-xs transition-colors">
-                                            Book Now
-                                        </Link>
                                     </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     )}
                     <div className="mt-12 text-center md:hidden">

@@ -8,6 +8,9 @@ public class RoomType
     public int CapacityAdults { get; set; }
     public int CapacityChildren { get; set; }
     public string? Description { get; set; }
+    public string? View { get; set; }
+    public string? BedType { get; set; }
+    public int? SizeM2 { get; set; }
     public bool IsActive { get; set; } = true;
 
     public ICollection<Room> Rooms { get; set; } = new List<Room>();

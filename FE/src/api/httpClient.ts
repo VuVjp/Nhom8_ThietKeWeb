@@ -123,34 +123,40 @@ async function refreshAccessToken() {
         return null;
     }
 
-    const response = await axios.post<RefreshEnvelope>(
-        `${API_BASE_URL}/auth/refresh-token`,
-        { refreshToken },
-        { headers: { 'Content-Type': 'application/json' } },
-    );
+    try {
+        // Use global axios to avoid interceptor loop
+        const response = await axios.post<RefreshEnvelope>(
+            `${API_BASE_URL}/auth/refresh-token`,
+            { RefreshToken: refreshToken }, // Use PascalCase to match C# DTO
+            { headers: { 'Content-Type': 'application/json' } },
+        );
 
-    const nextAccessToken =
-        response.data.token ??
-        response.data.Token ??
-        response.data.accessToken ??
-        response.data.AccessToken ??
-        null;
-    const nextRefreshToken =
-        response.data.refreshToken ??
-        response.data.RefreshToken ??
-        response.data.refeshToken ??
-        response.data.RefeshToken ??
-        null;
+        const nextAccessToken =
+            response.data.token ??
+            response.data.Token ??
+            response.data.accessToken ??
+            response.data.AccessToken ??
+            null;
+        const nextRefreshToken =
+            response.data.refreshToken ??
+            response.data.RefreshToken ??
+            response.data.refeshToken ??
+            response.data.RefeshToken ??
+            null;
 
-    if (!nextAccessToken || !nextRefreshToken) {
+        if (!nextAccessToken || !nextRefreshToken) {
+            return null;
+        }
+
+        setAccessToken(nextAccessToken);
+        setRefreshToken(nextRefreshToken);
+        notifyAuthRefresh(nextAccessToken);
+
+        return nextAccessToken;
+    } catch (err) {
+        console.error('[HttpClient] Refresh token request failed:', err);
         return null;
     }
-
-    setAccessToken(nextAccessToken);
-    setRefreshToken(nextRefreshToken);
-    notifyAuthRefresh(nextAccessToken);
-
-    return nextAccessToken;
 }
 
 httpClient.interceptors.request.use((config) => {
@@ -164,12 +170,24 @@ httpClient.interceptors.request.use((config) => {
 httpClient.interceptors.response.use(
     (response) => response,
     async (error: AxiosError) => {
-        const originalRequest = error.config as (typeof error.config & { _retry?: boolean }) | undefined;
+        const originalRequest = error.config;
 
-        if (!originalRequest || originalRequest._retry || error.response?.status !== 401) {
+        if (!originalRequest || (error.response?.status !== 401)) {
             return Promise.reject(error);
         }
 
+        // Avoid infinite loop if refresh itself fails with 401
+        if (originalRequest.url?.includes('auth/refresh-token')) {
+            clearAuthTokens();
+            return Promise.reject(error);
+        }
+
+        // @ts-ignore
+        if (originalRequest._retry) {
+            return Promise.reject(error);
+        }
+
+        // @ts-ignore
         originalRequest._retry = true;
 
         if (isRefreshing) {

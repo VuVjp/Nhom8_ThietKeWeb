@@ -11,7 +11,7 @@ public class Booking
     public int? VoucherId { get; set; }
     public string? Status { get; set; }
     public decimal TotalPrice { get; set; }
-    public decimal? Discount { get; set; }
+    public decimal? VoucherDiscount { get; set; }
     public decimal FinalPrice { get; set; }
     public decimal? Deposit { get; set; }
     public int? AppliedMembershipId { get; set; }

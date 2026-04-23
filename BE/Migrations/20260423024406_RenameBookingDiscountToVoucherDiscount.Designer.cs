@@ -4,6 +4,7 @@ using HotelManagement.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BE.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260423024406_RenameBookingDiscountToVoucherDiscount")]
+    partial class RenameBookingDiscountToVoucherDiscount
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1060,9 +1063,6 @@ namespace BE.Migrations
                         .HasColumnType("decimal(18,2)")
                         .HasColumnName("base_price");
 
-                    b.Property<string>("BedType")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<int>("CapacityAdults")
                         .HasColumnType("int")
                         .HasColumnName("capacity_adults");
@@ -1083,12 +1083,6 @@ namespace BE.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("name");
-
-                    b.Property<int?>("SizeM2")
-                        .HasColumnType("int");
-
-                    b.Property<string>("View")
-                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 

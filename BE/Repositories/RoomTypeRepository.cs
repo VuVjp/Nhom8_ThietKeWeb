@@ -23,6 +23,9 @@ public class RoomTypeRepository : Repository<RoomType>, IRoomTypeRepository
             .Include(r => r.RoomImages)
             .Include(r => r.RoomTypeAmenities)
                 .ThenInclude(rta => rta.Amenity)
+            .Include(r => r.Rooms)
+                .ThenInclude(rm => rm.RoomInventories)
+                    .ThenInclude(ri => ri.Equipment)
             .ToListAsync();
     }
 
@@ -32,6 +35,9 @@ public class RoomTypeRepository : Repository<RoomType>, IRoomTypeRepository
             .Include(r => r.RoomImages)
             .Include(r => r.RoomTypeAmenities)
                 .ThenInclude(rta => rta.Amenity)
+            .Include(r => r.Rooms)
+                .ThenInclude(rm => rm.RoomInventories)
+                    .ThenInclude(ri => ri.Equipment)
             .ToListAsync();
     }
 
@@ -41,6 +47,9 @@ public class RoomTypeRepository : Repository<RoomType>, IRoomTypeRepository
             .Include(r => r.RoomImages)
             .Include(r => r.RoomTypeAmenities)
                 .ThenInclude(rta => rta.Amenity)
+            .Include(r => r.Rooms)
+                .ThenInclude(rm => rm.RoomInventories)
+                    .ThenInclude(ri => ri.Equipment)
             .FirstOrDefaultAsync(r => r.Id == id);
     }
 

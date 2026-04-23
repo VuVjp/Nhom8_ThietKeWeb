@@ -68,7 +68,7 @@ function getUserBaseFromToken(): Omit<AppUser, 'permissions'> | null {
     const roleClaim =
         payload?.role ??
         payload?.['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
-    const role = roleClaim ?? 'Guest';
+    const role = roleClaim ?? '';
 
     const idClaim =
         payload?.nameid ??
@@ -78,7 +78,7 @@ function getUserBaseFromToken(): Omit<AppUser, 'permissions'> | null {
         payload?.email ??
         payload?.['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'];
 
-    const nameClaim =
+    const nameClaim =   
         payload?.name ??
         payload?.['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'] ??
         'User';
@@ -87,12 +87,25 @@ function getUserBaseFromToken(): Omit<AppUser, 'permissions'> | null {
         id: Number(idClaim ?? Date.now()),
         name: String(nameClaim),
         email: String(emailClaim ?? ''),
-        role: String(roleClaim ?? 'Guest'),
+        role: String(role),
     };
 }
 
 async function resolveCurrentUser(emailOverride?: string): Promise<AppUser | null> {
-    const baseUser = getUserBaseFromToken();
+    let baseUser = getUserBaseFromToken();
+    
+    if (!baseUser) {
+        try {
+            const refreshToken = localStorage.getItem('refreshToken');
+            if (refreshToken) {
+                await authApi.refreshToken();
+                baseUser = getUserBaseFromToken();
+            }
+        } catch {
+            return null;
+        }
+    }
+
     if (!baseUser) {
         return null;
     }

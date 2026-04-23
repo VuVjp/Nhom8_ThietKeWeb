@@ -1,5 +1,6 @@
 import { httpClient } from './httpClient';
 import type { AmenityItem } from './amenitiesApi';
+import type { EquipmentItem } from './equipmentsApi';
 
 export interface RoomTypeImage {
     id: number;
@@ -14,8 +15,12 @@ export interface RoomTypeItem {
     capacityAdults: number;
     capacityChildren: number;
     description: string;
+    view: string;
+    bedType: string;
+    sizeM2: number | null;
     amenities: AmenityItem[];
     images: RoomTypeImage[];
+    equipments: EquipmentItem[];
     isActive: boolean;
 }
 
@@ -25,6 +30,9 @@ export interface RoomTypePayload {
     CapacityAdults: number;
     CapacityChildren: number;
     Description?: string;
+    View?: string;
+    BedType?: string;
+    SizeM2?: number | null;
     Files?: File[];
     PrimaryImageIndex?: number;
 }
@@ -42,6 +50,12 @@ interface RoomTypeDto {
     CapacityChildren?: number;
     description?: string;
     Description?: string;
+    view?: string;
+    View?: string;
+    bedType?: string;
+    BedType?: string;
+    sizeM2?: number | null;
+    SizeM2?: number | null;
     isActive?: boolean;
     IsActive?: boolean;
     amenities?: Array<{ id?: number; Id?: number; name?: string; Name?: string; iconUrl?: string; IconUrl?: string }>;
@@ -50,6 +64,8 @@ interface RoomTypeDto {
     Images?: Array<{ id?: number; Id?: number; url?: string; Url?: string; isPrimary?: boolean; IsPrimary?: boolean }>;
     roomImages?: Array<{ id?: number; Id?: number; url?: string; Url?: string; imageUrl?: string; ImageUrl?: string; isPrimary?: boolean; IsPrimary?: boolean }>;
     RoomImages?: Array<{ id?: number; Id?: number; url?: string; Url?: string; imageUrl?: string; ImageUrl?: string; isPrimary?: boolean; IsPrimary?: boolean }>;
+    equipments?: Array<{ id?: number; Id?: number; name?: string; Name?: string; imageUrl?: string; ImageUrl?: string; category?: string; Category?: string }>;
+    Equipments?: Array<{ id?: number; Id?: number; name?: string; Name?: string; imageUrl?: string; ImageUrl?: string; category?: string; Category?: string }>;
 }
 
 interface RoomTypeAmenityPayload {
@@ -77,6 +93,26 @@ function normalizeImage(dto: { id?: number; Id?: number; url?: string; Url?: str
     };
 }
 
+function normalizeEquipment(dto: { id?: number; Id?: number; name?: string; Name?: string; imageUrl?: string; ImageUrl?: string; category?: string; Category?: string }): EquipmentItem {
+    return {
+        id: Number(dto.id ?? dto.Id ?? 0),
+        name: String(dto.name ?? dto.Name ?? ''),
+        imageUrl: String(dto.imageUrl ?? dto.ImageUrl ?? ''),
+        category: String(dto.category ?? dto.Category ?? ''),
+        // Adding defaults for other fields if they are missing in the simple Dto
+        itemCode: '',
+        unit: '',
+        totalQuantity: 0,
+        inUseQuantity: 0,
+        damagedQuantity: 0,
+        liquidatedQuantity: 0,
+        basePrice: 0,
+        defaultPriceIfLost: 0,
+        supplier: '',
+        isActive: true
+    };
+}
+
 function normalizeRoomType(dto: RoomTypeDto): RoomTypeItem {
     const rawImages = dto.images ?? dto.Images ?? dto.roomImages ?? dto.RoomImages ?? [];
 
@@ -87,8 +123,12 @@ function normalizeRoomType(dto: RoomTypeDto): RoomTypeItem {
         capacityAdults: Number(dto.capacityAdults ?? dto.CapacityAdults ?? 0),
         capacityChildren: Number(dto.capacityChildren ?? dto.CapacityChildren ?? 0),
         description: String(dto.description ?? dto.Description ?? ''),
+        view: String(dto.view ?? dto.View ?? ''),
+        bedType: String(dto.bedType ?? dto.BedType ?? ''),
+        sizeM2: dto.sizeM2 ?? dto.SizeM2 ?? null,
         amenities: (dto.amenities ?? dto.Amenities ?? []).map(normalizeAmenity),
         images: rawImages.map(normalizeImage),
+        equipments: (dto.equipments ?? dto.Equipments ?? []).map(normalizeEquipment),
         isActive: Boolean(dto.isActive ?? dto.IsActive ?? false),
     };
 }
@@ -101,6 +141,15 @@ function toRoomTypeFormData(payload: RoomTypePayload): FormData {
     formData.append('CapacityChildren', String(payload.CapacityChildren));
     if (payload.Description) {
         formData.append('Description', payload.Description);
+    }
+    if (payload.View) {
+        formData.append('View', payload.View);
+    }
+    if (payload.BedType) {
+        formData.append('BedType', payload.BedType);
+    }
+    if (payload.SizeM2 != null) {
+        formData.append('SizeM2', String(payload.SizeM2));
     }
     if (payload.Files) {
         payload.Files.forEach((file) => {

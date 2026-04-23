@@ -89,9 +89,9 @@ export function CreateBookingPage() {
     const getDiscountAmount = (baseTotal: number) => {
         if (!appliedVoucher) return 0;
         if (appliedVoucher.discountType === 'Percentage') {
-            return (baseTotal * appliedVoucher.discountValue) / 100;
+            return Math.round((baseTotal * appliedVoucher.discountValue) / 100);
         }
-        return appliedVoucher.discountValue;
+        return Math.round(appliedVoucher.discountValue);
     };
 
     const handleCheckVoucher = async () => {
@@ -194,7 +194,7 @@ export function CreateBookingPage() {
             const { start, end } = getCalculatedDates();
             const baseTotal = calculatedTotal();
             const voucherDiscount = getDiscountAmount(baseTotal);
-            const membershipDiscount = guestType === 'existing' ? (baseTotal * membershipDiscountPercent) / 100 : 0;
+            const membershipDiscount = guestType === 'existing' ? Math.round((baseTotal * membershipDiscountPercent) / 100) : 0;
             const finalTotal = baseTotal - voucherDiscount - membershipDiscount;
 
             await receptionApi.createBooking({
@@ -358,7 +358,7 @@ export function CreateBookingPage() {
                     const { start, end } = getCalculatedDates();
                     const baseTotal = calculatedTotal();
                     const voucherDiscount = getDiscountAmount(baseTotal);
-                    const membershipDiscount = guestType === 'existing' ? (baseTotal * membershipDiscountPercent) / 100 : 0;
+                    const membershipDiscount = guestType === 'existing' ? Math.round((baseTotal * membershipDiscountPercent) / 100) : 0;
                     const finalTotal = baseTotal - voucherDiscount - membershipDiscount;
 
                     return (

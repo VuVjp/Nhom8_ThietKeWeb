@@ -174,7 +174,7 @@ public class AppDbContext : DbContext
             e.Property(x => x.Status).HasColumnName("status");
             e.Property(x => x.Deposit).HasColumnName("deposit").HasColumnType("decimal(18,2)");
             e.Property(x => x.TotalPrice).HasColumnName("total_price").HasColumnType("decimal(18,2)");
-            e.Property(x => x.Discount).HasColumnName("discount").HasColumnType("decimal(18,2)");
+            e.Property(x => x.VoucherDiscount).HasColumnName("voucher_discount").HasColumnType("decimal(18,2)");
             e.Property(x => x.FinalPrice).HasColumnName("final_price").HasColumnType("decimal(18,2)");
             e.Property(x => x.InvoiceType).HasColumnName("invoice_type").HasDefaultValue("Consolidated");
             e.Property(x => x.AppliedMembershipId).HasColumnName("applied_membership_id");

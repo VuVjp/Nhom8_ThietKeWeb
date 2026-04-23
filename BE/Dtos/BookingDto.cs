@@ -57,6 +57,8 @@ public class BookingSummaryDto
     public string Status { get; set; } = string.Empty;
     public decimal TotalAmount { get; set; }
     public decimal Deposit { get; set; }
+    public decimal MembershipDiscount { get; set; }
+    public decimal VoucherDiscount { get; set; }
     public List<string> RoomNumbers { get; set; } = new();
     public List<int> RoomIds { get; set; } = new();
 }

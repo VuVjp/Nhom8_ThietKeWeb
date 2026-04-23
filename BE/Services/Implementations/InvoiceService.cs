@@ -380,7 +380,7 @@ public class InvoiceService : IInvoiceService
                 {
                     if (voucher.DiscountType == "Percentage")
                     {
-                        discountAmount += Math.Round(totalRoomAmount * (voucher.DiscountValue / 100m), 2);
+                        discountAmount += Math.Round(totalRoomAmount * (voucher.DiscountValue / 100m), 0);
                     }
                     else if (voucher.DiscountType == "Fixed")
                     {
@@ -394,18 +394,18 @@ public class InvoiceService : IInvoiceService
         var membershipDiscountPercent = booking.MembershipDiscountPercentApplied ?? 0m;
         if (membershipDiscountPercent > 0)
         {
-            discountAmount += Math.Round(totalRoomAmount * (membershipDiscountPercent / 100m), 2);
+            discountAmount += Math.Round(totalRoomAmount * (membershipDiscountPercent / 100m), 0);
         }
         else if ((booking.MembershipDiscountAmountApplied ?? 0m) > 0m && booking.TotalPrice > 0m)
         {
             var ratio = totalRoomAmount / booking.TotalPrice;
-            discountAmount += Math.Round((booking.MembershipDiscountAmountApplied ?? 0m) * ratio, 2);
+            discountAmount += Math.Round((booking.MembershipDiscountAmountApplied ?? 0m) * ratio, 0);
         }
         invoice.DiscountAmount = discountAmount;
 
         // 5. Tax Amount (10% of subtotal)
         decimal subtotal = totalRoomAmount + totalServiceAmount + totalLossDamageAmount - discountAmount;
-        invoice.TaxAmount = Math.Round(Math.Max(0, subtotal) * _taxRate, 2);
+        invoice.TaxAmount = Math.Round(Math.Max(0, subtotal) * _taxRate, 0);
 
         // 6. Final Total
         invoice.FinalTotal = subtotal + invoice.TaxAmount;
