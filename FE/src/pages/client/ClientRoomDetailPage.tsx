@@ -53,7 +53,7 @@ export function ClientRoomDetailPage() {
     return (
         <div className="w-full bg-slate-50 min-h-screen pb-24">
             {/* HERo/LARGETHUMBNAIL SECTION */}
-            <div className="relative h-[60vh] w-full bg-slate-900 mt-[88px]">
+            <div className="relative h-[60vh] w-full bg-slate-900 ">
                 <img
                     src={heroImage}
                     alt={roomType.name}

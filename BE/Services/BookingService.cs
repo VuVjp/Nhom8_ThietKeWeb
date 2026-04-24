@@ -449,10 +449,10 @@ public class BookingService : IBookingService
             return false;
         }
 
-        if(DateTime.Now > booking.CheckInDate)
-        {
-            return false;
-        }
+        // if(DateTime.Now > booking.CheckInDate)
+        // {
+        //     return false;
+        // }
         
         try
         {

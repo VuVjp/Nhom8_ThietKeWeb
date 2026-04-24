@@ -297,7 +297,8 @@ export function ClientAccountPage() {
                                                                     <CreditCardIcon className="w-4 h-4" /> Pay Deposit
                                                                 </button>
                                                             )}
-                                                            {(bkg.status?.toLowerCase() === 'pending' || bkg.status?.toLowerCase() === 'confirmed') && new Date(bkg.checkInDate) > new Date() && (
+                                                            {/* {&& new Date(bkg.checkInDate).addHours(1) > new Date()} */}
+                                                            {(bkg.status?.toLowerCase() === 'pending' || bkg.status?.toLowerCase() === 'confirmed') && (
                                                                 <button
                                                                     onClick={() => handleCancelBooking(bkg.id)}
                                                                     className="text-red-600 bg-red-50 hover:bg-red-100 border border-red-100 font-bold text-xs uppercase tracking-wider px-3 py-1.5 rounded flex items-center gap-1 transition-all shadow-sm active:scale-95"
@@ -333,7 +334,7 @@ export function ClientAccountPage() {
                             </div>
                             <h2 className="text-2xl font-bold text-slate-900 mb-2">Cancel Booking?</h2>
                             <p className="text-slate-500 mb-8">Are you sure you want to cancel booking <strong>#{bookingToCancel}</strong>? This action cannot be undone.</p>
-                            
+
                             <div className="flex flex-col gap-3">
                                 <button
                                     onClick={confirmCancel}

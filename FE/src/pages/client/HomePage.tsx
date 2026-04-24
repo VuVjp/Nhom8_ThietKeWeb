@@ -223,7 +223,7 @@ export function HomePage() {
                         <div className="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/20 transition-colors" />
                     </div>
                     <div className="relative group overflow-hidden">
-                        <img src="https://images.unsplash.com/photo-1551882547-ff40c0d129df?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Restaurant" className="w-full h-full object-cover transform transition-transform duration-700 group-hover:scale-105" />
+                        <img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1740&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Restaurant" className="w-full h-full object-cover transform transition-transform duration-700 group-hover:scale-105" />
                     </div>
                     <div className="relative group overflow-hidden">
                         <img src="https://images.unsplash.com/photo-1544161515-4ab6ce6db874?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Spa" className="w-full h-full object-cover transform transition-transform duration-700 group-hover:scale-105" />
