@@ -65,12 +65,35 @@ export const servicesApi = {
     return data;
   },
 
-  async create(payload: { categoryId?: number; name: string; price: number; unit: string }) {
-    await httpClient.post('services', payload);
+  async create(payload: { categoryId?: number; name: string; price: number; unit: string; description?: string; features?: string; image?: File }) {
+    const formData = new FormData();
+    if (payload.categoryId) formData.append('categoryId', payload.categoryId.toString());
+    formData.append('name', payload.name);
+    formData.append('price', payload.price.toString());
+    formData.append('unit', payload.unit);
+    if (payload.description) formData.append('description', payload.description);
+    if (payload.features) formData.append('features', payload.features);
+    if (payload.image) formData.append('image', payload.image);
+
+    await httpClient.post('services', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
   },
 
-  async update(id: number, payload: { categoryId?: number; name: string; price: number; unit: string; isActive: boolean }) {
-    await httpClient.put(`services/${id}`, payload);
+  async update(id: number, payload: { categoryId?: number; name: string; price: number; unit: string; description?: string; features?: string; isActive: boolean; image?: File }) {
+    const formData = new FormData();
+    if (payload.categoryId) formData.append('categoryId', payload.categoryId.toString());
+    formData.append('name', payload.name);
+    formData.append('price', payload.price.toString());
+    formData.append('unit', payload.unit);
+    if (payload.description) formData.append('description', payload.description);
+    if (payload.features) formData.append('features', payload.features);
+    formData.append('isActive', payload.isActive.toString());
+    if (payload.image) formData.append('image', payload.image);
+
+    await httpClient.put(`services/${id}`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
   },
 
   async delete(id: number) {

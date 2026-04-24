@@ -8,10 +8,12 @@ namespace HotelManagement.Services.Implementations;
 public class ServiceService : IServiceService
 {
     private readonly IServiceRepository _repository;
+    private readonly ICloudinaryService _cloudinaryService;
 
-    public ServiceService(IServiceRepository repository)
+    public ServiceService(IServiceRepository repository, ICloudinaryService cloudinaryService)
     {
         _repository = repository;
+        _cloudinaryService = cloudinaryService;
     }
 
     public async Task<PaginatedResultDto<ServiceDto>> GetPagedAsync(ServiceQueryDto query)
@@ -29,6 +31,9 @@ public class ServiceService : IServiceService
                 Name = s.Name,
                 Price = s.Price,
                 Unit = s.Unit,
+                ImageUrl = s.ImageUrl,
+                Description = s.Description,
+                Features = s.Features,
                 IsActive = s.IsActive
             }).ToList(),
             Total = total,
@@ -49,6 +54,9 @@ public class ServiceService : IServiceService
             Name = s.Name,
             Price = s.Price,
             Unit = s.Unit,
+            ImageUrl = s.ImageUrl,
+            Description = s.Description,
+            Features = s.Features,
             IsActive = s.IsActive
         };
     }
@@ -59,12 +67,21 @@ public class ServiceService : IServiceService
         if (dto.Price <= 0) throw new ArgumentException("Price must be greater than 0.");
         if (string.IsNullOrWhiteSpace(dto.Unit)) throw new ArgumentException("Unit is required.");
 
+        string? imageUrl = null;
+        if (dto.Image != null)
+        {
+            imageUrl = await _cloudinaryService.UploadImageAsync(dto.Image, "services");
+        }
+
         var service = new Service
         {
             CategoryId = dto.CategoryId,
             Name = dto.Name,
             Price = dto.Price,
             Unit = dto.Unit,
+            ImageUrl = imageUrl,
+            Description = dto.Description,
+            Features = dto.Features,
             IsActive = true
         };
 
@@ -82,10 +99,17 @@ public class ServiceService : IServiceService
         var service = await _repository.GetByIdAsync(id);
         if (service == null) return false;
 
+        if (dto.Image != null)
+        {
+            service.ImageUrl = await _cloudinaryService.UploadImageAsync(dto.Image, "services");
+        }
+
         service.CategoryId = dto.CategoryId;
         service.Name = dto.Name;
         service.Price = dto.Price;
         service.Unit = dto.Unit;
+        service.Description = dto.Description;
+        service.Features = dto.Features;
         service.IsActive = dto.IsActive;
 
         _repository.Update(service);

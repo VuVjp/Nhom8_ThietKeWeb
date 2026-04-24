@@ -56,7 +56,7 @@ public class ServicesController : ControllerBase
 
     [Permission(PermissionNames.ManageServices)]
     [HttpPost]
-    public async Task<IActionResult> Create(CreateServiceDto dto)
+    public async Task<IActionResult> Create([FromForm] CreateServiceDto dto)
     {
         try
         {
@@ -83,7 +83,7 @@ public class ServicesController : ControllerBase
 
     [Permission(PermissionNames.ManageServices)]
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(int id, UpdateServiceDto dto)
+    public async Task<IActionResult> Update(int id, [FromForm] UpdateServiceDto dto)
     {
         try
         {

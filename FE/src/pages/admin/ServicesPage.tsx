@@ -14,6 +14,7 @@ import { useDebounce } from '../../hooks/useDebounce';
 import { Badge } from '../../components/Badge';
 
 import { CategorySelect } from '../../components/CategorySelect';
+import { ImageUpload } from '../../components/ImageUpload';
 
 export function ServicesPage() {
     const { ensure } = usePermissionCheck();
@@ -37,6 +38,9 @@ export function ServicesPage() {
         name: '',
         price: 0,
         unit: 'Per Item',
+        description: '',
+        features: '',
+        image: null as File | null,
         isActive: true
     });
     const [isSaving, setIsSaving] = useState(false);
@@ -89,10 +93,17 @@ export function ServicesPage() {
         setIsSaving(true);
         try {
             if (editing) {
-                await servicesApi.update(editing.id, { ...formData, isActive: formData.isActive });
+                await servicesApi.update(editing.id, { 
+                    ...formData, 
+                    image: formData.image || undefined,
+                    isActive: formData.isActive 
+                });
                 toast.success('Service updated');
             } else {
-                await servicesApi.create(formData);
+                await servicesApi.create({
+                    ...formData,
+                    image: formData.image || undefined
+                });
                 toast.success('Service created');
             }
             setOpenModal(false);
@@ -148,7 +159,25 @@ export function ServicesPage() {
 
     const columns = [
         { key: 'id', label: 'ID', render: (row: Service) => row.id },
-        { key: 'name', label: 'Service Name', render: (row: Service) => row.name },
+        { 
+            key: 'name', 
+            label: 'Service Details', 
+            render: (row: Service) => (
+                <div className="flex items-center gap-3">
+                    {row.imageUrl ? (
+                        <img src={row.imageUrl} alt={row.name} className="h-12 w-12 rounded-lg object-cover border border-slate-200" />
+                    ) : (
+                        <div className="h-12 w-12 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 border border-slate-200">
+                            <PlusIcon className="h-6 w-6" />
+                        </div>
+                    )}
+                    <div>
+                        <div className="font-semibold text-slate-900">{row.name}</div>
+                        {row.description && <div className="text-xs text-slate-500 line-clamp-1 max-w-[200px]">{row.description}</div>}
+                    </div>
+                </div>
+            )
+        },
         { key: 'category', label: 'Category', render: (row: Service) => row.categoryName || '-' },
         { 
             key: 'price', 
@@ -182,6 +211,9 @@ export function ServicesPage() {
                                 name: row.name,
                                 price: row.price,
                                 unit: row.unit,
+                                description: row.description || '',
+                                features: row.features || '',
+                                image: null,
                                 isActive: row.isActive
                             });
                             setOpenModal(true);
@@ -279,26 +311,54 @@ export function ServicesPage() {
                 onClose={() => {
                     setOpenModal(false);
                     setEditing(null);
-                    setFormData({ categoryId: undefined, name: '', price: 0, unit: 'Per Item', isActive: true });
+                    setFormData({ categoryId: undefined, name: '', price: 0, unit: 'Per Item', description: '', features: '', image: null, isActive: true });
                 }}
             >
-                <div className="space-y-4">
+                <div className="space-y-4 max-h-[80vh] overflow-y-auto px-1">
                     <div className="space-y-2">
-                        <label className="text-sm font-medium text-slate-700">Category</label>
-                        <Select 
-                            value={formData.categoryId || ''} 
-                            onChange={(e) => setFormData({ ...formData, categoryId: e.target.value ? Number(e.target.value) : undefined })}
-                        >
-                            <option value="">No Category</option>
-                            {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                        </Select>
+                        <label className="text-sm font-medium text-slate-700">Service Image</label>
+                        <ImageUpload 
+                            value={formData.image}
+                            onChange={(file) => setFormData({ ...formData, image: file as File })}
+                            currentUrl={editing?.imageUrl}
+                        />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-slate-700">Category</label>
+                            <Select 
+                                value={formData.categoryId || ''} 
+                                onChange={(e) => setFormData({ ...formData, categoryId: e.target.value ? Number(e.target.value) : undefined })}
+                            >
+                                <option value="">No Category</option>
+                                {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-slate-700">Service Name</label>
+                            <Input 
+                                value={formData.name} 
+                                onChange={(e) => setFormData({ ...formData, name: e.target.value })} 
+                                placeholder="e.g. Laundry Service"
+                            />
+                        </div>
                     </div>
                     <div className="space-y-2">
-                        <label className="text-sm font-medium text-slate-700">Service Name</label>
+                        <label className="text-sm font-medium text-slate-700">Description</label>
+                        <textarea 
+                            className="w-full rounded-lg border border-slate-200 p-2 text-sm focus:border-cyan-500 focus:outline-none"
+                            rows={3}
+                            value={formData.description}
+                            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                            placeholder="Enter service description..."
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-slate-700">Features</label>
                         <Input 
-                            value={formData.name} 
-                            onChange={(e) => setFormData({ ...formData, name: e.target.value })} 
-                            placeholder="e.g. Laundry Service"
+                            value={formData.features} 
+                            onChange={(e) => setFormData({ ...formData, features: e.target.value })} 
+                            placeholder="e.g. Fast delivery, Eco-friendly (use commas or semicolons)"
                         />
                     </div>
                     <div className="grid grid-cols-2 gap-4">

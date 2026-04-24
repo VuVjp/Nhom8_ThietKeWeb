@@ -124,6 +124,9 @@ export interface Service {
   name: string;
   price: number;
   unit: string;
+  imageUrl?: string;
+  description?: string;
+  features?: string;
   isActive: boolean;
 }
 
