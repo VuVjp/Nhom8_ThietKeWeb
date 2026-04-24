@@ -25,6 +25,10 @@ public class Repository<T> : IRepository<T> where T : class
     {
         return await _dbSet.ToListAsync();
     }
+    public virtual IQueryable<T> GetQueryable()
+    {
+        return _dbSet.AsQueryable();
+    }
 
     public async Task AddAsync(T entity)
     {

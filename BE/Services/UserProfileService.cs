@@ -27,7 +27,9 @@ public class UserProfileService : IUserProfileService
             Phone = user.Phone,
             RoleName = user.Role?.Name ?? string.Empty,
             IsActive = user.IsActive,
-            AvatarUrl = user.AvatarUrl
+            AvatarUrl = user.AvatarUrl,
+            Birthday = user.Birthday,
+            BirthdayUpdateCount = user.BirthdayUpdateCount
         };
     }
 
@@ -39,6 +41,42 @@ public class UserProfileService : IUserProfileService
         {
             throw new NotFoundException("User not found.");
         }
+
+        if (updateProfileDto.Birthday.HasValue && user.Birthday != updateProfileDto.Birthday)
+        {
+            // Limit birthday updates (default: 1)
+            if (user.BirthdayUpdateCount >= 1)
+            {
+                throw new BadRequestException("Birthday can only be updated once.");
+            }
+
+            var now = DateTime.UtcNow;
+            var newBirthday = updateProfileDto.Birthday.Value;
+            var currentYear = now.Year;
+
+            // Anti-abuse: if birthday already passed this year OR updated < 7 days before birthday
+            // Use safe way to handle February 29th
+            DateTime birthdayThisYear;
+            try
+            {
+                birthdayThisYear = new DateTime(currentYear, newBirthday.Month, newBirthday.Day);
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+                // If Leap Year Birthday and current year is not leap year, use Feb 28th or March 1st
+                birthdayThisYear = new DateTime(currentYear, 3, 1);
+            }
+
+            if (birthdayThisYear < now.Date || (birthdayThisYear - now.Date).TotalDays < 7)
+            {
+                user.LastBirthdayVoucherYear = currentYear;
+            }
+
+            user.Birthday = newBirthday;
+            user.BirthdayUpdatedAt = now;
+            user.BirthdayUpdateCount++;
+        }
+
         user.FullName = updateProfileDto.FullName ?? user.FullName;
         user.Phone = updateProfileDto.Phone ?? user.Phone;
 
@@ -46,10 +84,13 @@ public class UserProfileService : IUserProfileService
         await _userRepository.SaveChangesAsync();
         return new UserDto
         {
-            FullName = updateProfileDto.FullName ?? user.FullName,
+            Id = user.Id,
+            FullName = user.FullName,
             Email = user.Email,
-            Phone = updateProfileDto.Phone ?? user.Phone,
-            AvatarUrl = user.AvatarUrl
+            Phone = user.Phone,
+            AvatarUrl = user.AvatarUrl,
+            Birthday = user.Birthday,
+            BirthdayUpdateCount = user.BirthdayUpdateCount
         };
     }
 

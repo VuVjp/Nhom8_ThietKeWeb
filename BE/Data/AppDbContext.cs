@@ -395,6 +395,11 @@ public class AppDbContext : DbContext
             e.Property(x => x.LoyaltyPoints).HasColumnName("loyalty_points");
             e.Property(x => x.GoogleId).HasColumnName("google_id");
             e.Property(x => x.AvatarUrl).HasColumnName("avatar_url");
+            e.Property(x => x.Birthday).HasColumnName("birthday").HasColumnType("date");
+            e.Property(x => x.BirthdayUpdatedAt).HasColumnName("birthday_updated_at");
+            e.Property(x => x.BirthdayUpdateCount).HasColumnName("birthday_update_count").HasDefaultValue(0);
+            e.Property(x => x.LastBirthdayVoucherYear).HasColumnName("last_birthday_voucher_year");
+            e.Property(x => x.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("GETDATE()");
             e.HasIndex(x => x.Email).IsUnique();
         });
 

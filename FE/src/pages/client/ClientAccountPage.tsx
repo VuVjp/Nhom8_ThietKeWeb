@@ -19,7 +19,8 @@ export function ClientAccountPage() {
 
     const [formData, setFormData] = useState({
         fullName: '',
-        phone: ''
+        phone: '',
+        birthday: ''
     });
 
     const [bookingToCancel, setBookingToCancel] = useState<number | null>(null);
@@ -46,7 +47,8 @@ export function ClientAccountPage() {
             setBookings(bookingsData);
             setFormData({
                 fullName: profileData.fullName,
-                phone: profileData.phone
+                phone: profileData.phone,
+                birthday: profileData.birthday ? profileData.birthday.split('T')[0] : ''
             });
         } catch (error) {
             console.error('Error fetching data:', error);
@@ -68,7 +70,12 @@ export function ClientAccountPage() {
         e.preventDefault();
         setSaving(true);
         try {
-            const updated = await userProfileApi.updateProfile(formData);
+            const payload = {
+                fullName: formData.fullName,
+                phone: formData.phone,
+                birthday: formData.birthday || undefined
+            };
+            const updated = await userProfileApi.updateProfile(payload);
             setProfile(updated);
             toast.success('Profile updated successfully!');
         } catch (error) {
@@ -211,6 +218,24 @@ export function ClientAccountPage() {
                                             className="w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:outline-none"
                                             required
                                         />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Birthday</label>
+                                        <input
+                                            type="date"
+                                            value={formData.birthday}
+                                            onChange={(e) => setFormData({ ...formData, birthday: e.target.value })}
+                                            className={`w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:outline-none ${(profile?.birthdayUpdateCount || 0) >= 1 ? 'cursor-not-allowed opacity-75' : ''}`}
+                                            disabled={(profile?.birthdayUpdateCount || 0) >= 1}
+                                        />
+                                        <p className="text-[10px] text-slate-500 mt-1 italic">
+                                            Enter your birthday to receive voucher offers on your birthday 🎉
+                                        </p>
+                                        {(profile?.birthdayUpdateCount || 0) >= 1 && (
+                                            <p className="text-[10px] text-red-500 mt-1">
+                                                Birthday can only be set once. Please contact support if you need to change it.
+                                            </p>
+                                        )}
                                     </div>
                                     <div className="md:col-span-2">
                                         <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Email Address</label>

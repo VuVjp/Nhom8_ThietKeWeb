@@ -13,6 +13,11 @@ public class User
     public bool IsActive { get; set; } = true;
     public string? GoogleId { get; set; }
     public string? AvatarUrl { get; set; }
+    public DateTime? Birthday { get; set; }
+    public DateTime? BirthdayUpdatedAt { get; set; }
+    public int BirthdayUpdateCount { get; set; } = 0;
+    public int? LastBirthdayVoucherYear { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public Role? Role { get; set; }
     public Membership? Membership { get; set; }

@@ -9,6 +9,8 @@ namespace HotelManagement.Dtos
         public string? FullName { get; set; }
         public string? Phone { get; set; }
         public string? AvatarUrl { get; set; }
+        public DateTime? Birthday { get; set; }
+        public int BirthdayUpdateCount { get; set; }
     }
     public class validateUserResponseDto
     {

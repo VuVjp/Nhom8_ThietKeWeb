@@ -8,11 +8,14 @@ export interface UserProfile {
     roleName: string;
     isActive: boolean;
     avatarUrl?: string;
+    birthday?: string;
+    birthdayUpdateCount: number;
 }
 
 export interface UpdateProfilePayload {
     fullName: string;
     phone: string;
+    birthday?: string;
 }
 
 export const userProfileApi = {
