@@ -20,9 +20,9 @@ const ACTION_COLORS: Record<string, { bg: string; text: string }> = {
     CREATE: { bg: 'bg-emerald-100', text: 'text-emerald-800' },
     UPDATE: { bg: 'bg-cyan-100', text: 'text-cyan-800' },
     DELETE: { bg: 'bg-red-100', text: 'text-red-800' },
-    LOGIN: { bg: 'bg-blue-100', text: 'text-blue-800' },
-    LOGOUT: { bg: 'bg-slate-100', text: 'text-slate-600' },
-    STATUS_CHANGE: { bg: 'bg-amber-100', text: 'text-amber-800' },
+    // LOGIN: { bg: 'bg-blue-100', text: 'text-blue-800' },
+    // LOGOUT: { bg: 'bg-slate-100', text: 'text-slate-600' },
+    // STATUS_CHANGE: { bg: 'bg-amber-100', text: 'text-amber-800' },
     OTHER: { bg: 'bg-violet-100', text: 'text-violet-800' },
 };
 
@@ -101,7 +101,8 @@ function buildDiff(oldValue: unknown, newValue: unknown): { oldData: unknown; ne
 
 const DEFAULT_PAGE_SIZE = 15;
 const PAGE_SIZE_OPTIONS = [10, 15, 30, 50];
-const ACTION_OPTIONS = ['All', 'CREATE', 'UPDATE', 'DELETE', 'LOGIN', 'LOGOUT', 'STATUS_CHANGE', 'OTHER'];
+const ACTION_OPTIONS = ['All', 'CREATE', 'UPDATE', 'DELETE', 'OTHER'];
+// const ACTION_OPTIONS = ['All', 'CREATE', 'UPDATE', 'DELETE', 'LOGIN', 'LOGOUT', 'STATUS_CHANGE', 'OTHER'];
 
 export function AuditLogPage() {
     const [groups, setGroups] = useState<AuditLogDailyGroup[]>([]);

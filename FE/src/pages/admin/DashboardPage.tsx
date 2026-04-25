@@ -207,7 +207,7 @@ export function DashboardPage() {
                 <MetricCard
                     title="Staff Actions"
                     value={stats?.auditLogTotal || 0}
-                    subValue="Audit logs (placeholder)"
+                    subValue="Audit logs"
                     icon={ClipboardDocumentListIcon}
                     color="amber"
                 />

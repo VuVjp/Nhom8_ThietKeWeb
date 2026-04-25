@@ -43,8 +43,8 @@
     "EmailSettings": {
         "Host": "smtp.example.com",
         "Port": 587,
-        "Username": "your_smtp_username",
-        "Password": "your_smtp_password"
+        "SenderEmail": "your_smtp_username",
+        "SenderPassword": "your_smtp_password"
     },
     "BookingAutoCancel": {
         "Enabled": true,

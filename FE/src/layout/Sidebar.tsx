@@ -54,6 +54,7 @@ const navItems: SidebarNavItem[] = [
     children: [
       { to: '/admin/articles', label: 'Article Catalog', permissions: ['MANAGE_ARTICLES'] as AppPermission[] },
       { to: '/admin/article-categories', label: 'Categories', permissions: ['MANAGE_ARTICLES'] as AppPermission[] },
+      { to: '/admin/attractions', label: 'Attractions', permissions: ['MANAGE_ATTRACTIONS'] as AppPermission[] }
     ]
   },
   { to: '/admin/rooms', label: 'Rooms', icon: BuildingOffice2Icon, permissions: ['MANAGE_ROOMS'] as AppPermission[] },
@@ -65,7 +66,7 @@ const navItems: SidebarNavItem[] = [
   { to: '/admin/cleaning', label: 'Inspecting & Cleaning', icon: SparklesIcon, permissions: ['UPDATE_CLEANING'] as AppPermission[] },
   { to: '/admin/vouchers', label: 'Vouchers', icon: TicketIcon, permissions: ['MANAGE_VOUCHERS'] as AppPermission[] },
   { to: '/admin/memberships', label: 'Memberships', icon: StarIcon, permissions: ['MANAGE_MEMBERSHIPS'] as AppPermission[] },
-  { to: '/admin/attractions', label: 'Attractions', icon: Squares2X2Icon, permissions: ['MANAGE_ATTRACTIONS'] as AppPermission[] },
+  //{ to: '/admin/attractions', label: 'Attractions', icon: Squares2X2Icon, permissions: ['MANAGE_ATTRACTIONS'] as AppPermission[] },
   { to: '/admin/users', label: 'Users', icon: UsersIcon, permissions: ['MANAGE_USERS'] as AppPermission[] },
   { to: '/admin/roles', label: 'Roles', icon: ShieldCheckIcon, permissions: ['MANAGE_ROLES'] as AppPermission[] },
   { to: '/admin/audit-log', label: 'Audit Logs', icon: Squares2X2Icon, permissions: ['VIEW_DASHBOARD'] as AppPermission[] },
